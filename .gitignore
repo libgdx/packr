@@ -1,0 +1,17 @@
+.class
+.jar
+.project
+.classpath
+.settings/
+.DS_Store
+ipch/
+Debug/
+Release/
+build/
+*.*sdf
+*.suo
+*.user
+/*.exe
+/*.idb
+/*.ilk
+/*.pdb
