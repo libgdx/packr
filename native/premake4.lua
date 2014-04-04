@@ -41,4 +41,4 @@ solution "packr"
 			includedirs { "include/jni-headers/mac" }
 			libdirs { LIBJVM_DIR }
 			links { "jvm" }
-			linkoptions { "-rpath @executable_path/jre/lib/server" }
+			linkoptions { "-framework CoreFoundation", "-rpath @executable_path/jre/lib/server" }
