@@ -20,3 +20,6 @@ packr.xcodeproj
 packr-mac
 packr.make
 Makefile
+*~
+obj/
+packr
