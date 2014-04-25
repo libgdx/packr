@@ -12,7 +12,7 @@ solution "packr"
 		kind "ConsoleApp"
 		language "C++"		
 		buildoptions { "-Wall" }
-		files { "**.h", "**.cpp" }
+		files { "**.h", "src/launcher.cpp" }
 		includedirs { "include", "include/jni-headers" }
 
 		configuration "debug"
@@ -39,6 +39,7 @@ solution "packr"
 			LIBJVM_DIR = JAVA_HOME .. "/jre/lib/server/"
 			printf(LIBJVM_DIR);
 			includedirs { "include/jni-headers/mac" }
+			files { "src/main-mac.cpp" }
 			libdirs { LIBJVM_DIR }
 			links { "jvm" }
 			linkoptions { "-framework CoreFoundation", "-rpath @executable_path/jre/lib/server" }
