@@ -17,3 +17,4 @@ build/
 /*.pdb
 /target
 packr.xcodeproj
+packr-mac
