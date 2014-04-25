@@ -18,3 +18,5 @@ build/
 /target
 packr.xcodeproj
 packr-mac
+packr.make
+Makefile
