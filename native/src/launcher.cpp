@@ -13,7 +13,7 @@ extern char** g_argv;
 void* launchVM(void* params) {
     std::string execDir = getExecutableDir();
     std::ifstream configFile;
-    configFile.open(execDir + std::string("/config.json"));
+    configFile.open((execDir + std::string("/config.json")).c_str());
     printf("config file: %s\n", (execDir + std::string("/config.json")).c_str());
     
     picojson::value json;
@@ -32,7 +32,7 @@ void* launchVM(void* params) {
     
     JavaVMOption* options = (JavaVMOption*)malloc(sizeof(JavaVMOption) * (1 + vmArgs.size()));
     options[0].optionString = (char*)classPath.c_str();
-    for(int i = 0; i < vmArgs.size(); i++) {
+    for(unsigned i = 0; i < vmArgs.size(); i++) {
         options[i+1].optionString = (char*)vmArgs[i].to_str().c_str();
         printf("vmArg %d: %s\n", i, options[i+1].optionString);
     }

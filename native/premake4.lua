@@ -30,8 +30,14 @@ solution "packr"
 
 		--- linux ---
 		configuration { "linux" }
-			defines { "LINUX" }		
+			defines { "LINUX" }
+			LIBJVM_DIR = JAVA_HOME .. "/jre/lib/amd64/server/"
+			printf(LIBJVM_DIR);
 			includedirs { "include/jni-headers/linux" }
+			files { "src/main-linux.cpp" }
+			libdirs { LIBJVM_DIR }
+			links { "jvm" }
+			linkoptions { "-Wl,-rpath,'$$ORIGIN/jre/lib/amd64/server'" }
 
 		--- mac os x ---
 		configuration { "macosx" }			
