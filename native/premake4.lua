@@ -25,9 +25,12 @@ solution "packr"
 
 		--- windows ---
 		configuration { "windows" }
+			kind "WindowedApp"
 			defines { "WINDOWS" }		
 			includedirs { "include/jni-headers/win32" }
-
+			files { "src/main-windows.cpp" }
+            flags { "WinMain" }
+			
 		--- linux ---
 		configuration { "linux" }
 			defines { "LINUX" }

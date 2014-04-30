@@ -1,3 +1,7 @@
+#ifdef WINDOWS
+#include <windows.h>
+#endif
+
 #include <launcher.h>
 #include <stdio.h>
 #include <jni.h>
@@ -9,6 +13,8 @@
 extern std::string getExecutableDir();
 extern int g_argc;
 extern char** g_argv;
+
+typedef jint (JNICALL *PtrCreateJavaVM)(JavaVM **, void **, void *);
 
 void* launchVM(void* params) {
     std::string execDir = getExecutableDir();
@@ -39,14 +45,21 @@ void* launchVM(void* params) {
     
     JavaVMInitArgs args;
     args.version = JNI_VERSION_1_6;
-    args.nOptions = 2;
+    args.nOptions = 1 + vmArgs.size();
     args.options = options;
     args.ignoreUnrecognized = JNI_FALSE;
     
     JavaVM* jvm = 0;
     JNIEnv* env = 0;
+
+#ifndef WINDOWS
     JNI_CreateJavaVM(&jvm, (void**)&env, &args);
-    
+#else
+	HINSTANCE hinstLib = LoadLibrary(TEXT("jre\\bin\\server\\jvm.dll"));
+	PtrCreateJavaVM ptrCreateJavaVM = (PtrCreateJavaVM)GetProcAddress(hinstLib,"JNI_CreateJavaVM");
+	jint res = ptrCreateJavaVM(&jvm, (void**)&env, &args);
+#endif
+
     jobjectArray appArgs = env->NewObjectArray(g_argc, env->FindClass("java/lang/String"), NULL);
     for(int i = 0; i < g_argc; i++) {
         jstring arg = env->NewStringUTF(g_argv[i]);

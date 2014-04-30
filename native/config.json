@@ -1,0 +1,6 @@
+{
+   "jar": "cuboc.jar",
+   "mainClass": "com/badlogic/cubocy/CubocDesktop",
+   "vmArgs": [
+   ]
+}
