@@ -13,7 +13,7 @@ java -jar packr.jar -windows -jdk /path/to/the/jdk -executable name-of-executabl
 
 The first parameter indicates for which platform to build the distribution, valid parameters are `-windows`, `-linux`and `-mac`.
 
-The parameter `-jdk` specifies the location of an OpenJDK ZIP file, a directory containing OpenJDK, or an URL to an OpenJDK ZIP file. You can find prebuild binaries at https://github.com/alexkasko/openjdk-unofficial-builds.
+The parameter `-jdk` specifies the location of an OpenJDK ZIP file, a directory containing OpenJDK, or an URL to an OpenJDK ZIP file. You can find prebuild binaries at https://github.com/alexkasko/openjdk-unofficial-builds. Just download one for each platform you want to create a distribution for, then let this parameter point at the respective ZIP file. You can also directly specify an URL (redirects are not supported though!).
 
 The parameter `-executable` specifies the name of the native executable to be put into the distribution, e.g. `mygame`, would become `mygame.exe` on Windows and `mygame` on Linux/Mac.
 
