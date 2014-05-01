@@ -33,6 +33,44 @@ The parameter `-config` specifies the JSON configuration file that specifies fla
 
 This file will be packaged with the distribution and read by the native executable to start the embedded JVM.
 
+Output
+======
+When packing for Windows, the following folder structure will be generated
+
+```
+outdir/
+   executable.exe
+   yourjar.jar
+   config.json
+   jre/
+```
+
+Linux (64-bit!)
+
+```
+outdir/
+   executable
+   yourjar.jar
+   config.json
+   jre/
+```
+
+Mac OS X
+
+```
+outdir/
+   Contents/
+      Info.plist
+      MacOS/
+         executable
+         yourjar.jar
+         config.json
+         jre/
+      Resources/
+```
+
+You can futher modify the Info.plist to your liking, e.g. add icons, a bundle identifier etc.
+
 Building
 ========
 If you only modify the Java code, it's sufficient to invoke Maven
