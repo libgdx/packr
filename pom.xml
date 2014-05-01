@@ -74,9 +74,6 @@
 					<showWarnings>true</showWarnings>
 				</configuration>
 			</plugin>
-		</plugins>
-		<build>
-		<plugins>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
@@ -99,7 +96,6 @@
 				</executions>
 			</plugin>
 		</plugins>
-	</build>
 	</build>
 
 	<dependencies>
