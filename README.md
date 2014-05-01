@@ -3,6 +3,8 @@ packr
 
 Packages your JAR, assets and a JVM for distribution on Windows (ZIP), Linux (ZIP) and Mac OS X (.app), adding a native executable file to make it appear like the app is a native app. Packr is most suitable for GUI applications.
 
+## [Download Packr](http://libgdx.badlogicgames.com/packr/) (jar-with-dependencies)
+
 Usage
 =====
 You point packr at your JAR file (containing all your code and assets), a JSON config file (specifying parameters to the JVM and the main class) and a URL or local file location to an OpenJDK build for the platform you want to build. Invoking packr from the command line looks like this:
