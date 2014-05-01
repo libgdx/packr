@@ -1,6 +1,6 @@
 {
-   "jar": "cuboc.jar",
-   "mainClass": "com/badlogic/cubocy/CubocDesktop",
+   "jar": "packr-1.0.jar",
+   "mainClass": "com/badlogicgames/packr/TestApp",
    "vmArgs": [
    ]
 }
