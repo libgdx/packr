@@ -69,7 +69,7 @@ outdir/
       Resources/
 ```
 
-You can futher modify the Info.plist to your liking, e.g. add icons, a bundle identifier etc.
+You can futher modify the Info.plist to your liking, e.g. add icons, a bundle identifier etc. If your `outdir` has the `.app` extension it will be treated as an application bundle by Mac OS X.
 
 Building
 ========
@@ -86,4 +86,4 @@ If you want to compile the exe files used by packr, install premake, Visual Stud
 Limitations
 ===========
 
-  * Can't set the icon of the executable file on Windows (not to confuse with the window icon)
+  * Icons aren't set yet on any platform, need to do that manually.
