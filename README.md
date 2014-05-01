@@ -21,12 +21,12 @@ The parameter `-executable` specifies the name of the native executable to be pu
 
 The parameter `-jar` specifies the location of the jar to be packaged. This must contain both your code and your assets.
 
-The parameter `-config` specifies the JSON configuration file that specifies flags for the bundled JRE. Here's an example:
+The parameter `-config` specifies the JSON configuration file that specifies flags for the bundled JRE. Here's an example (using [cuboc.jar](http://libgdx.badlogicgames.com/demos/cuboc/cubor.jar)):
 
 ```
 {
-   "jar": "name-of-the-jar.jar",
-   "mainClass": "com/badlogic/MyMainClass",
+   "jar": “cuboc.jar",
+   "mainClass": "com/badlogic/cuboc/CubocyDesktop”,
    "vmArgs": [
       "-Xmx1G"
    ]
