@@ -54,6 +54,10 @@ void* launchVM(void* params) {
 
 #ifndef WINDOWS
     JNI_CreateJavaVM(&jvm, (void**)&env, &args);
+    if(!env || !jvm) {
+        printf("couldn't create JVM");
+        exit(-1);
+    }
 #else
 	HINSTANCE hinstLib = LoadLibrary(TEXT("jre\\bin\\server\\jvm.dll"));
 	PtrCreateJavaVM ptrCreateJavaVM = (PtrCreateJavaVM)GetProcAddress(hinstLib,"JNI_CreateJavaVM");

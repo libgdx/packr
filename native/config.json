@@ -1,6 +1,7 @@
 {
-   "jar": "packr-1.0.jar",
-   "mainClass": "com/badlogicgames/packr/TestApp",
-   "vmArgs": [
-   ]
+    "jar": "packr-1.0.jar",
+    "mainClass": "com/badlogicgames/packr/TestApp",
+    "vmArgs": [
+        "-Xmx512M"
+    ]
 }
