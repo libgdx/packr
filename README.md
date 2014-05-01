@@ -87,3 +87,4 @@ Limitations
 ===========
 
   * Icons aren't set yet on any platform, need to do that manually.
+  * Windows is 32-bit only, Linux is 64-bit only, Mac OS X is 64-bit only
