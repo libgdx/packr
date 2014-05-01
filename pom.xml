@@ -10,10 +10,10 @@
 	<groupId>com.badlogicgames.packr</groupId>
 	<artifactId>packr</artifactId>
 	<packaging>jar</packaging>
-	<version>1.1-SNAPSHOT</version>
+	<version>1.0-SNAPSHOT</version>
 
 	<name>packr</name>
-	<description>Packages OpenJDK, your JAR and assets for Windows, Linux and MAc OS X</description>
+	<description>Packages OpenJDK, your JAR and assets for Windows, Linux and Mac OS X</description>
 	<url>http://github.com/libgdx/packr</url>
 	<issueManagement>
 		<url>https://github.com/libgdx/packr/issues</url>
