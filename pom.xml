@@ -10,7 +10,7 @@
 	<groupId>com.badlogicgames.packr</groupId>
 	<artifactId>packr</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0-SNAPSHOT</version>
+	<version>1.0</version>
 
 	<name>packr</name>
 	<description>Packages OpenJDK, your JAR and assets for Windows, Linux and MAc OS X</description>
@@ -78,4 +78,4 @@
 
 	<dependencies>
 	</dependencies>
-</project>https://github.com/libgdx/packr.git
+</project>
