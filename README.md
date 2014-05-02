@@ -17,7 +17,10 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
      -jar target/packr-1.0-SNAPSHOT.jar \
      -config native/config.json \
      -resources pom.xml;src/main/resources \
-     -outdir out 
+     -treeshake "com/badlogicgames/packr/TestApp" \
+     -excludeJre "bin/keytool";"java/swing" \
+     -includeJre "com/badlogicgames/gdx" \
+     -outdir out
 ```
 
 | Parameter | Meaning |
@@ -29,6 +32,8 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
 | config | file location of the "config.json" file to be packaged, see below |
 | outdir | output directory |
 | resources (optional) | list of files and directories to be packaged next to the native executable, separated by `;`.
+| excludeJre | files, directories and package prefixes to be excluded from the bundled JRE |
+| includeJre | package prefixes to be included in the bundled JRE in case treeshaking would remove them |
 
 When the native executable is started, it tries to find `config.json` specified via the `-config` flag, parse it and use the information contained in it to start the bundled JRE. Here's an example:
 
