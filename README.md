@@ -7,21 +7,30 @@ Packages your JAR, assets and a JVM for distribution on Windows (ZIP), Linux (ZI
 
 Usage
 =====
-You point packr at your JAR file (containing all your code and assets), a JSON config file (specifying parameters to the JVM and the main class) and a URL or local file location to an OpenJDK build for the platform you want to build. Invoking packr from the command line looks like this:
+You point packr at your JAR file (containing all your code and assets), a JSON config file (specifying parameters to the JVM and the main class) and a URL or local file location to an OpenJDK build for the platform you want to build. Invoking packr from the command line may look like this:
 
 ```
-java -jar packr.jar -windows -jdk /path/to/the/jdk -executable name-of-executable -jar my-own-app.jar -config config.json
+java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
+     -platform mac \
+     -jdk "openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip" \
+     -executable myapp \
+     -jar target/packr-1.0-SNAPSHOT.jar \
+     -config native/config.json \
+     -resources pom.xml;src/main/resources \
+     -outdir out 
 ```
 
-The first parameter indicates for which platform to build the distribution, valid parameters are `-windows`, `-linux`and `-mac`.
+| Parameter | Meaning |
+-----------------------
+| platform | one of "windows", "linux", "mac" |
+| jdk | ZIP file location or URL to an OpenJDK build containing a JRE |
+| executable | name of the native executable, without extension such as ".exe" |
+| jar | file location of the JAR to package |
+| config | file location of the "config.json" file to be packaged, see below |
+| outdir | output directory |
+| resources (optional) | list of files and directories to be packaged next to the native executable, separated by `;`.
 
-The parameter `-jdk` specifies the location of an OpenJDK ZIP file, a directory containing OpenJDK, or an URL to an OpenJDK ZIP file. You can find prebuild binaries at https://github.com/alexkasko/openjdk-unofficial-builds. Just download one for each platform you want to create a distribution for, then let this parameter point at the respective ZIP file. You can also directly specify an URL (redirects are not supported though!).
-
-The parameter `-executable` specifies the name of the native executable to be put into the distribution, e.g. `mygame`, would become `mygame.exe` on Windows and `mygame` on Linux/Mac.
-
-The parameter `-jar` specifies the location of the jar to be packaged. This must contain both your code and your assets.
-
-The parameter `-config` specifies the JSON configuration file that specifies flags for the bundled JRE. Here's an example (using [cuboc.jar](http://libgdx.badlogicgames.com/demos/cuboc/cubor.jar)):
+When the native executable is started, it tries to find `config.json` specified via the `-config` flag, parse it and use the information contained in it to start the bundled JRE. Here's an example:
 
 ```
 {
@@ -32,8 +41,6 @@ The parameter `-config` specifies the JSON configuration file that specifies fla
    ]
 }
 ```
-
-This file will be packaged with the distribution and read by the native executable to start the embedded JVM.
 
 Output
 ======
