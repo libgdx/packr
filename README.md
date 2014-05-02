@@ -26,7 +26,7 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
 | Parameter | Meaning |
 | --- | --- |
 | platform | one of "windows", "linux", "mac" |
-| jdk | ZIP file location or URL to an OpenJDK build containing a JRE |
+| jdk | ZIP file location or URL to an OpenJDK build containing a JRE. Prebuild JDKs can be found at https://github.com/alexkasko/openjdk-unofficial-builds |
 | executable | name of the native executable, without extension such as ".exe" |
 | jar | file location of the JAR to package |
 | config | file location of the "config.json" file to be packaged, see below |
