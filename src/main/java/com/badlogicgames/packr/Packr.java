@@ -15,6 +15,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.zeroturnaround.zip.ZipUtil;
 
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
+
 /**
  * Takes a couple of parameters and a JRE and bundles them into a platform specific 
  * distributable (zip on Windows and Linux, app bundle on Mac OS X).
@@ -39,10 +43,6 @@ public class Packr {
 		public List<String> includeJre = new ArrayList<String>();
 		public List<String> resources = new ArrayList<String>();
 		public String outDir;
-	}
-	
-	public static class MultiConfig {
-		public List<Config> configs = new ArrayList<Config>();
 	}
 	
 	public void pack(Config config) throws IOException {
@@ -189,21 +189,49 @@ public class Packr {
 			config.platform = Platform.valueOf(arguments.get("platform"));
 			config.jdk = arguments.get("jdk");
 			config.executable = arguments.get("executable");
-			config.jar = arguments.get("jar");
+			config.jar = arguments.get("appjar");
 			config.config = arguments.get("config");
 			config.outDir = arguments.get("outdir");
 			config.treeshake = arguments.get("threeshake");
-			if(arguments.get("excludeJre") != null) config.excludeJre = Arrays.asList(arguments.get("excludeJre").split(";"));
-			if(arguments.get("includeJre") != null) config.includeJre = Arrays.asList(arguments.get("includeJre").split(";"));
+			if(arguments.get("excludejre") != null) config.excludeJre = Arrays.asList(arguments.get("excludejre").split(";"));
+			if(arguments.get("includejre") != null) config.includeJre = Arrays.asList(arguments.get("includejre").split(";"));
 			if(arguments.get("resources") != null) config.resources = Arrays.asList(arguments.get("resources").split(";"));
 			new Packr().pack(config);
 		} else {
 			if(args.length == 0) {
 				printHelp();
 			} else {
-				
+				JsonObject json = JsonObject.readFrom(FileUtils.readFileToString(new File(args[0])));
+				Config config = new Config();
+				config.platform = Platform.valueOf(json.get("platform").asString());
+				config.jdk = json.get("jdk").asString();
+				config.executable = json.get("executable").asString();
+				config.jar = json.get("appjar").asString();
+				config.config = json.get("config").asString();
+				config.outDir = json.get("outdir").asString();
+				if(json.get("treeshake") != null) {
+					config.treeshake = json.get("treeshake").asString();
+				}
+				if(json.get("excludejre") != null) {
+					config.excludeJre = toStringArray(json.get("excludejre").asArray());
+				}
+				if(json.get("includejre") != null) {
+					config.includeJre = toStringArray(json.get("includejre").asArray());
+				}
+				if(json.get("resources") != null) {
+					config.resources = toStringArray(json.get("resources").asArray());
+				}
+				new Packr().pack(config);
 			}
 		}
+	}
+	
+	private static List<String> toStringArray(JsonArray array) {
+		List<String> result = new ArrayList<String>();
+		for(JsonValue value: array) {
+			result.add(value.asString());
+		}
+		return result;
 	}
 	
 	private static void error() {
@@ -217,13 +245,13 @@ public class Packr {
 		System.out.println("-jdk <path-or-url>              ... path to a JDK to be bundled (needs to fit platform).");
 		System.out.println("                                   Can be a ZIP file or URL to a ZIP file");
 		System.out.println("-executable <name>              ... name of the executable, e.g. 'mygame', without extension");
-		System.out.println("-jar <file>                     ... JAR file containing code and assets to be packed");
+		System.out.println("-appjar <file>                     ... JAR file containing code and assets to be packed");
 		System.out.println("-config <file>                  ... JSON config file to be packed");
 		System.out.println("-treeshake <mainclass>          ... whether to perform tree shaking on the JRE rt.jar.");
 		System.out.println("                                    Any dependencies of the main class will be kept");
-		System.out.println("-excludeJre <files-and-classes> ... list of files, directories, packages and classes to exclude");
+		System.out.println("-excludejre <files-and-classes> ... list of files, directories, packages and classes to exclude");
 		System.out.println("                                    from the final JRE. Entries are separated by a ;");
-		System.out.println("-includeJre <files-and-classes> ... list of files, directories, packages and classes to exclude");
+		System.out.println("-includejre <files-and-classes> ... list of files, directories, packages and classes to exclude");
 		System.out.println("                                    from the final JRE. Entries are separated by a ;");
 		System.out.println("-resources <files-and-folders>  ... additional files and folders to be packed next to the");
 		System.out.println("                                    executable. Entries are separated by a ;");
@@ -245,7 +273,7 @@ public class Packr {
 		if(params.get("platform") == null) error();
 		if(params.get("jdk") == null) error();
 		if(params.get("executable") == null) error();
-		if(params.get("jar") == null) error();
+		if(params.get("appjar") == null) error();
 		if(params.get("config") == null) error();
 		if(params.get("outdir") == null) error();
 		

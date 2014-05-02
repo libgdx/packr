@@ -1,0 +1,15 @@
+{
+    "platform": "mac",
+    "jdk": "/Users/badlogic/Downloads/openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip",
+    "executable": "myapp",
+    "appjar": "target/packr-1.0-SNAPSHOT.jar",
+    "config": "example-config.json",
+    "resources": [
+        "pom.xml",
+        "src/main/resources"
+    ],
+    "treeshake": "com/badlogicgames/packr/TestApp",
+    "excludejre": [],
+    "includejre": [],
+    "outdir": "out-mac"
+}
