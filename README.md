@@ -14,10 +14,10 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
      -platform mac \
      -jdk "openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip" \
      -executable myapp \
-     -jar target/packr-1.0-SNAPSHOT.jar \
-     -config native/config.json \
+     -jar myapp.jar \
+     -config config.json \
      -resources pom.xml;src/main/resources \
-     -treeshake "com/badlogicgames/packr/TestApp" \
+     -treeshake "com/my/app/MainClass" \
      -excludeJre "bin/keytool";"java/swing" \
      -includeJre "com/badlogicgames/gdx" \
      -outdir out
@@ -40,8 +40,8 @@ When the native executable is started, it tries to find `config.json` specified 
 
 ```
 {
-    "jar": "packr-1.0-SNAPSHOT.jar",
-    "mainClass": "com/badlogicgames/packr/TestApp",
+    "jar": "myapp.jar",
+    "mainClass": "com/my/app/MainClass",
     "vmArgs": [
         "-Xmx512M"
     ]
