@@ -34,11 +34,11 @@ When the native executable is started, it tries to find `config.json` specified 
 
 ```
 {
-   "jar": “cuboc.jar",
-   "mainClass": "com/badlogic/cuboc/CubocyDesktop”,
-   "vmArgs": [
-      "-Xmx1G"
-   ]
+    "jar": "packr-1.0-SNAPSHOT.jar",
+    "mainClass": "com/badlogicgames/packr/TestApp",
+    "vmArgs": [
+        "-Xmx512M"
+    ]
 }
 ```
 
