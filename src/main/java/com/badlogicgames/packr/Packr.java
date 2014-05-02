@@ -5,7 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
@@ -25,9 +28,26 @@ public class Packr {
 		mac
 	}
 	
-	public void pack(Platform platform, String jdk, String executable, String jar, String config, String outDir) throws IOException {
+	public static class Config {
+		public Platform platform;
+		public String jdk;
+		public String executable;
+		public String jar;
+		public String config;
+		public String treeshake;
+		public List<String> excludeJre = new ArrayList<String>();
+		public List<String> includeJre = new ArrayList<String>();
+		public List<String> resources = new ArrayList<String>();
+		public String outDir;
+	}
+	
+	public static class MultiConfig {
+		public List<Config> configs = new ArrayList<Config>();
+	}
+	
+	public void pack(Config config) throws IOException {
 		// create output dir
-		File out = new File(outDir);
+		File out = new File(config.outDir);
 		File target = out;
 		if(out.exists()) {
 			System.out.println("Output directory '" + out.getAbsolutePath() + "' exists, deleting");
@@ -36,18 +56,15 @@ public class Packr {
 		out.mkdirs();
 		
 		Map<String, String> values = new HashMap<String, String>();
-		values.put("${executable}", executable);
+		values.put("${executable}", config.executable);
 		values.put("${bundleIdentifier}", "com.yourcompany.identifier"); // FIXME add as a param
 		
 		// if this is a mac build, let's create the app bundle structure
-		if(platform == Platform.mac) {
+		if(config.platform == Platform.mac) {
 			new File(out, "Contents").mkdirs();
 			FileUtils.writeStringToFile(new File(out, "Contents/Info.plist"), readResourceAsString("/Info.plist", values));
-			
 			target = new File(out, "Contents/MacOS");
 			target.mkdirs();
-			
-			
 			new File(out, "Contents/Resources").mkdirs();
 			// FIXME copy icons
 		}
@@ -55,7 +72,7 @@ public class Packr {
 		// write jar, exe and config to target folder
 		byte[] exe = null;
 		String extension = "";
-		switch(platform) {
+		switch(config.platform) {
 			case windows:
 				exe = readResource("/packr-windows.exe");
 				extension = ".exe";
@@ -67,23 +84,23 @@ public class Packr {
 				exe = readResource("/packr-mac");
 				break;
 		}
-		FileUtils.writeByteArrayToFile(new File(target, executable + extension), exe);
-		new File(target, executable + extension).setExecutable(true);
-		FileUtils.copyFile(new File(jar), new File(target, new File(jar).getName()));
-		FileUtils.copyFile(new File(config), new File(target, "config.json"));
+		FileUtils.writeByteArrayToFile(new File(target, config.executable + extension), exe);
+		new File(target, config.executable + extension).setExecutable(true);
+		FileUtils.copyFile(new File(config.jar), new File(target, new File(config.jar).getName()));
+		FileUtils.copyFile(new File(config.config), new File(target, "config.json"));
 		
 		// add JRE from local or remote zip file
 		File jdkFile = null;		
-		if(jdk.startsWith("http://") || jdk.startsWith("https://")) {
-			System.out.println("Downloading JDK from '" + jdk + "'");
+		if(config.jdk.startsWith("http://") || config.jdk.startsWith("https://")) {
+			System.out.println("Downloading JDK from '" + config.jdk + "'");
 			jdkFile = new File(target, "jdk.zip");
-			InputStream in = new URL(jdk).openStream();
+			InputStream in = new URL(config.jdk).openStream();
 			OutputStream outJdk = FileUtils.openOutputStream(jdkFile);
 			IOUtils.copy(in, outJdk);
 			in.close();
 			outJdk.close();
 		} else {
-			jdkFile = new File(jdk);			
+			jdkFile = new File(config.jdk);			
 		}
 		File tmp = new File(target, "tmp");
 		tmp.mkdirs();
@@ -96,12 +113,44 @@ public class Packr {
 		}
 		FileUtils.copyDirectory(jre, new File(target, "jre"));
 		FileUtils.deleteDirectory(tmp);
-		if(jdk.startsWith("http://") || jdk.startsWith("https://")) {
+		if(config.jdk.startsWith("http://") || config.jdk.startsWith("https://")) {
 			jdkFile.delete();
 		}
+		
+		// copy resources
+		System.out.println("copying resources");
+		copyResources(target, config.resources);
+		
+		// perform tree shaking
+		if(config.treeshake != null) {
+			System.out.println("shaking trees");
+			treeshake(new File(target, "jre"), config.treeshake, config.includeJre, config.excludeJre);
+		}
+		
 		System.out.println("Done!");
 	}
 	
+	private void copyResources(File targetDir, List<String> resources) throws IOException {
+		for(String resource: resources) {
+			File file = new File(resource);
+			if(!file.exists()) {
+				System.out.println("resource '" + file.getAbsolutePath() + "' doesn't exist");
+				System.exit(-1);
+			}
+			if(file.isFile()) {
+				FileUtils.copyFile(file, new File(targetDir, file.getName()));
+			}
+			if(file.isDirectory()) {
+				File target = new File(targetDir, file.getName());
+				target.mkdirs();
+				FileUtils.copyDirectory(file, target);
+			}
+		}
+	}
+	
+	private void treeshake(File jreDir, String treeshake, List<String> includeJre, List<String> excludeJre) {
+	}
+
 	private File searchJre(File tmp) {
 		if(tmp.getName().equals("jre") && tmp.isDirectory() && (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
 			return tmp;
@@ -125,10 +174,6 @@ public class Packr {
 		return replace(txt, values);
 	}
 	
-	private String readResourceAsString(String resource) throws IOException {
-		return IOUtils.toString(Packr.class.getResourceAsStream(resource), "UTF-8");
-	}
-	
 	private String replace (String txt, Map<String, String> values) {
 		for (String key : values.keySet()) {
 			String value = values.get(key);
@@ -138,8 +183,27 @@ public class Packr {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		Map<String, String> arguments = parseArgs(args);
-		new Packr().pack(Platform.valueOf(arguments.get("platform")), arguments.get("jdk"), arguments.get("executable"), arguments.get("jar"), arguments.get("config"), arguments.get("outdir"));
+		if(args.length > 1) {
+			Map<String, String> arguments = parseArgs(args);
+			Config config = new Config();
+			config.platform = Platform.valueOf(arguments.get("platform"));
+			config.jdk = arguments.get("jdk");
+			config.executable = arguments.get("executable");
+			config.jar = arguments.get("jar");
+			config.config = arguments.get("config");
+			config.outDir = arguments.get("outdir");
+			config.treeshake = arguments.get("threeshake");
+			if(arguments.get("excludeJre") != null) config.excludeJre = Arrays.asList(arguments.get("excludeJre").split(";"));
+			if(arguments.get("includeJre") != null) config.includeJre = Arrays.asList(arguments.get("includeJre").split(";"));
+			if(arguments.get("resources") != null) config.resources = Arrays.asList(arguments.get("resources").split(";"));
+			new Packr().pack(config);
+		} else {
+			if(args.length == 0) {
+				printHelp();
+			} else {
+				
+			}
+		}
 	}
 	
 	private static void error() {
@@ -149,16 +213,25 @@ public class Packr {
 	
 	private static void printHelp() {
 		System.out.println("Usage: packr <args>");
-		System.out.println("-platform <windows|linux|mac>  ... operating system to pack for");
-		System.out.println("-jdk <path-or-url>             ... path to a JDK to be bundled (needs to fit platform). Can be a folder, ZIP file or URL");
-		System.out.println("-executable <name>             ... name of the executable, e.g. 'mygame', without extension");
-		System.out.println("-jar <file>                    ... JAR file containing code and assets to be packed");
-		System.out.println("-config <file>                 ... JSON config file to be packed");
-		System.out.println("-outdir <dir>                  ... output directory");
+		System.out.println("-platform <windows|linux|mac>   ... operating system to pack for");
+		System.out.println("-jdk <path-or-url>              ... path to a JDK to be bundled (needs to fit platform).");
+		System.out.println("                                   Can be a ZIP file or URL to a ZIP file");
+		System.out.println("-executable <name>              ... name of the executable, e.g. 'mygame', without extension");
+		System.out.println("-jar <file>                     ... JAR file containing code and assets to be packed");
+		System.out.println("-config <file>                  ... JSON config file to be packed");
+		System.out.println("-treeshake <mainclass>          ... whether to perform tree shaking on the JRE rt.jar.");
+		System.out.println("                                    Any dependencies of the main class will be kept");
+		System.out.println("-excludeJre <files-and-classes> ... list of files, directories, packages and classes to exclude");
+		System.out.println("                                    from the final JRE. Entries are separated by a ;");
+		System.out.println("-includeJre <files-and-classes> ... list of files, directories, packages and classes to exclude");
+		System.out.println("                                    from the final JRE. Entries are separated by a ;");
+		System.out.println("-resources <files-and-folders>  ... additional files and folders to be packed next to the");
+		System.out.println("                                    executable. Entries are separated by a ;");
+		System.out.println("-outdir <dir>                   ... output directory");
 	}
 	
 	private static Map<String, String> parseArgs (String[] args) {
-		if (args.length != 12) {
+		if (args.length < 12) {
 			error();
 		}
 
