@@ -38,6 +38,7 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
 
 When the native executable is started, it tries to find `config.json` specified via the `-config` flag, parse it and use the information contained in it to start the bundled JRE. Here's an example:
 
+> config.json
 ```json
 {
     "jar": "myapp.jar",
@@ -50,13 +51,14 @@ When the native executable is started, it tries to find `config.json` specified 
 
 Alternatively, you can put all the command line arguments into a JSON file which might look like this:
 
+> my-packaging-config.json
 ```json
 {
     "platform": "mac",
     "jdk": "/Users/badlogic/Downloads/openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip",
     "executable": "myapp",
     "appjar": "target/packr-1.0-SNAPSHOT.jar",
-    "config": "example-config.json",
+    "config": "config.json",
     "resources": [
         "pom.xml",
         "src/main/resources"
