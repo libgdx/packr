@@ -9,7 +9,7 @@ Usage
 =====
 You point packr at your JAR file (containing all your code and assets), a JSON config file (specifying parameters to the JVM and the main class) and a URL or local file location to an OpenJDK build for the platform you want to build. Invoking packr from the command line may look like this:
 
-```
+```bash
 java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
      -platform mac \
      -jdk "openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip" \
@@ -38,7 +38,7 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
 
 When the native executable is started, it tries to find `config.json` specified via the `-config` flag, parse it and use the information contained in it to start the bundled JRE. Here's an example:
 
-```
+```json
 {
     "jar": "myapp.jar",
     "mainClass": "com/my/app/MainClass",
@@ -46,6 +46,32 @@ When the native executable is started, it tries to find `config.json` specified 
         "-Xmx512M"
     ]
 }
+```
+
+Alternatively, you can put all the command line arguments into a JSON file which might look like this:
+
+```json
+{
+    "platform": "mac",
+    "jdk": "/Users/badlogic/Downloads/openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip",
+    "executable": "myapp",
+    "appjar": "target/packr-1.0-SNAPSHOT.jar",
+    "config": "example-config.json",
+    "resources": [
+        "pom.xml",
+        "src/main/resources"
+    ],
+    "treeshake": "com/badlogicgames/packr/TestApp",
+    "excludejre": [],
+    "includejre": [],
+    "outdir": "out-mac"
+}
+```
+
+You can then invoke the tool like this:
+
+```bash
+java -jar packr-1.0-SNAPSHOT-jar-with-dependencies my-packaging-config.json
 ```
 
 Output
