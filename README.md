@@ -32,8 +32,9 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
 | config | file location of the "config.json" file to be packaged, see below |
 | outdir | output directory |
 | resources (optional) | list of files and directories to be packaged next to the native executable, separated by `;`.
-| excludeJre | files, directories and package prefixes to be excluded from the bundled JRE |
-| includeJre | package prefixes to be included in the bundled JRE in case treeshaking would remove them |
+| treeshake (optional) | enables tree shaking of the rt.jar file in the JRE, only keeping classes the specified main class depends on. Use with `excludeJre` and `includeJre` to keep and trim what you need |
+| excludeJre (optional) | files, directories and package prefixes to be excluded from the bundled JRE. Only works if trees haking is turned on |
+| includeJre (optional) | package prefixes to be included in the bundled JRE in case treeshaking would remove them. Only works if tree shaking is turned on |
 
 When the native executable is started, it tries to find `config.json` specified via the `-config` flag, parse it and use the information contained in it to start the bundled JRE. Here's an example:
 
