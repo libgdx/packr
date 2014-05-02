@@ -20,13 +20,8 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
      -outdir out 
 ```
 
-| Test | Test2 |
-| --- | --- |
-| 1 | 2 |
-
-
 | Parameter | Meaning |
-| --- | --- |
+| --- | --- |
 | platform | one of "windows", "linux", "mac" |
 | jdk | ZIP file location or URL to an OpenJDK build containing a JRE |
 | executable | name of the native executable, without extension such as ".exe" |
