@@ -1,1 +1,8 @@
 /target
+.DS_STORE
+.project
+.classpath
+.settings
+native/build
+native/obj
+native/packr.xcodeproj/
