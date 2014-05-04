@@ -15,11 +15,10 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
      -jdk "openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip" \
      -executable myapp \
      -appjar myapp.jar \
-     -config config.json \
+     -mainclass "com/my/app/MainClass"
+     -vmargs "-Xmx1G"
      -resources pom.xml;src/main/resources \
-     -treeshake "com/my/app/MainClass" \
-     -excludejre "bin/keytool";"java/swing" \
-     -includejre "com/badlogicgames/gdx" \
+     -minimizejre true
      -outdir out
 ```
 
@@ -29,25 +28,11 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
 | jdk | ZIP file location or URL to an OpenJDK build containing a JRE. Prebuild JDKs can be found at https://github.com/alexkasko/openjdk-unofficial-builds |
 | executable | name of the native executable, without extension such as ".exe" |
 | appjar | file location of the JAR to package |
-| config | file location of the "config.json" file to be packaged, see below |
+| mainclass | the fully qualified name of the main class, using forward slashes to delimit package names |
+| vmargs | list of arguments for the JVM, separated by `;`, e.g. "-Xmx1G" |
 | outdir | output directory |
 | resources (optional) | list of files and directories to be packaged next to the native executable, separated by `;`.
-| treeshake (optional) | enables tree shaking of the rt.jar file in the JRE, only keeping classes the specified main class depends on. Use with `excludeJre` and `includeJre` to keep and trim what you need |
-| excludejre (optional) | files, directories and package prefixes to be excluded from the bundled JRE. Only works if trees haking is turned on |
-| includejre (optional) | package prefixes to be included in the bundled JRE in case treeshaking would remove them. Only works if tree shaking is turned on |
-
-When the native executable is started, it tries to find `config.json` specified via the `-config` flag, parse it and use the information contained in it to start the bundled JRE. Here's an example:
-
-> config.json
-```json
-{
-    "jar": "myapp.jar",
-    "mainClass": "com/my/app/MainClass",
-    "vmArgs": [
-        "-Xmx512M"
-    ]
-}
-```
+| minimizejre | true or false, if true this will cut out a ton of usually unnecessary stuff, see Packr.java, method #minimizeJre() |
 
 Alternatively, you can put all the command line arguments into a JSON file which might look like this:
 
@@ -58,14 +43,15 @@ Alternatively, you can put all the command line arguments into a JSON file which
     "jdk": "/Users/badlogic/Downloads/openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip",
     "executable": "myapp",
     "appjar": "target/myapp.jar",
-    "config": "config.json",
+    "mainclass": "/com/my/app/MainClass",
+    "vmargs": [
+       "-Xmx1G"
+    ],
     "resources": [
         "pom.xml",
         "src/main/resources"
     ],
-    "treeshake": "com/badlogicgames/packr/TestApp",
-    "excludejre": [],
-    "includejre": [],
+    "minimizejre": true,
     "outdir": "out-mac"
 }
 ```
