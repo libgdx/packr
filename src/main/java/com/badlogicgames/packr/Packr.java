@@ -8,11 +8,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.zeroturnaround.zip.ZipUtil;
 
 import com.eclipsesource.json.JsonArray;
@@ -122,7 +125,7 @@ public class Packr {
 		
 		// perform tree shaking		
 		if(config.minimizeJre) {	
-			minimizeJre(config, new File(target, "jre"));			
+			minimizeJre(config, target);			
 		}
 		
 		System.out.println("Done!");
@@ -147,39 +150,61 @@ public class Packr {
 		FileUtils.writeStringToFile(file, builder.toString());
 	}
 
-	private void minimizeJre(Config config, File jreDir) throws IOException {
+	private void minimizeJre(Config config, File outDir) throws IOException {
+		// remove stuff from the JRE
 		System.out.println("minimizing JRE");
 		System.out.println("unpacking rt.jar");
-		ZipUtil.unpack(new File(jreDir, "lib/rt.jar"), new File(jreDir, "lib/rt"));
+		ZipUtil.unpack(new File(outDir, "jre/lib/rt.jar"), new File(outDir, "jre/lib/rt"));
 		
 		if(config.platform == Platform.windows) {
-			FileUtils.deleteDirectory(new File(jreDir, "bin/client"));
-			for(File file: new File(jreDir, "bin").listFiles()) {
+			FileUtils.deleteDirectory(new File(outDir, "jre/bin/client"));
+			for(File file: new File(outDir, "jre/bin").listFiles()) {
 				if(file.getName().endsWith(".exe")) file.delete();
 			}
 		} else {
-			FileUtils.deleteDirectory(new File(jreDir, "bin"));
+			FileUtils.deleteDirectory(new File(outDir, "jre/bin"));
 		}
 		
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/corba"));
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/jmx"));
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/jndi"));
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/media"));
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/naming"));
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/org"));
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/rowset"));
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/script"));
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/xml"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/corba"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/jmx"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/jndi"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/media"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/naming"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/org"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/rowset"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/script"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/xml"));
 		
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/sun/applet"));
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/sun/corba"));
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/sun/management"));
-		new File(jreDir, "lib/rhino.jar").delete();
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/sun/applet"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/sun/corba"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/sun/management"));
+		new File(outDir, "jre/lib/rhino.jar").delete();
 		
 		System.out.println("packing rt.jar");
-		new File(jreDir, "lib/rt.jar").delete();
-		ZipUtil.pack(new File(jreDir, "lib/rt"), new File(jreDir, "lib/rt.jar"));
-		FileUtils.deleteDirectory(new File(jreDir, "lib/rt"));
+		new File(outDir, "jre/lib/rt.jar").delete();
+		ZipUtil.pack(new File(outDir, "jre/lib/rt"), new File(outDir, "jre/lib/rt.jar"));
+		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt"));
+		
+		// let's remove any shared libs not used on the platform, e.g. libgdx/lwjgl natives
+		File jar = new File(outDir, new File(config.jar).getName());
+		File jarDir = new File(outDir, jar.getName()+ ".tmp");
+		ZipUtil.unpack(jar, jarDir);
+		
+		Set<String> extensions = new HashSet<String>();
+		if(config.platform == Platform.linux) { extensions.add(".dylib"); extensions.add(".dll"); }
+		if(config.platform == Platform.windows) { extensions.add(".dylib"); extensions.add(".so"); }
+		if(config.platform == Platform.mac) { extensions.add(".so"); extensions.add(".dll"); }
+		
+		for(Object obj: FileUtils.listFiles(jarDir, TrueFileFilter.INSTANCE , TrueFileFilter.INSTANCE )) {
+			File file = new File(obj.toString());
+			for(String extension: extensions) {
+				if(file.getName().endsWith(extension)) file.delete();
+			}
+		}
+		
+		jar.delete();
+		ZipUtil.pack(jarDir, jar);
+		FileUtils.deleteDirectory(jarDir);
 	}
 
 	private void copyResources(File targetDir, List<String> resources) throws IOException {
