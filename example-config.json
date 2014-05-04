@@ -1,7 +1,0 @@
-{
-    "jar": "packr-1.0-SNAPSHOT.jar",
-    "mainClass": "com/badlogicgames/packr/TestApp",
-    "vmArgs": [
-        "-Xmx512M"
-    ]
-}

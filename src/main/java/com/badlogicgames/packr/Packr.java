@@ -37,10 +37,9 @@ public class Packr {
 		public String jdk;
 		public String executable;
 		public String jar;
-		public String config;
-		public String treeshake;
-		public List<String> excludeJre = new ArrayList<String>();
-		public List<String> includeJre = new ArrayList<String>();
+		public String mainClass;
+		public List<String> vmArgs = new ArrayList<String>();
+		public boolean minimizeJre;
 		public List<String> resources = new ArrayList<String>();
 		public String outDir;
 	}
@@ -87,7 +86,7 @@ public class Packr {
 		FileUtils.writeByteArrayToFile(new File(target, config.executable + extension), exe);
 		new File(target, config.executable + extension).setExecutable(true);
 		FileUtils.copyFile(new File(config.jar), new File(target, new File(config.jar).getName()));
-		FileUtils.copyFile(new File(config.config), new File(target, "config.json"));
+		writeConfig(config, new File(target, "config.json"));
 		
 		// add JRE from local or remote zip file
 		File jdkFile = null;		
@@ -121,15 +120,68 @@ public class Packr {
 		System.out.println("copying resources");
 		copyResources(target, config.resources);
 		
-		// perform tree shaking
-		if(config.treeshake != null) {
-			System.out.println("shaking trees");
-			treeshake(new File(target, "jre"), config.treeshake, config.includeJre, config.excludeJre);
+		// perform tree shaking		
+		if(config.minimizeJre) {	
+			minimizeJre(config, new File(target, "jre"));			
 		}
 		
 		System.out.println("Done!");
 	}
 	
+	private void writeConfig(Config config, File file) throws IOException {
+		StringBuilder builder = new StringBuilder();
+		builder.append("{\n");
+		builder.append("   \"jar\": \"" + new File(config.jar).getName() + "\",\n");
+		builder.append("   \"mainClass\": \"" + config.mainClass + "\",\n");
+		builder.append("   \"vmArgs\": [\n");
+		for(int i = 0; i < config.vmArgs.size(); i++) {
+			String vmArg = config.vmArgs.get(i);
+			builder.append("      \"" + vmArg + "\"");
+			if(i < config.vmArgs.size() - 1) {
+				builder.append(",");
+			}
+			builder.append("\n");
+		}
+		builder.append("   ]");
+		builder.append("}");
+		FileUtils.writeStringToFile(file, builder.toString());
+	}
+
+	private void minimizeJre(Config config, File jreDir) throws IOException {
+		System.out.println("minimizing JRE");
+		System.out.println("unpacking rt.jar");
+		ZipUtil.unpack(new File(jreDir, "lib/rt.jar"), new File(jreDir, "lib/rt"));
+		
+		if(config.platform == Platform.windows) {
+			FileUtils.deleteDirectory(new File(jreDir, "bin/client"));
+			for(File file: new File(jreDir, "bin").listFiles()) {
+				if(file.getName().endsWith(".exe")) file.delete();
+			}
+		} else {
+			FileUtils.deleteDirectory(new File(jreDir, "bin"));
+		}
+		
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/corba"));
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/jmx"));
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/jndi"));
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/media"));
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/naming"));
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/org"));
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/rowset"));
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/script"));
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/com/sun/xml"));
+		
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/sun/applet"));
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/sun/corba"));
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt/sun/management"));
+		new File(jreDir, "lib/rhino.jar").delete();
+		
+		System.out.println("packing rt.jar");
+		new File(jreDir, "lib/rt.jar").delete();
+		ZipUtil.pack(new File(jreDir, "lib/rt"), new File(jreDir, "lib/rt.jar"));
+		FileUtils.deleteDirectory(new File(jreDir, "lib/rt"));
+	}
+
 	private void copyResources(File targetDir, List<String> resources) throws IOException {
 		for(String resource: resources) {
 			File file = new File(resource);
@@ -148,9 +200,6 @@ public class Packr {
 		}
 	}
 	
-	private void treeshake(File jreDir, String treeshake, List<String> includeJre, List<String> excludeJre) {
-	}
-
 	private File searchJre(File tmp) {
 		if(tmp.getName().equals("jre") && tmp.isDirectory() && (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
 			return tmp;
@@ -190,11 +239,12 @@ public class Packr {
 			config.jdk = arguments.get("jdk");
 			config.executable = arguments.get("executable");
 			config.jar = arguments.get("appjar");
-			config.config = arguments.get("config");
+			config.mainClass = arguments.get("mainclass");
+			if(arguments.get("vmargs") != null) {
+				config.vmArgs = Arrays.asList(arguments.get("vmargs").split(";"));
+			}
 			config.outDir = arguments.get("outdir");
-			config.treeshake = arguments.get("threeshake");
-			if(arguments.get("excludejre") != null) config.excludeJre = Arrays.asList(arguments.get("excludejre").split(";"));
-			if(arguments.get("includejre") != null) config.includeJre = Arrays.asList(arguments.get("includejre").split(";"));
+			config.minimizeJre = arguments.get("minimizeJre") != null? Boolean.parseBoolean(arguments.get("minimizeJre")): false;
 			if(arguments.get("resources") != null) config.resources = Arrays.asList(arguments.get("resources").split(";"));
 			new Packr().pack(config);
 		} else {
@@ -207,16 +257,15 @@ public class Packr {
 				config.jdk = json.get("jdk").asString();
 				config.executable = json.get("executable").asString();
 				config.jar = json.get("appjar").asString();
-				config.config = json.get("config").asString();
+				config.mainClass = json.get("mainclass").asString();
+				if(json.get("vmargs") != null) {
+					for(JsonValue val: json.get("vmargs").asArray()) {
+						config.vmArgs.add(val.asString());
+					}
+				}
 				config.outDir = json.get("outdir").asString();
-				if(json.get("treeshake") != null) {
-					config.treeshake = json.get("treeshake").asString();
-				}
-				if(json.get("excludejre") != null) {
-					config.excludeJre = toStringArray(json.get("excludejre").asArray());
-				}
-				if(json.get("includejre") != null) {
-					config.includeJre = toStringArray(json.get("includejre").asArray());
+				if(json.get("minimizeJre") != null) {
+					config.minimizeJre = json.get("minimizeJre").asBoolean();
 				}
 				if(json.get("resources") != null) {
 					config.resources = toStringArray(json.get("resources").asArray());
@@ -245,14 +294,10 @@ public class Packr {
 		System.out.println("-jdk <path-or-url>              ... path to a JDK to be bundled (needs to fit platform).");
 		System.out.println("                                   Can be a ZIP file or URL to a ZIP file");
 		System.out.println("-executable <name>              ... name of the executable, e.g. 'mygame', without extension");
-		System.out.println("-appjar <file>                     ... JAR file containing code and assets to be packed");
-		System.out.println("-config <file>                  ... JSON config file to be packed");
-		System.out.println("-treeshake <mainclass>          ... whether to perform tree shaking on the JRE rt.jar.");
-		System.out.println("                                    Any dependencies of the main class will be kept");
-		System.out.println("-excludejre <files-and-classes> ... list of files, directories, packages and classes to exclude");
-		System.out.println("                                    from the final JRE. Entries are separated by a ;");
-		System.out.println("-includejre <files-and-classes> ... list of files, directories, packages and classes to exclude");
-		System.out.println("                                    from the final JRE. Entries are separated by a ;");
+		System.out.println("-appjar <file>                  ... JAR file containing code and assets to be packed");
+		System.out.println("-mainclass <main-class>         ... fully qualified main class name, e.g. com/badlogic/MyApp");
+		System.out.println("-vmargs <args>                  ... arguments passed to the JVM, e.g. -Xmx1G, separated by ;");
+		System.out.println("-minimizeJre <true|false>       ... minimize the JRE, may remove things your app needs.");
 		System.out.println("-resources <files-and-folders>  ... additional files and folders to be packed next to the");
 		System.out.println("                                    executable. Entries are separated by a ;");
 		System.out.println("-outdir <dir>                   ... output directory");
@@ -274,7 +319,7 @@ public class Packr {
 		if(params.get("jdk") == null) error();
 		if(params.get("executable") == null) error();
 		if(params.get("appjar") == null) error();
-		if(params.get("config") == null) error();
+		if(params.get("mainclass") == null) error();
 		if(params.get("outdir") == null) error();
 		
 		return params;
