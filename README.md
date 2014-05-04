@@ -1,7 +1,7 @@
 packr
 =====
 
-Packages your JAR, assets and a JVM for distribution on Windows (ZIP), Linux (ZIP) and Mac OS X (.app), adding a native executable file to make it appear like the app is a native app. Packr is most suitable for GUI applications.
+Packages your JAR, assets and a JVM for distribution on Windows (ZIP), Linux (ZIP) and Mac OS X (.app), adding a native executable file to make it appear like the app is a native app. Packr is most suitable for GUI applications, such as games made with [libGDX](http://libgdx.badlogicgames.com/)
 
 #### [Download Packr](http://libgdx.badlogicgames.com/packr/) (jar-with-dependencies)
 
@@ -144,3 +144,7 @@ Limitations
   * Icons aren't set yet on any platform, need to do that manually.
   * Windows is 32-bit only, Linux is 64-bit only, Mac OS X is 64-bit only
   * JRE minimization is very conservative, depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr
+ 
+Security
+========
+Distributing a bundled JVM has security implications, just like bundling any other runtimes like Mono, Air, etc. Make sure you understand the implications before deciding to use this tool. Here's a [discussion on the topic](http://www.reddit.com/r/gamedev/comments/24orpg/packr_package_your_libgdxjavascalajvm_appgame_for/ch99zk2).
