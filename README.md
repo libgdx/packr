@@ -143,3 +143,4 @@ Limitations
 
   * Icons aren't set yet on any platform, need to do that manually.
   * Windows is 32-bit only, Linux is 64-bit only, Mac OS X is 64-bit only
+  * JRE minimization is very conservative, depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr
