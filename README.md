@@ -62,6 +62,32 @@ You can then invoke the tool like this:
 java -jar packr-1.0-SNAPSHOT-jar-with-dependencies my-packaging-config.json
 ```
 
+Finally, you can use packr from within your code. Just add the JAR file to your project, either manually, or via the following Maven dependency:
+
+```xml
+<dependency>
+   <groupId>com.badlogicgames.packr</groupId>
+   <artifactId>packr</artifactId>
+   <version>1.0</version>
+</dependency>
+```
+
+To invoke packr, you need to create an instance of `Config` and pass it to `Packr#pack()`
+
+```java
+Config config = new Config();
+config.platform = Platform.windows;
+config.jdk = "/User/badlogic/Downloads/openjdk-for-mac.zip";
+config.executable = "myapp";
+config.jar = "myjar.jar";
+config.mainClass = "com/my/app/MainClass";
+config.vmArgs = Arrays.asList("-Xmx1G");
+config.minimizeJre = true;
+config.outDir = "out-mac";
+
+new Packr().pack(config)
+```
+
 Output
 ======
 When packing for Windows, the following folder structure will be generated
