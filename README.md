@@ -1,12 +1,10 @@
-packr
-=====
+# packr
 
 Packages your JAR, assets and a JVM for distribution on Windows (ZIP), Linux (ZIP) and Mac OS X (.app), adding a native executable file to make it appear like the app is a native app. Packr is most suitable for GUI applications, such as games made with [libGDX](http://libgdx.badlogicgames.com/)
 
 #### [Download Packr](http://libgdx.badlogicgames.com/packr/) (jar-with-dependencies)
 
-Usage
-=====
+## Usage
 You point packr at your JAR file (containing all your code and assets), a JSON config file (specifying parameters to the JVM and the main class) and a URL or local file location to an OpenJDK build for the platform you want to build. Invoking packr from the command line may look like this:
 
 ```bash
@@ -88,8 +86,8 @@ config.outDir = "out-mac";
 new Packr().pack(config)
 ```
 
-Output
-======
+## Output
+
 When packing for Windows, the following folder structure will be generated
 
 ```
@@ -126,8 +124,8 @@ outdir/
 
 You can futher modify the Info.plist to your liking, e.g. add icons, a bundle identifier etc. If your `outdir` has the `.app` extension it will be treated as an application bundle by Mac OS X.
 
-Building
-========
+## Building
+
 If you only modify the Java code, it's sufficient to invoke Maven
 
 ```
@@ -138,15 +136,14 @@ This will create a `packr-VERSION.jar` file in `target` which you can invoke as 
 
 If you want to compile the exe files used by packr, install premake, Visual Studio 2010 Express on Windows, Xcode on Mac OS X and GCC on Linux, then invoke the build-xxx scripts in the `natives/` folder. Each script will create an executable file for the specific platform and place it under src/main/resources.
 
-Limitations
-===========
+## Limitations
 
   * Icons aren't set yet on any platform, need to do that manually.
   * Windows is 32-bit only, Linux is 64-bit only, Mac OS X is 64-bit only
   * JRE minimization is very conservative, depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr
  
-Code Warning
-============
+## Code Warning
+
 You may find some style issues with this code, namely:
 
   * lack of proper logging
@@ -154,10 +151,10 @@ You may find some style issues with this code, namely:
 
 This was conceived over a "weekend" so to speak, so please excuse any shortcomings. Happy to receive PRs!
 
-License & Contributions
-=======================
+## License & Contributions
+
 The code is licensed under the [Apache 2 license](http://www.apache.org/licenses/LICENSE-2.0.html). By contributing to this repository, you automatically agree that your contribution can be distributed under the Apache 2 license by the author of this project. You will not be able to revoke this right once your contribution has been merged into this repository.
 
-Security
-========
+## Security
+
 Distributing a bundled JVM has security implications, just like bundling any other runtimes like Mono, Air, etc. Make sure you understand the implications before deciding to use this tool. Here's a [discussion on the topic](http://www.reddit.com/r/gamedev/comments/24orpg/packr_package_your_libgdxjavascalajvm_appgame_for/ch99zk2).
