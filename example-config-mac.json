@@ -11,6 +11,6 @@
         "pom.xml",
         "src/main/resources"
     ],
-    "minimizeJre": true,
+    "minimizejre": true,
     "outdir": "out-mac"
 }
