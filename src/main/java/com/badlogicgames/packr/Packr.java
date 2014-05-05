@@ -58,7 +58,7 @@ public class Packr {
 		public String jar;
 		public String mainClass;
 		public List<String> vmArgs = new ArrayList<String>();
-		public boolean minimizeJre;
+		public String[] minimizeJre;
 		public List<String> resources = new ArrayList<String>();
 		public String outDir;
 	}
@@ -140,7 +140,7 @@ public class Packr {
 		copyResources(target, config.resources);
 		
 		// perform tree shaking		
-		if(config.minimizeJre) {	
+		if(config.minimizeJre != null) {	
 			minimizeJre(config, target);			
 		}
 		
@@ -180,20 +180,9 @@ public class Packr {
 		} else {
 			FileUtils.deleteDirectory(new File(outDir, "jre/bin"));
 		}
-		
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/corba"));
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/jmx"));
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/jndi"));
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/media"));
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/naming"));
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/org"));
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/rowset"));
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/script"));
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/com/sun/xml"));
-		
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/sun/applet"));
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/sun/corba"));
-		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt/sun/management"));
+		for(String minimizedDir : config.minimizeJre) {
+			FileUtils.deleteDirectory(new File(outDir, minimizedDir));
+		}
 		new File(outDir, "jre/lib/rhino.jar").delete();
 		
 		System.out.println("packing rt.jar");
@@ -285,7 +274,35 @@ public class Packr {
 				config.vmArgs = Arrays.asList(arguments.get("vmargs").split(";"));
 			}
 			config.outDir = arguments.get("outdir");
-			config.minimizeJre = arguments.get("minimizejre") != null? Boolean.parseBoolean(arguments.get("minimizejre")): false;
+			if(arguments.get("minimizejre").equals("hard") || arguments.get("minimizejre").equals("true"))
+			{
+				config.minimizeJre = new String[] {
+				"jre/lib/rt/com/sun/corba", "jre/lib/rt/com/sun/jmx", "jre/lib/rt/com/sun/jndi", 
+				"jre/lib/rt/com/sun/media", "jre/lib/rt/com/sun/naming",
+				"jre/lib/rt/com/sun/org", "jre/lib/rt/com/sun/rowset",
+				"jre/lib/rt/com/sun/script", "jre/lib/rt/com/sun/xml", "jre/lib/rt/sun/applet",
+				"jre/lib/rt/sun/corba", "jre/lib/rt/sun/management"
+				};
+			}
+			else if(arguments.get("minimizejre").equals("soft"))
+			{
+				config.minimizeJre = new String[] {
+				"jre/lib/rt/com/sun/corba", "jre/lib/rt/com/sun/jndi", 
+				"jre/lib/rt/com/sun/media", "jre/lib/rt/com/sun/naming",
+			        "jre/lib/rt/com/sun/rowset",
+			        "jre/lib/rt/sun/applet",
+				"jre/lib/rt/sun/corba", "jre/lib/rt/sun/management"
+				};
+			}
+			
+			else if(arguments.get("minimizejre").equals("false"))
+			{
+				config.minimizeJre = null;
+			}
+			else if(arguments.get("minimizejre") != null)
+			{
+				config.minimizeJre = FileUtils.readFileToString(new File(arguments.get("minimizejre"))).split("\r?\n");
+			}
 			if(arguments.get("resources") != null) config.resources = Arrays.asList(arguments.get("resources").split(";"));
 			new Packr().pack(config);
 		} else {
@@ -305,8 +322,32 @@ public class Packr {
 					}
 				}
 				config.outDir = json.get("outdir").asString();
-				if(json.get("minimizejre") != null) {
-					config.minimizeJre = json.get("minimizejre").asBoolean();
+				if(json.get("minimizejre").asString().equals("hard") || json.get("minimizejre").asString().equals("true"))
+				{
+					config.minimizeJre = new String[] {
+					"jre/lib/rt/com/sun/corba", "jre/lib/rt/com/sun/jmx", "jre/lib/rt/com/sun/jndi", 
+					"jre/lib/rt/com/sun/media", "jre/lib/rt/com/sun/naming",
+					"jre/lib/rt/com/sun/org", "jre/lib/rt/com/sun/rowset",
+					"jre/lib/rt/com/sun/script", "jre/lib/rt/com/sun/xml", "jre/lib/rt/sun/applet",
+					"jre/lib/rt/sun/corba", "jre/lib/rt/sun/management"
+					};
+				}
+				else if(json.get("minimizejre").asString().equals("soft"))
+				{
+					config.minimizeJre = new String[]{
+					"jre/lib/rt/com/sun/corba", "jre/lib/rt/com/sun/jndi", 
+					"jre/lib/rt/com/sun/media", "jre/lib/rt/com/sun/naming",
+					"jre/lib/rt/com/sun/rowset",
+					"jre/lib/rt/sun/applet",
+					"jre/lib/rt/sun/corba", "jre/lib/rt/sun/management"
+					};
+				}
+				else if(json.get("minimizejre").asString().equals("false"))
+				{
+					config.minimizeJre = null;
+				}
+				else if(json.get("minimizejre") != null) {
+					config.minimizeJre = FileUtils.readFileToString(new File(json.get("minimizejre").asString())).split("\r?\n");
 				}
 				if(json.get("resources") != null) {
 					config.resources = toStringArray(json.get("resources").asArray());
@@ -331,17 +372,19 @@ public class Packr {
 	
 	private static void printHelp() {
 		System.out.println("Usage: packr <args>");
-		System.out.println("-platform <windows|linux|mac>   ... operating system to pack for");
-		System.out.println("-jdk <path-or-url>              ... path to a JDK to be bundled (needs to fit platform).");
-		System.out.println("                                   Can be a ZIP file or URL to a ZIP file");
-		System.out.println("-executable <name>              ... name of the executable, e.g. 'mygame', without extension");
-		System.out.println("-appjar <file>                  ... JAR file containing code and assets to be packed");
-		System.out.println("-mainclass <main-class>         ... fully qualified main class name, e.g. com/badlogic/MyApp");
-		System.out.println("-vmargs <args>                  ... arguments passed to the JVM, e.g. -Xmx1G, separated by ;");
-		System.out.println("-minimizejre <true|false>       ... minimize the JRE, may remove things your app needs.");
-		System.out.println("-resources <files-and-folders>  ... additional files and folders to be packed next to the");
-		System.out.println("                                    executable. Entries are separated by a ;");
-		System.out.println("-outdir <dir>                   ... output directory");
+		System.out.println("-platform <windows|linux|mac>        ... operating system to pack for");
+		System.out.println("-jdk <path-or-url>                   ... path to a JDK to be bundled (needs to fit platform).");
+		System.out.println("                                         Can be a ZIP file or URL to a ZIP file");
+		System.out.println("-executable <name>                   ... name of the executable, e.g. 'mygame', without extension");
+		System.out.println("-appjar <file>                       ... JAR file containing code and assets to be packed");
+		System.out.println("-mainclass <main-class>              ... fully qualified main class name, e.g. com/badlogic/MyApp");
+		System.out.println("-vmargs <args>                       ... arguments passed to the JVM, e.g. -Xmx1G, separated by ;");
+		System.out.println("-minimizejre <false|file|soft|hard>  ... minimize the JRE, can remove unneeded folders but could break your app.");
+		System.out.println("                                         Can be false, a config file or how hard to push things out (soft or hard, true is an alias for hard).");
+		System.out.println("                                         Config files are just lists of folders in rt.jar to remove, one per line.");
+		System.out.println("-resources <files-and-folders>       ... additional files and folders to be packed next to the");
+		System.out.println("                                         executable. Entries are separated by a ;");
+		System.out.println("-outdir <dir>                        ... output directory");
 	}
 	
 	private static Map<String, String> parseArgs (String[] args) {
