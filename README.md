@@ -145,6 +145,19 @@ Limitations
   * Windows is 32-bit only, Linux is 64-bit only, Mac OS X is 64-bit only
   * JRE minimization is very conservative, depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr
  
+Code Warning
+============
+You may find some style issues with this code, namely:
+
+  * lack of proper logging
+  * lack of return value checking
+
+This was conceived over a "weekend" so to speak, so please excuse any shortcomings. Happy to receive PRs!
+
+License & Contributions
+=======================
+The code is licensed under the [Apache 2 license](http://www.apache.org/licenses/LICENSE-2.0.html). By contributing to this repository, you automatically agree that your contribution can be distributed under the Apache 2 license by the author of this project. You will not be able to revoke this right once your contribution has been merged into this repository.
+
 Security
 ========
 Distributing a bundled JVM has security implications, just like bundling any other runtimes like Mono, Air, etc. Make sure you understand the implications before deciding to use this tool. Here's a [discussion on the topic](http://www.reddit.com/r/gamedev/comments/24orpg/packr_package_your_libgdxjavascalajvm_appgame_for/ch99zk2).
