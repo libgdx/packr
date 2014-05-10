@@ -52,6 +52,11 @@ public class Packr {
 		File out = new File(config.outDir);
 		File target = out;
 		if(out.exists()) {
+			if(new File(".").equals(out)) {
+				System.out.println("Output directory equals working directory, aborting");
+				System.exit(-1);
+			}
+			
 			System.out.println("Output directory '" + out.getAbsolutePath() + "' exists, deleting");
 			FileUtils.deleteDirectory(out);
 		}
