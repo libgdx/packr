@@ -13,10 +13,10 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
      -jdk "openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip" \
      -executable myapp \
      -appjar myapp.jar \
-     -mainclass "com/my/app/MainClass"
-     -vmargs "-Xmx1G"
+     -mainclass "com/my/app/MainClass" \
+     -vmargs "-Xmx1G" \
      -resources pom.xml;src/main/resources \
-     -minimizejre true
+     -minimizejre true \
      -outdir out
 ```
 
