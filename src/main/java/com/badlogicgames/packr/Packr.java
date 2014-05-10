@@ -1,3 +1,19 @@
+/*******************************************************************************
+ * Copyright 2014 See AUTHORS file.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
+
 package com.badlogicgames.packr;
 
 import java.io.File;
@@ -274,7 +290,7 @@ public class Packr {
 				config.vmArgs = Arrays.asList(arguments.get("vmargs").split(";"));
 			}
 			config.outDir = arguments.get("outdir");
-			config.minimizeJre = arguments.get("minimizeJre") != null? Boolean.parseBoolean(arguments.get("minimizeJre")): false;
+			config.minimizeJre = arguments.get("minimizejre") != null? Boolean.parseBoolean(arguments.get("minimizejre")): false;
 			if(arguments.get("resources") != null) config.resources = Arrays.asList(arguments.get("resources").split(";"));
 			new Packr().pack(config);
 		} else {
@@ -294,8 +310,8 @@ public class Packr {
 					}
 				}
 				config.outDir = json.get("outdir").asString();
-				if(json.get("minimizeJre") != null) {
-					config.minimizeJre = json.get("minimizeJre").asBoolean();
+				if(json.get("minimizejre") != null) {
+					config.minimizeJre = json.get("minimizejre").asBoolean();
 				}
 				if(json.get("resources") != null) {
 					config.resources = toStringArray(json.get("resources").asArray());
@@ -327,7 +343,7 @@ public class Packr {
 		System.out.println("-appjar <file>                  ... JAR file containing code and assets to be packed");
 		System.out.println("-mainclass <main-class>         ... fully qualified main class name, e.g. com/badlogic/MyApp");
 		System.out.println("-vmargs <args>                  ... arguments passed to the JVM, e.g. -Xmx1G, separated by ;");
-		System.out.println("-minimizeJre <true|false>       ... minimize the JRE, may remove things your app needs.");
+		System.out.println("-minimizejre <true|false>       ... minimize the JRE, may remove things your app needs.");
 		System.out.println("-resources <files-and-folders>  ... additional files and folders to be packed next to the");
 		System.out.println("                                    executable. Entries are separated by a ;");
 		System.out.println("-outdir <dir>                   ... output directory");
