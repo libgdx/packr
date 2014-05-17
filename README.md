@@ -8,7 +8,7 @@ Packages your JAR, assets and a JVM for distribution on Windows (ZIP), Linux (ZI
 You point packr at your JAR file (containing all your code and assets), a JSON config file (specifying parameters to the JVM and the main class) and a URL or local file location to an OpenJDK build for the platform you want to build. Invoking packr from the command line may look like this:
 
 ```bash
-java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
+java -jar packr.jar \
      -platform mac \
      -jdk "openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip" \
      -executable myapp \
@@ -57,7 +57,7 @@ Alternatively, you can put all the command line arguments into a JSON file which
 You can then invoke the tool like this:
 
 ```bash
-java -jar packr-1.0-SNAPSHOT-jar-with-dependencies my-packaging-config.json
+java -jar packr.jar my-packaging-config.json
 ```
 
 Finally, you can use packr from within your code. Just add the JAR file to your project, either manually, or via the following Maven dependency:
@@ -66,7 +66,7 @@ Finally, you can use packr from within your code. Just add the JAR file to your 
 <dependency>
    <groupId>com.badlogicgames.packr</groupId>
    <artifactId>packr</artifactId>
-   <version>1.0</version>
+   <version>1.1</version>
 </dependency>
 ```
 
