@@ -2,7 +2,7 @@
     "platform": "mac",
     "jdk": "/Users/badlogic/Downloads/openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip",
     "executable": "myapp",
-    "appjar": "target/packr-1.0-SNAPSHOT.jar",
+    "appjar": "target/packr-1.1-SNAPSHOT.jar",
     "mainclass": "com/badlogicgames/packr/TestApp",
     "vmargs": [
     	"-Xmx1G"
