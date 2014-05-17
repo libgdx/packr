@@ -11,6 +11,6 @@
         "pom.xml",
         "src/main/resources"
     ],
-    "minimizejre": true,
+    "minimizejre": "soft",
     "outdir": "out-lin"
 }
