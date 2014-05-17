@@ -16,7 +16,7 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
      -mainclass "com/my/app/MainClass" \
      -vmargs "-Xmx1G" \
      -resources pom.xml;src/main/resources \
-     -minimizejre true \
+     -minimizejre "soft" \
      -outdir out
 ```
 
@@ -30,7 +30,7 @@ java -jar packr-1.0-SNAPSHOT-jar-with-dependencies.jar \
 | vmargs | list of arguments for the JVM, separated by `;`, e.g. "-Xmx1G" |
 | outdir | output directory |
 | resources (optional) | list of files and directories to be packaged next to the native executable, separated by `;`.
-| minimizejre | true or false, if true this will cut out a ton of usually unnecessary stuff, see Packr.java, method #minimizeJre() |
+| minimizejre | minimize the JRE by removing directories and files as specified by the config file. Comes with two config files out of the box called "soft" and "hard". See below for details on the minimization config file. |
 
 Alternatively, you can put all the command line arguments into a JSON file which might look like this:
 
@@ -49,7 +49,7 @@ Alternatively, you can put all the command line arguments into a JSON file which
         "pom.xml",
         "src/main/resources"
     ],
-    "minimizejre": true,
+    "minimizejre": "soft",
     "outdir": "out-mac"
 }
 ```
@@ -80,11 +80,27 @@ config.executable = "myapp";
 config.jar = "myjar.jar";
 config.mainClass = "com/my/app/MainClass";
 config.vmArgs = Arrays.asList("-Xmx1G");
-config.minimizeJre = true;
+config.minimizeJre = new String[] { "jre/lib/rt/com/sun/corba", "jre/lib/rt/com/sun/jndi" };
 config.outDir = "out-mac";
 
 new Packr().pack(config)
 ```
+
+## Minimization
+A standard JRE weighs about 90mb unpacked and about 50mb packed. Packr helps you cut down on that size, thus also reducing the download size of your app. 
+
+To minimize the JRE that is bundled with your app, you have to specify a minimization configuration file via the `minimizejre` flag you supply to Packr. Such a minimization configuration contains the names of files and directories within the JRE to be removed, one per line in the file. E.g.:
+
+```
+jre/lib/rhino.jar
+jre/lib/rt/com/sun/corba 
+````
+
+This will remove the rhino.jar (about 1.1MB) and all the packages and classes in com.sun.corba from the rt.jar file. To specify files and packages to be removed from the JRE, simply prepend them with `jre/lib/rt/`.
+
+Packr comes with two such configurations out of the box, [`soft`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/soft) and [`hard`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/soft)
+
+Additionally, Packr will compress the rt.jar file. By default, the JRE uses zero-compression on the rt.jar file to make application startup a little faster.
 
 ## Output
 
