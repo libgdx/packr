@@ -79,6 +79,8 @@ void* launchVM(void* params) {
     #else
         std::string jre = execDir + std::string("/jre/lib/i386/server/libjvm.so");
     #endif
+
+    printf("jre: %s\n", jre.c_str());
     
     void* handle = dlopen(jre.c_str(), RTLD_LAZY);
     if(handle == NULL) {
