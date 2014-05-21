@@ -16,6 +16,9 @@
 
 #ifdef WINDOWS
 #include <windows.h>
+#include <direct.h>
+#else
+#include <unistd.h>
 #endif
 
 #include <launcher.h>
@@ -84,6 +87,15 @@ void* launchVM(void* params) {
 	PtrCreateJavaVM ptrCreateJavaVM = (PtrCreateJavaVM)GetProcAddress(hinstLib,"JNI_CreateJavaVM");
 #endif
     
+#ifdef WINDOWS
+    int rval = _chdir(execDir.c_str());
+#else
+    int rval = chdir(execDir.c_str());
+#endif
+    if(rval != 0) {
+        printf("Couldn't change working directory to: %s\n", execDir.c_str());
+    }
+
     jint res = ptrCreateJavaVM(&jvm, (void**)&env, &args);
 
     jobjectArray appArgs = env->NewObjectArray(g_argc, env->FindClass("java/lang/String"), NULL);
