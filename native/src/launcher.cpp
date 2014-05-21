@@ -27,6 +27,10 @@
 #include <picojson.h>
 #include <dlfcn.h>
 
+#ifdef MACOSX
+#include <unistd.h>
+#endif
+
 extern std::string getExecutableDir();
 extern int g_argc;
 extern char** g_argv;
@@ -84,6 +88,10 @@ void* launchVM(void* params) {
 	PtrCreateJavaVM ptrCreateJavaVM = (PtrCreateJavaVM)GetProcAddress(hinstLib,"JNI_CreateJavaVM");
 #endif
     
+#ifdef MACOSX
+    chdir(execDir.c_str());
+#endif
+
     jint res = ptrCreateJavaVM(&jvm, (void**)&env, &args);
 
     jobjectArray appArgs = env->NewObjectArray(g_argc, env->FindClass("java/lang/String"), NULL);
