@@ -47,7 +47,8 @@ import com.eclipsesource.json.JsonValue;
 public class Packr {
 	public static enum Platform {
 		windows,
-		linux,
+		linux32,
+		linux64,
 		mac
 	}
 	
@@ -100,8 +101,11 @@ public class Packr {
 				exe = readResource("/packr-windows.exe");
 				extension = ".exe";
 				break;
-			case linux:
+			case linux32:
 				exe = readResource("/packr-linux");
+				break;
+			case linux64:
+				exe = readResource("/packr-linux-x64");
 				break;
 			case mac:
 				exe = readResource("/packr-mac");
@@ -203,9 +207,9 @@ public class Packr {
 		ZipUtil.unpack(jar, jarDir);
 		
 		Set<String> extensions = new HashSet<String>();
-		if(config.platform == Platform.linux) { extensions.add(".dylib"); extensions.add(".dll"); }
-		if(config.platform == Platform.windows) { extensions.add(".dylib"); extensions.add(".so"); }
-		if(config.platform == Platform.mac) { extensions.add(".so"); extensions.add(".dll"); }
+		if(config.platform != Platform.linux32 && config.platform != Platform.linux64) { extensions.add(".so"); }
+		if(config.platform != Platform.windows) { extensions.add(".dll"); }
+		if(config.platform != Platform.mac) { extensions.add(".dylib"); }
 		
 		for(Object obj: FileUtils.listFiles(jarDir, TrueFileFilter.INSTANCE , TrueFileFilter.INSTANCE )) {
 			File file = new File(obj.toString());

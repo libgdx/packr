@@ -21,6 +21,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <sys/param.h>
 #include <launcher.h>
+#include <unistd.h>
 
 extern "C" { int _NSGetExecutablePath(char* buf, uint32_t* bufsize); }
 
@@ -31,6 +32,10 @@ std::string getExecutableDir() {
     _NSGetExecutablePath(buf, &size);
     std::string path = std::string(buf);
     return path.substr(0, path.find_last_of('/'));
+}
+
+bool changeWorkingDir(std::string dir) {
+    return chdir(dir.c_str()) == 0;
 }
 
 int g_argc;

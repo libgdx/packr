@@ -15,10 +15,11 @@
  ******************************************************************************/
 
 #include <launcher.h>
-#include <string>
 #include <windows.h>
+#include <string>
 #include <stdio.h>
 #include <string.h>
+#include <direct.h>
 
 std::string getExecutableDir() {
 	HMODULE hModule = GetModuleHandleW(NULL);
@@ -31,6 +32,9 @@ std::string getExecutableDir() {
 	return std::string(dest);
 }
 
+bool changeWorkingDir(std::string dir) {
+    return _chdir(dir.c_str()) == 0;
+}
 
 int g_argc;
 char** g_argv;

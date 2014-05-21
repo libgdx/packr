@@ -34,6 +34,9 @@ std::string getExecutableDir() {
 	}
 }
 
+bool changeWorkingDir(std::string dir) {
+    return chdir(dir.c_str()) == 0;
+}
 
 int g_argc;
 char** g_argv;

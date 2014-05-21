@@ -16,10 +16,8 @@
 
 #ifdef WINDOWS
 #include <windows.h>
-#include <direct.h>
 #else
 #include <dlfcn.h>
-#include <unistd.h>
 #endif
 
 #include <launcher.h>
@@ -31,6 +29,7 @@
 #include <picojson.h>
 
 extern std::string getExecutableDir();
+extern bool changeWorkingDir(std::string dir);
 extern int g_argc;
 extern char** g_argv;
 
@@ -65,18 +64,20 @@ void* launchVM(void* params) {
     
     JavaVMInitArgs args;
     args.version = JNI_VERSION_1_6;
-    args.nOptions = 1 + vmArgs.size();
+    args.nOptions = 1 + (int)vmArgs.size();
     args.options = options;
     args.ignoreUnrecognized = JNI_FALSE;
     
     JavaVM* jvm = 0;
     JNIEnv* env = 0;
-    
+
 #ifndef WINDOWS
     #ifdef MACOSX
         std::string jre = execDir + std::string("/jre/lib/server/libjvm.dylib");
-    #else
+    #elif defined(__LP64__)
         std::string jre = execDir + std::string("/jre/lib/amd64/server/libjvm.so");
+    #else
+        std::string jre = execDir + std::string("/jre/lib/i386/server/libjvm.so");
     #endif
     
     void* handle = dlopen(jre.c_str(), RTLD_LAZY);
@@ -94,12 +95,7 @@ void* launchVM(void* params) {
 	PtrCreateJavaVM ptrCreateJavaVM = (PtrCreateJavaVM)GetProcAddress(hinstLib,"JNI_CreateJavaVM");
 #endif
     
-#ifdef WINDOWS
-    int rval = _chdir(execDir.c_str());
-#else
-    int rval = chdir(execDir.c_str());
-#endif
-    if(rval != 0) {
+    if(!changeWorkingDir(execDir)) {
         printf("Couldn't change working directory to: %s\n", execDir.c_str());
     }
 
