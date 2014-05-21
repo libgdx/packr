@@ -18,6 +18,7 @@
 #include <windows.h>
 #include <direct.h>
 #else
+#include <dlfcn.h>
 #include <unistd.h>
 #endif
 
@@ -28,7 +29,6 @@
 #include <iostream>
 #include <fstream>
 #include <picojson.h>
-#include <dlfcn.h>
 
 extern std::string getExecutableDir();
 extern int g_argc;
@@ -71,7 +71,6 @@ void* launchVM(void* params) {
     
     JavaVM* jvm = 0;
     JNIEnv* env = 0;
-
     
 #ifndef WINDOWS
     #ifdef MACOSX
@@ -81,7 +80,15 @@ void* launchVM(void* params) {
     #endif
     
     void* handle = dlopen(jre.c_str(), RTLD_LAZY);
+    if(handle == NULL) {
+        fprintf(stderr, "%s\n", dlerror());
+        exit(EXIT_FAILURE);
+    }
     PtrCreateJavaVM ptrCreateJavaVM = (PtrCreateJavaVM)dlsym(handle, "JNI_CreateJavaVM");
+    if(ptrCreateJavaVM == NULL) {
+        fprintf(stderr, "%s\n", dlerror());
+        exit(EXIT_FAILURE);
+    }
 #else
 	HINSTANCE hinstLib = LoadLibrary(TEXT("jre\\bin\\server\\jvm.dll"));
 	PtrCreateJavaVM ptrCreateJavaVM = (PtrCreateJavaVM)GetProcAddress(hinstLib,"JNI_CreateJavaVM");
@@ -97,6 +104,10 @@ void* launchVM(void* params) {
     }
 
     jint res = ptrCreateJavaVM(&jvm, (void**)&env, &args);
+    if(res < 0) {
+        fprintf(stderr, "Failed to create Java VM\n");
+        exit(EXIT_FAILURE);
+    }
 
     jobjectArray appArgs = env->NewObjectArray(g_argc, env->FindClass("java/lang/String"), NULL);
     for(int i = 0; i < g_argc; i++) {
@@ -106,6 +117,10 @@ void* launchVM(void* params) {
     
     jclass mainClass = env->FindClass(main.c_str());
     jmethodID mainMethod = env->GetStaticMethodID(mainClass, "main", "([Ljava/lang/String;)V");
+    if(mainMethod == 0) {
+        fprintf(stderr, "Failed to aquire main() method of class: %s:\n", main.c_str());
+        exit(EXIT_FAILURE);
+    }
     env->CallStaticVoidMethod(mainClass, mainMethod, appArgs);
     jvm->DestroyJavaVM();
     return 0;
