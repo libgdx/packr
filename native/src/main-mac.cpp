@@ -45,6 +45,9 @@ char** g_argv;
 void sourceCallBack (  void *info  ) {}
 
 int main(int argc, char** argv) {
+    g_argc = argc;
+    g_argv = argv;
+    
     CFRunLoopSourceContext sourceContext;
     pthread_t vmthread;
     struct rlimit limit;
