@@ -16,9 +16,8 @@
 
 #ifdef WINDOWS
 #include <windows.h>
-#include <direct.h>
 #else
-#include <unistd.h>
+#include <dlfcn.h>
 #endif
 
 #include <launcher.h>
@@ -28,9 +27,9 @@
 #include <iostream>
 #include <fstream>
 #include <picojson.h>
-#include <dlfcn.h>
 
 extern std::string getExecutableDir();
+extern bool changeWorkingDir(std::string dir);
 extern int g_argc;
 extern char** g_argv;
 
@@ -65,38 +64,48 @@ void* launchVM(void* params) {
     
     JavaVMInitArgs args;
     args.version = JNI_VERSION_1_6;
-    args.nOptions = 1 + vmArgs.size();
+    args.nOptions = 1 + (int)vmArgs.size();
     args.options = options;
     args.ignoreUnrecognized = JNI_FALSE;
     
     JavaVM* jvm = 0;
     JNIEnv* env = 0;
 
-    
 #ifndef WINDOWS
     #ifdef MACOSX
         std::string jre = execDir + std::string("/jre/lib/server/libjvm.dylib");
-    #else
+    #elif defined(__LP64__)
         std::string jre = execDir + std::string("/jre/lib/amd64/server/libjvm.so");
+    #else
+        std::string jre = execDir + std::string("/jre/lib/i386/server/libjvm.so");
     #endif
+
+    printf("jre: %s\n", jre.c_str());
     
     void* handle = dlopen(jre.c_str(), RTLD_LAZY);
+    if(handle == NULL) {
+        fprintf(stderr, "%s\n", dlerror());
+        exit(EXIT_FAILURE);
+    }
     PtrCreateJavaVM ptrCreateJavaVM = (PtrCreateJavaVM)dlsym(handle, "JNI_CreateJavaVM");
+    if(ptrCreateJavaVM == NULL) {
+        fprintf(stderr, "%s\n", dlerror());
+        exit(EXIT_FAILURE);
+    }
 #else
 	HINSTANCE hinstLib = LoadLibrary(TEXT("jre\\bin\\server\\jvm.dll"));
 	PtrCreateJavaVM ptrCreateJavaVM = (PtrCreateJavaVM)GetProcAddress(hinstLib,"JNI_CreateJavaVM");
 #endif
     
-#ifdef WINDOWS
-    int rval = _chdir(execDir.c_str());
-#else
-    int rval = chdir(execDir.c_str());
-#endif
-    if(rval != 0) {
+    if(!changeWorkingDir(execDir)) {
         printf("Couldn't change working directory to: %s\n", execDir.c_str());
     }
 
     jint res = ptrCreateJavaVM(&jvm, (void**)&env, &args);
+    if(res < 0) {
+        fprintf(stderr, "Failed to create Java VM\n");
+        exit(EXIT_FAILURE);
+    }
 
     jobjectArray appArgs = env->NewObjectArray(g_argc, env->FindClass("java/lang/String"), NULL);
     for(int i = 0; i < g_argc; i++) {
@@ -106,6 +115,10 @@ void* launchVM(void* params) {
     
     jclass mainClass = env->FindClass(main.c_str());
     jmethodID mainMethod = env->GetStaticMethodID(mainClass, "main", "([Ljava/lang/String;)V");
+    if(mainMethod == 0) {
+        fprintf(stderr, "Failed to aquire main() method of class: %s:\n", main.c_str());
+        exit(EXIT_FAILURE);
+    }
     env->CallStaticVoidMethod(mainClass, mainMethod, appArgs);
     jvm->DestroyJavaVM();
     return 0;

@@ -15,10 +15,11 @@
  ******************************************************************************/
 
 #include <launcher.h>
-#include <string>
 #include <windows.h>
+#include <string>
 #include <stdio.h>
 #include <string.h>
+#include <direct.h>
 
 std::string getExecutableDir() {
 	HMODULE hModule = GetModuleHandleW(NULL);
@@ -31,14 +32,43 @@ std::string getExecutableDir() {
 	return std::string(dest);
 }
 
+bool changeWorkingDir(std::string dir) {
+    return _chdir(dir.c_str()) == 0;
+}
 
 int g_argc;
 char** g_argv;
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
-	g_argc = 0;
-	g_argv = 0;
+void parseCommandLine() {
+	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &g_argc);
+	if(argv != NULL) {
+		g_argv = new char*[g_argc];
+		char defChar = ' ';
+		for(int i = 0; i < g_argc; i++) {
+			int len = wcslen(argv[i]) * 2;
+			g_argv[i] = new char[len + 1];
+			WideCharToMultiByte(CP_ACP, 0, argv[i], -1, g_argv[i], len, &defChar, NULL);
+			g_argv[i][len - 1] = '\0';
+		}
+	} else {
+		g_argc = 1;
+		g_argv = NULL;
+	}
+	LocalFree(argv);
+}
 
+void cleanupCommandLine() {
+	if(g_argv != NULL) {
+		for(int i = 0; i < g_argc; i++) {
+			delete[] g_argv[i];
+		}
+		delete[] g_argv;
+	}
+}
+
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
+	parseCommandLine();
 	launchVM(0);
+	cleanupCommandLine();
 	return 0;
 }

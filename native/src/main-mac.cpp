@@ -21,6 +21,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <sys/param.h>
 #include <launcher.h>
+#include <unistd.h>
 
 extern "C" { int _NSGetExecutablePath(char* buf, uint32_t* bufsize); }
 
@@ -33,6 +34,10 @@ std::string getExecutableDir() {
     return path.substr(0, path.find_last_of('/'));
 }
 
+bool changeWorkingDir(std::string dir) {
+    return chdir(dir.c_str()) == 0;
+}
+
 int g_argc;
 char** g_argv;
 
@@ -40,6 +45,9 @@ char** g_argv;
 void sourceCallBack (  void *info  ) {}
 
 int main(int argc, char** argv) {
+    g_argc = argc;
+    g_argv = argv;
+    
     CFRunLoopSourceContext sourceContext;
     pthread_t vmthread;
     struct rlimit limit;

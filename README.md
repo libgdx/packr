@@ -22,7 +22,7 @@ java -jar packr.jar \
 
 | Parameter | Meaning |
 | --- | --- |
-| platform | one of "windows", "linux", "mac" |
+| platform | one of "windows", "linux32", "linux64", "mac" |
 | jdk | ZIP file location or URL to an OpenJDK build containing a JRE. Prebuild JDKs can be found at https://github.com/alexkasko/openjdk-unofficial-builds |
 | executable | name of the native executable, without extension such as ".exe" |
 | appjar | file location of the JAR to package |
@@ -114,7 +114,7 @@ outdir/
    jre/
 ```
 
-Linux (64-bit!)
+Linux
 
 ```
 outdir/
@@ -155,7 +155,7 @@ If you want to compile the exe files used by packr, install premake, Visual Stud
 ## Limitations
 
   * Icons aren't set yet on any platform, need to do that manually.
-  * Windows is 32-bit only, Linux is 64-bit only, Mac OS X is 64-bit only
+  * Windows is 32-bit only, Mac OS X is 64-bit only
   * JRE minimization is very conservative, depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr
  
 ## Code Warning
