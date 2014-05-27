@@ -98,7 +98,7 @@ jre/lib/rt/com/sun/corba
 
 This will remove the rhino.jar (about 1.1MB) and all the packages and classes in com.sun.corba from the rt.jar file. To specify files and packages to be removed from the JRE, simply prepend them with `jre/lib/rt/`.
 
-Packr comes with two such configurations out of the box, [`soft`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/soft) and [`hard`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/soft)
+Packr comes with two such configurations out of the box, [`soft`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/soft) and [`hard`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/hard)
 
 Additionally, Packr will compress the rt.jar file. By default, the JRE uses zero-compression on the rt.jar file to make application startup a little faster.
 
