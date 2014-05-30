@@ -15,7 +15,10 @@
  ******************************************************************************/
 package com.badlogicgames.packr;
 
+import java.io.File;
+
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 public class TestApp {
 	public static void main (String[] args) {
@@ -24,5 +27,6 @@ public class TestApp {
 		frame.setTitle("My Test App");
 		frame.setSize(480, 320);
 		frame.setVisible(true);
+		JOptionPane.showConfirmDialog(null, "Working dir: " + new File(".").getAbsolutePath());
 	}
 }
