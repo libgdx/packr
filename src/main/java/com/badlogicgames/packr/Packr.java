@@ -45,7 +45,7 @@ import com.eclipsesource.json.JsonValue;
  *
  */
 public class Packr {
-	public static enum Platform {
+	public enum Platform {
 		windows32,
 		windows64,
 		linux32,
@@ -63,6 +63,8 @@ public class Packr {
 		public String[] minimizeJre;
 		public List<String> resources = new ArrayList<String>();
 		public String outDir;
+		public String iconResource;
+		public String bundleIdentifier = "com.yourcompany.identifier";
 	}
 	
 	public void pack(Config config) throws IOException {
@@ -86,16 +88,23 @@ public class Packr {
 		
 		Map<String, String> values = new HashMap<String, String>();
 		values.put("${executable}", config.executable);
-		values.put("${bundleIdentifier}", "com.yourcompany.identifier"); // FIXME add as a param
-		
+		values.put("${bundleIdentifier}", config.bundleIdentifier);
+
 		// if this is a mac build, let's create the app bundle structure
 		if(config.platform == Platform.mac) {
 			new File(out, "Contents").mkdirs();
 			FileUtils.writeStringToFile(new File(out, "Contents/Info.plist"), readResourceAsString("/Info.plist", values));
 			target = new File(out, "Contents/MacOS");
 			target.mkdirs();
-			new File(out, "Contents/Resources").mkdirs();
-			// FIXME copy icons
+			File resources = new File(out, "Contents/Resources");
+			resources.mkdirs();
+			if(config.iconResource != null) {
+				// copy icon to Contents/Resources/icons.icns
+				File icons = new File(config.iconResource);
+				if(icons.exists()) {
+					FileUtils.copyFile(new File(config.iconResource), new File(resources, "icons.icns"));
+				}
+			}
 		}
 		
 		// write jar, exe and config to target folder
@@ -170,28 +179,28 @@ public class Packr {
 	private void writeConfig(Config config, File file) throws IOException {
 		StringBuilder builder = new StringBuilder();
 		builder.append("{\n");
-		builder.append("   \"classPath\": [");
+		builder.append("  \"classPath\": [");
 		
 		{
 			String delim = "\n";
 			for (String f : config.classpath) {
-				builder.append(delim).append("      \"" + new File(f).getName() + "\"");
+				builder.append(delim).append("    \"" + new File(f).getName() + "\"");
 				delim = ",\n";
 			}
 			builder.append("],\n");
 		}
 		
-		builder.append("   \"mainClass\": \"" + config.mainClass + "\",\n");
-		builder.append("   \"vmArgs\": [\n");
+		builder.append("  \"mainClass\": \"" + config.mainClass + "\",\n");
+		builder.append("  \"vmArgs\": [\n");
 		for(int i = 0; i < config.vmArgs.size(); i++) {
 			String vmArg = config.vmArgs.get(i);
-			builder.append("      \"" + vmArg + "\"");
+			builder.append("    \"" + vmArg + "\"");
 			if(i < config.vmArgs.size() - 1) {
 				builder.append(",");
 			}
 			builder.append("\n");
 		}
-		builder.append("   ]");
+		builder.append("  ]\n");
 		builder.append("}");
 		FileUtils.writeStringToFile(file, builder.toString());
 	}
@@ -308,7 +317,11 @@ public class Packr {
 			config.jdk = arguments.get("jdk");
 			config.executable = arguments.get("executable");
 			config.classpath =  Arrays.asList(arguments.get("classpath").split(";"));
+			config.iconResource = arguments.get("icon");
 			config.mainClass = arguments.get("mainclass");
+			if(arguments.get("bundleidentifier") != null) {
+				config.bundleIdentifier = arguments.get("bundleidentifier");
+			}
 			if(arguments.get("vmargs") != null) {
 				config.vmArgs = Arrays.asList(arguments.get("vmargs").split(";"));
 			}
@@ -338,7 +351,13 @@ public class Packr {
 				config.jdk = json.get("jdk").asString();
 				config.executable = json.get("executable").asString();
 				config.classpath = toStringArray(json.get("classpath").asArray());
+				if(json.get("icon") != null) {
+					config.iconResource = json.get("icon").asString();
+				}
 				config.mainClass = json.get("mainclass").asString();
+				if(json.get("bundleidentifier") != null) {
+					config.bundleIdentifier = json.get("bundleidentifier").asString();
+				}
 				if(json.get("vmargs") != null) {
 					config.vmArgs = toStringArray(json.get("vmargs").asArray());
 				}
@@ -386,7 +405,11 @@ public class Packr {
 		System.out.println("-executable <name>                   ... name of the executable, e.g. 'mygame', without extension");
 		System.out.println("-classpath <file.jar>                ... JAR file containing code and assets to be packed");
 		System.out.println("                                         Can contain multiple JAR files, separated by ;");
+		System.out.println("-icon <file>                         ... file containing icon resources (needs to fit platform)");
+		System.out.println("                                         Only supported on OS X (.icns)");
 		System.out.println("-mainclass <main-class>              ... fully qualified main class name, e.g. com/badlogic/MyApp");
+		System.out.println("-bundleidentifier <identifier>       ... bundle identifier, e.g. com.badlogic");
+		System.out.println("                                         Only used for Info.plist on OS X");
 		System.out.println("-vmargs <args>                       ... arguments passed to the JVM, e.g. -Xmx1G, separated by ;");
 		System.out.println("-minimizejre <configfile>            ... minimize the JRE by removing folders and files specified in the config file");
 		System.out.println("                                         three config files come with packr: 'soft' and 'hard' which may or may not break your app");
