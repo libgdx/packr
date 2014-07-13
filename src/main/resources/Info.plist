@@ -4,6 +4,8 @@
 <dict>
   <key>CFBundleGetInfoString</key>
   <string>${executable}</string>
+  <key>NSHumanReadableCopyright</key>
+  <string>${executable}</string>
   <key>CFBundleExecutable</key>
   <string>${executable}</string>
   <key>CFBundleIdentifier</key>
