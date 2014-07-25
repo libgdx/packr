@@ -4,7 +4,7 @@ solution "packr"
 	project "packr"
 		kind "ConsoleApp"
 		language "C++"
-		buildoptions { "-Wall" }
+		buildoptions { "-Wall", "-mmacosx-version-min=10.6" }
 		files { "**.h", "src/launcher.cpp" }
 		includedirs { "include", "include/jni-headers" }
 
@@ -14,6 +14,6 @@ solution "packr"
 		defines { "MACOSX" }
 		includedirs { "include/jni-headers/mac" }
 		files { "src/main-mac.cpp" }
-		linkoptions { "-framework CoreFoundation" }
+		linkoptions { "-framework CoreFoundation", "-mmacosx-version-min=10.6" }
 
 		platforms { "native" }
