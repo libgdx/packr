@@ -15,6 +15,7 @@ solution "packr"
 		defines { "WINDOWS" }
 		includedirs { "include/jni-headers/win32" }
 		files { "src/main-windows.cpp" }
+		linkoptions { "/LARGEADDRESSAWARE" }
 		flags { "WinMain" }
 
 		platforms { "x32", "x64" }
