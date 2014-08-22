@@ -16,6 +16,6 @@ solution "packr"
 		includedirs { "include/jni-headers/win32" }
 		files { "src/main-windows.cpp" }
 		linkoptions { "/LARGEADDRESSAWARE" }
-		flags { "WinMain" }
+		flags { "WinMain", "StaticRuntime", "NoManifest" }
 
 		platforms { "x32", "x64" }
