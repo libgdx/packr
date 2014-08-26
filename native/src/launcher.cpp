@@ -46,6 +46,7 @@ void* launchVM(void* params) {
     std::string err = picojson::get_last_error();
     if(!err.empty()) {
         printf("Couldn't parse json: %s\n", err.c_str());
+        exit(EXIT_FAILURE);
     }
     
     std::string jarFile = execDir + std::string("/") + json.get<picojson::object>()["jar"].to_str();
@@ -114,6 +115,11 @@ void* launchVM(void* params) {
     }
     
     jclass mainClass = env->FindClass(main.c_str());
+    if(mainClass == 0) {
+        fprintf(stderr, "Failed to find class: %s:\n", main.c_str());
+        exit(EXIT_FAILURE);
+    }
+
     jmethodID mainMethod = env->GetStaticMethodID(mainClass, "main", "([Ljava/lang/String;)V");
     if(mainMethod == 0) {
         fprintf(stderr, "Failed to aquire main() method of class: %s:\n", main.c_str());
