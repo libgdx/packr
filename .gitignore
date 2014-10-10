@@ -6,3 +6,5 @@
 native/build
 native/obj
 native/packr.xcodeproj/
+.idea/
+*.iml

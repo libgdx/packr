@@ -57,9 +57,9 @@ void* launchVM(void* params) {
     printf("mainClass: %s\n", main.c_str());
     
     JavaVMOption* options = (JavaVMOption*)malloc(sizeof(JavaVMOption) * (1 + vmArgs.size()));
-    options[0].optionString = (char*)classPath.c_str();
+    options[0].optionString = strdup(classPath.c_str());
     for(unsigned i = 0; i < vmArgs.size(); i++) {
-        options[i+1].optionString = (char*)vmArgs[i].to_str().c_str();
+        options[i+1].optionString = strdup(vmArgs[i].to_str().c_str());
         printf("vmArg %d: %s\n", i, options[i+1].optionString);
     }
     
@@ -127,5 +127,10 @@ void* launchVM(void* params) {
     }
     env->CallStaticVoidMethod(mainClass, mainMethod, appArgs);
     jvm->DestroyJavaVM();
+
+    for(unsigned i = 0; i < vmArgs.size() + 1; i++) {
+        free(options[i].optionString);
+    }
+
     return 0;
 }
