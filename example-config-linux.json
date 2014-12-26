@@ -1,5 +1,5 @@
 {
-    "platform": "linux",
+    "platform": "linux64",
     "jdk": "/home/badlogic/Downloads/openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-linux-amd64-image.zip",
     "executable": "myapp",
     "appjar": "target/packr-1.1-SNAPSHOT.jar",
