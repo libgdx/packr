@@ -190,6 +190,7 @@ public class Packr {
 			FileUtils.deleteDirectory(new File(outDir, "jre/bin"));
 		}
 		for(String minimizedDir : config.minimizeJre) {
+			minimizedDir = minimizedDir.trim();
 			File file = new File(outDir, minimizedDir);
 			if(file.isDirectory()) FileUtils.deleteDirectory(new File(outDir, minimizedDir));
 			else file.delete();
