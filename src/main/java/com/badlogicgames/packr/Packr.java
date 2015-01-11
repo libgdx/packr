@@ -190,9 +190,14 @@ public class Packr {
 			FileUtils.deleteDirectory(new File(outDir, "jre/bin"));
 		}
 		for(String minimizedDir : config.minimizeJre) {
+			minimizedDir = minimizedDir.trim();
 			File file = new File(outDir, minimizedDir);
-			if(file.isDirectory()) FileUtils.deleteDirectory(new File(outDir, minimizedDir));
-			else file.delete();
+			try {
+				if(file.isDirectory()) FileUtils.deleteDirectory(new File(outDir, minimizedDir));
+				else file.delete();
+			} catch (Exception e) {
+				System.out.println("Failed to delete file " + file.getPath() + ": " + e.getMessage());
+			}
 		}
 		new File(outDir, "jre/lib/rhino.jar").delete();
 		
