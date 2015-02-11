@@ -39,36 +39,16 @@ bool changeWorkingDir(std::string dir) {
 int g_argc;
 char** g_argv;
 
-void parseCommandLine() {
-	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &g_argc);
-	if(argv != NULL) {
-		g_argv = new char*[g_argc];
-		char defChar = ' ';
-		for(int i = 0; i < g_argc; i++) {
-			int len = wcslen(argv[i]) * 2;
-			g_argv[i] = new char[len + 1];
-			WideCharToMultiByte(CP_ACP, 0, argv[i], -1, g_argv[i], len, &defChar, NULL);
-			g_argv[i][len - 1] = '\0';
-		}
-	} else {
-		g_argc = 1;
-		g_argv = NULL;
-	}
-	LocalFree(argv);
-}
-
-void cleanupCommandLine() {
-	if(g_argv != NULL) {
-		for(int i = 0; i < g_argc; i++) {
-			delete[] g_argv[i];
-		}
-		delete[] g_argv;
-	}
-}
-
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
-	parseCommandLine();
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
 	launchVM(0);
-	cleanupCommandLine();
+}
+
+/*
+int main(int argc, char** argv) {
+	g_argc = argc;
+	g_argv = argv;
+
+	launchVM(0);
 	return 0;
 }
+*/
