@@ -73,6 +73,10 @@ public class Packr {
 				System.out.println("Output directory equals working directory, aborting");
 				System.exit(-1);
 			}
+			if(new File("/").equals(out)) {
+				System.out.println("Output directory equals root, aborting");
+				System.exit(-1);
+			}
 			
 			System.out.println("Output directory '" + out.getAbsolutePath() + "' exists, deleting");
 			FileUtils.deleteDirectory(out);
