@@ -74,7 +74,7 @@ void* launchVM(void* params) {
 
 #ifndef WINDOWS
     #ifdef MACOSX
-        std::string jre = execDir + std::string("/jre/lib/server/libjvm.dylib");
+        std::string jre = execDir + std::string("/jre/lib/jli/libjli.dylib");
     #elif defined(__LP64__)
         std::string jre = execDir + std::string("/jre/lib/amd64/server/libjvm.so");
     #else
