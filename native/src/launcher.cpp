@@ -49,11 +49,24 @@ void* launchVM(void* params) {
         exit(EXIT_FAILURE);
     }
     
-    std::string jarFile = execDir + std::string("/") + json.get<picojson::object>()["jar"].to_str();
+    std::string jarFile = "";
+    picojson::array jarFiles = json.get<picojson::object>()["classpath"].get<picojson::array>();
+    for(unsigned i = 0; i < jarFiles.size(); i++) {
+        std::string jar = jarFiles[i].to_str().c_str();
+        jarFile = jarFile + execDir + std::string("/") + jar;
+        if (i + 1 < jarFiles.size()) {
+        	#ifdef WINDOWS
+        		jarFile += ";";
+        	#else
+        		jarFile += ":";
+        	#endif
+        }
+    }
+    
     std::string main = json.get<picojson::object>()["mainClass"].to_str();
     std::string classPath = std::string("-Djava.class.path=") + jarFile;
     picojson::array vmArgs = json.get<picojson::object>()["vmArgs"].get<picojson::array>();
-    printf("jar: %s\n", jarFile.c_str());
+    printf("classpath: %s\n", jarFile.c_str());
     printf("mainClass: %s\n", main.c_str());
     
     JavaVMOption* options = (JavaVMOption*)malloc(sizeof(JavaVMOption) * (1 + vmArgs.size()));
