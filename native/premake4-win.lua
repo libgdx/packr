@@ -1,21 +1,19 @@
 solution "packr"
-	configurations { "release" }
+	configurations { "debug", "release" }
 
 	project "packr"
-		kind "ConsoleApp"
+		kind "WindowedApp"
 		language "C++"
 		-- buildoptions { "-Wall" }
-		files { "**.h", "src/launcher.cpp" }
-		includedirs { "include", "include/jni-headers" }
-
-		defines { "NDEBUG" }
-		flags { "Optimize" }
-
-		kind "WindowedApp"
+		files { "**.h", "src/launcher.cpp", "src/main-windows.cpp" }
+		includedirs { "include", "include/jni-headers", "include/jni-headers/win32" }
 		defines { "WINDOWS" }
-		includedirs { "include/jni-headers/win32" }
-		files { "src/main-windows.cpp" }
-		linkoptions { "/LARGEADDRESSAWARE" }
-		flags { "WinMain", "StaticRuntime", "NoManifest" }
+		flags { "StaticRuntime", "WinMain" }
 
-		platforms { "x32", "x64" }
+		configuration "debug"
+		         defines { "DEBUG" }
+		         flags { "Symbols" }
+ 
+		configuration "release"
+		         defines { "NDEBUG" }
+		         flags { "Optimize" }    

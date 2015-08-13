@@ -14,7 +14,7 @@
  * limitations under the License.
  ******************************************************************************/
 
-#ifdef WINDOWS
+#ifdef _WIN32
 #include <windows.h>
 #else
 #include <dlfcn.h>
@@ -28,6 +28,13 @@
 #include <fstream>
 #include <picojson.h>
 
+const char kPathSeparator =
+#ifdef _WIN32
+'\\';
+#else
+'/';
+#endif
+
 extern std::string getExecutableDir();
 extern bool changeWorkingDir(std::string dir);
 extern int g_argc;
@@ -37,9 +44,11 @@ typedef jint (JNICALL *PtrCreateJavaVM)(JavaVM **, void **, void *);
 
 void* launchVM(void* params) {
     std::string execDir = getExecutableDir();
+    std::string configfilePath = execDir + kPathSeparator + "config.json";
+    printf("config file: %s\n", configfilePath.c_str());
+
     std::ifstream configFile;
-    configFile.open((execDir + std::string("/config.json")).c_str());
-    printf("config file: %s\n", (execDir + std::string("/config.json")).c_str());
+    configFile.open(configfilePath.c_str());
     
     picojson::value json;
     configFile >> json;
@@ -49,14 +58,20 @@ void* launchVM(void* params) {
         exit(EXIT_FAILURE);
     }
     
-    std::string jarFile = execDir + std::string("/") + json.get<picojson::object>()["jar"].to_str();
-    std::string main = json.get<picojson::object>()["mainClass"].to_str();
-    std::string classPath = std::string("-Djava.class.path=") + jarFile;
-    picojson::array vmArgs = json.get<picojson::object>()["vmArgs"].get<picojson::array>();
+    picojson::object rootObj = json.get<picojson::object>();
+
+
+    std::string jarFile = execDir + kPathSeparator + rootObj["jar"].to_str();
     printf("jar: %s\n", jarFile.c_str());
+
+    std::string main = rootObj["mainClass"].to_str();
     printf("mainClass: %s\n", main.c_str());
+
+    picojson::array vmArgs = rootObj["vmArgs"].get<picojson::array>();
     
-    JavaVMOption* options = (JavaVMOption*)malloc(sizeof(JavaVMOption) * (1 + vmArgs.size()));
+    std::string classPath = std::string("-Djava.class.path=") + jarFile;
+    
+    JavaVMOption* options = new JavaVMOption[vmArgs.size() + 1];
     options[0].optionString = strdup(classPath.c_str());
     for(unsigned i = 0; i < vmArgs.size(); i++) {
         options[i+1].optionString = strdup(vmArgs[i].to_str().c_str());
@@ -65,14 +80,14 @@ void* launchVM(void* params) {
     
     JavaVMInitArgs args;
     args.version = JNI_VERSION_1_6;
-    args.nOptions = 1 + (int)vmArgs.size();
+    args.nOptions = 1 + vmArgs.size();
     args.options = options;
     args.ignoreUnrecognized = JNI_FALSE;
     
     JavaVM* jvm = 0;
     JNIEnv* env = 0;
 
-#ifndef WINDOWS
+#ifndef _WIN32
     #ifdef MACOSX
         std::string jre = execDir + std::string("/jre/lib/jli/libjli.dylib");
     #elif defined(__LP64__)
@@ -94,17 +109,17 @@ void* launchVM(void* params) {
         exit(EXIT_FAILURE);
     }
 #else
-	HINSTANCE hinstLib = LoadLibrary(TEXT("jre\\bin\\server\\jvm.dll"));
-	PtrCreateJavaVM ptrCreateJavaVM = (PtrCreateJavaVM)GetProcAddress(hinstLib,"JNI_CreateJavaVM");
+    HINSTANCE hinstLib = LoadLibrary(TEXT("jre\\bin\\server\\jvm.dll"));
+    PtrCreateJavaVM ptrCreateJavaVM = (PtrCreateJavaVM)GetProcAddress(hinstLib,"JNI_CreateJavaVM");
 #endif
     
     if(!changeWorkingDir(execDir)) {
-        printf("Couldn't change working directory to: %s\n", execDir.c_str());
+        fprintf(stderr, "Couldn't change working directory to: %s\n", execDir.c_str());
     }
 
     jint res = ptrCreateJavaVM(&jvm, (void**)&env, &args);
-    if(res < 0) {
-        fprintf(stderr, "Failed to create Java VM\n");
+    if(res != JNI_OK) {
+        fprintf(stderr, "Failed to create Java VM. Error: %d\n", res);
         exit(EXIT_FAILURE);
     }
 
@@ -128,9 +143,7 @@ void* launchVM(void* params) {
     env->CallStaticVoidMethod(mainClass, mainMethod, appArgs);
     jvm->DestroyJavaVM();
 
-    for(unsigned i = 0; i < vmArgs.size() + 1; i++) {
-        free(options[i].optionString);
-    }
-
+    delete[] options;
+    
     return 0;
 }
