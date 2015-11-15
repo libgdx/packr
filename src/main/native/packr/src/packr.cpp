@@ -436,9 +436,6 @@ void* launchJavaVM(void*) {
 
 	// load main class & method from classpath
 
-	jclass mainClass;
-	jmethodID mainMethod;
-
 	cout << "Loading JAR file ..." << endl;
 
 	if (!hasJsonValue(jsonRoot, "mainClass", sajson::TYPE_STRING)) {
@@ -454,6 +451,9 @@ void* launchJavaVM(void*) {
 	const string main = getJsonValue(jsonRoot, "mainClass").as_string();
 	sajson::value jsonClassPath = getJsonValue(jsonRoot, "classPath");
 	vector<string> classPath = extractClassPath(jsonClassPath);
+
+	jclass mainClass = nullptr;
+	jmethodID mainMethod = nullptr;
 
 	if (loadStaticMethod(env, classPath, main, &mainClass, &mainMethod) != 0) {
 		cerr << "Error: failed to load/find main class " << main << endl;

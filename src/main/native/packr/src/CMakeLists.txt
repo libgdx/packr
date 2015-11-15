@@ -1,4 +1,8 @@
-fips_begin_app(packr windowed)
+if (FIPS_WINDOWS)
+    fips_begin_app(packr windowed)
+else()
+    fips_begin_app(packr cmdline)
+endif()
 
 fips_setup_jni()
 
