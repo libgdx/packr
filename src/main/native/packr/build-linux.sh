@@ -2,10 +2,11 @@
 ./fips set config linux-make-release
 ./fips clean && ./fips build
 
-set arch = $(uname -m | grep '64')
-
-if $arch; then
-  cp ../fips-deploy/packr-native/linux-make-release/packr ../../resources/packr-linux-x64
+if [ `getconf LONG_BIT` = "64" ]
+then
+    echo "Copying 64 bit executable ..."
+    cp ../fips-deploy/packr-native/linux-make-release/packr ../../resources/packr-linux-x64
 else
-  cp ../fips-deploy/packr-native/linux-make-release/packr ../../resources/packr-linux
+    echo "Copying 32 bit executable ..."
+    cp ../fips-deploy/packr-native/linux-make-release/packr ../../resources/packr-linux
 fi
