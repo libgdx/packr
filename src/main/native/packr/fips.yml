@@ -1,0 +1,11 @@
+#
+# packr-native
+#
+---
+imports:
+    fips-dropt:
+        git: https://github.com/code-disaster/fips-dropt.git
+    fips-jni:
+        git: https://github.com/code-disaster/fips-jni.git
+    fips-sajson:
+        git: https://github.com/code-disaster/fips-sajson.git
