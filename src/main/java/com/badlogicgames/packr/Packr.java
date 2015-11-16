@@ -56,7 +56,7 @@ public class Packr {
 		public Platform platform;
 		public String jdk;
 		public String executable;
-		public String jar;
+		public List<String> classpath = new ArrayList<String>();
 		public String mainClass;
 		public List<String> vmArgs = new ArrayList<String>();
 		public String[] minimizeJre;
@@ -117,7 +117,9 @@ public class Packr {
 		}
 		FileUtils.writeByteArrayToFile(new File(target, config.executable + extension), exe);
 		new File(target, config.executable + extension).setExecutable(true);
-		FileUtils.copyFile(new File(config.jar), new File(target, new File(config.jar).getName()));
+		for (String file : config.classpath) {
+			FileUtils.copyFile(new File(file), new File(target, new File(file).getName()));
+		}
 		writeConfig(config, new File(target, "config.json"));
 		
 		// add JRE from local or remote zip file
@@ -163,7 +165,17 @@ public class Packr {
 	private void writeConfig(Config config, File file) throws IOException {
 		StringBuilder builder = new StringBuilder();
 		builder.append("{\n");
-		builder.append("   \"jar\": \"" + new File(config.jar).getName() + "\",\n");
+		builder.append("   \"classpath\": [");
+		
+		{
+			String delim = "\n";
+			for (String f : config.classpath) {
+				builder.append(delim).append("      \"" + new File(f).getName() + "\"");
+				delim = ",\n";
+			}
+			builder.append("],\n");
+		}
+		
 		builder.append("   \"mainClass\": \"" + config.mainClass + "\",\n");
 		builder.append("   \"vmArgs\": [\n");
 		for(int i = 0; i < config.vmArgs.size(); i++) {
@@ -211,25 +223,27 @@ public class Packr {
 		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt"));
 		
 		// let's remove any shared libs not used on the platform, e.g. libgdx/lwjgl natives
-		File jar = new File(outDir, new File(config.jar).getName());
-		File jarDir = new File(outDir, jar.getName()+ ".tmp");
-		ZipUtil.unpack(jar, jarDir);
+		for (String classpath : config.classpath) {
+			File jar = new File(outDir, new File(classpath).getName());
+			File jarDir = new File(outDir, jar.getName()+ ".tmp");
+			ZipUtil.unpack(jar, jarDir);
 		
-		Set<String> extensions = new HashSet<String>();
-		if(config.platform != Platform.linux32 && config.platform != Platform.linux64) { extensions.add(".so"); }
-		if(config.platform != Platform.windows) { extensions.add(".dll"); }
-		if(config.platform != Platform.mac) { extensions.add(".dylib"); }
-		
-		for(Object obj: FileUtils.listFiles(jarDir, TrueFileFilter.INSTANCE , TrueFileFilter.INSTANCE )) {
-			File file = new File(obj.toString());
-			for(String extension: extensions) {
-				if(file.getName().endsWith(extension)) file.delete();
+			Set<String> extensions = new HashSet<String>();
+			if(config.platform != Platform.linux32 && config.platform != Platform.linux64) { extensions.add(".so"); }
+			if(config.platform != Platform.windows) { extensions.add(".dll"); }
+			if(config.platform != Platform.mac) { extensions.add(".dylib"); }
+			
+			for(Object obj: FileUtils.listFiles(jarDir, TrueFileFilter.INSTANCE , TrueFileFilter.INSTANCE )) {
+				File file = new File(obj.toString());
+				for(String extension: extensions) {
+					if(file.getName().endsWith(extension)) file.delete();
+				}
 			}
+			
+			jar.delete();
+			ZipUtil.pack(jarDir, jar);
+			FileUtils.deleteDirectory(jarDir);
 		}
-		
-		jar.delete();
-		ZipUtil.pack(jarDir, jar);
-		FileUtils.deleteDirectory(jarDir);
 	}
 
 	private void copyResources(File targetDir, List<String> resources) throws IOException {
@@ -288,7 +302,7 @@ public class Packr {
 			config.platform = Platform.valueOf(arguments.get("platform"));
 			config.jdk = arguments.get("jdk");
 			config.executable = arguments.get("executable");
-			config.jar = arguments.get("appjar");
+			config.classpath =  Arrays.asList(arguments.get("classpath").split(";"));
 			config.mainClass = arguments.get("mainclass");
 			if(arguments.get("vmargs") != null) {
 				config.vmArgs = Arrays.asList(arguments.get("vmargs").split(";"));
@@ -318,12 +332,10 @@ public class Packr {
 				config.platform = Platform.valueOf(json.get("platform").asString());
 				config.jdk = json.get("jdk").asString();
 				config.executable = json.get("executable").asString();
-				config.jar = json.get("appjar").asString();
+				config.classpath = toStringArray(json.get("classpath").asArray());
 				config.mainClass = json.get("mainclass").asString();
 				if(json.get("vmargs") != null) {
-					for(JsonValue val: json.get("vmargs").asArray()) {
-						config.vmArgs.add(val.asString());
-					}
+					config.vmArgs = toStringArray(json.get("vmargs").asArray());
 				}
 				config.outDir = json.get("outdir").asString();
 				if(json.get("minimizejre") != null) {
