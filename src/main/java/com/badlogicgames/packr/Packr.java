@@ -46,7 +46,8 @@ import com.eclipsesource.json.JsonValue;
  */
 public class Packr {
 	public static enum Platform {
-		windows,
+		windows32,
+		windows64,
 		linux32,
 		linux64,
 		mac
@@ -101,8 +102,12 @@ public class Packr {
 		byte[] exe = null;
 		String extension = "";
 		switch(config.platform) {
-			case windows:
+			case windows32:
 				exe = readResource("/packr-windows.exe");
+				extension = ".exe";
+				break;
+			case windows64:
+				exe = readResource("/packr-windows-x64.exe");
 				extension = ".exe";
 				break;
 			case linux32:
@@ -165,7 +170,7 @@ public class Packr {
 	private void writeConfig(Config config, File file) throws IOException {
 		StringBuilder builder = new StringBuilder();
 		builder.append("{\n");
-		builder.append("   \"classpath\": [");
+		builder.append("   \"classPath\": [");
 		
 		{
 			String delim = "\n";
@@ -197,7 +202,7 @@ public class Packr {
 		System.out.println("unpacking rt.jar");
 		ZipUtil.unpack(new File(outDir, "jre/lib/rt.jar"), new File(outDir, "jre/lib/rt"));
 		
-		if(config.platform == Platform.windows) {
+		if(config.platform == Platform.windows32 || config.platform == Platform.windows64) {
 			FileUtils.deleteDirectory(new File(outDir, "jre/bin/client"));
 			for(File file: new File(outDir, "jre/bin").listFiles()) {
 				if(file.getName().endsWith(".exe")) file.delete();
@@ -230,7 +235,7 @@ public class Packr {
 		
 			Set<String> extensions = new HashSet<String>();
 			if(config.platform != Platform.linux32 && config.platform != Platform.linux64) { extensions.add(".so"); }
-			if(config.platform != Platform.windows) { extensions.add(".dll"); }
+			if(config.platform != Platform.windows32 && config.platform != Platform.windows64) { extensions.add(".dll"); }
 			if(config.platform != Platform.mac) { extensions.add(".dylib"); }
 			
 			for(Object obj: FileUtils.listFiles(jarDir, TrueFileFilter.INSTANCE , TrueFileFilter.INSTANCE )) {
@@ -374,11 +379,13 @@ public class Packr {
 	
 	private static void printHelp() {
 		System.out.println("Usage: packr <args>");
-		System.out.println("-platform <windows|linux|mac>        ... operating system to pack for");
-		System.out.println("-jdk <path-or-url>                   ... path to a JDK to be bundled (needs to fit platform).");
+		System.out.println("-platform <windows32|windows64|linux32|linux64|mac>");
+		System.out.println("                                     ... operating system to pack for");
+		System.out.println("-jdk <path-or-url>                   ... path to a JDK to be bundled (needs to fit platform)");
 		System.out.println("                                         Can be a ZIP file or URL to a ZIP file");
 		System.out.println("-executable <name>                   ... name of the executable, e.g. 'mygame', without extension");
-		System.out.println("-appjar <file>                       ... JAR file containing code and assets to be packed");
+		System.out.println("-classpath <file.jar>                ... JAR file containing code and assets to be packed");
+		System.out.println("                                         Can contain multiple JAR files, separated by ;");
 		System.out.println("-mainclass <main-class>              ... fully qualified main class name, e.g. com/badlogic/MyApp");
 		System.out.println("-vmargs <args>                       ... arguments passed to the JVM, e.g. -Xmx1G, separated by ;");
 		System.out.println("-minimizejre <configfile>            ... minimize the JRE by removing folders and files specified in the config file");
