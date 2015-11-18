@@ -283,8 +283,10 @@ bool setCmdLineArguments(int argc, char** argv) {
 	dropt_char* config = nullptr;
 	dropt_bool _verbose = 0;
 	dropt_bool _console = 0;
+	dropt_bool _cli = 0;
 
 	dropt_option options[] = {
+		{ 'c', "cli", "Enables this command line interface.", NULL, dropt_handle_bool, &_cli, dropt_attr_optional_val },
 		{ 'h',  "help", "Shows help.", NULL, dropt_handle_bool, &showHelp, dropt_attr_halt },
 		{ '?', NULL, NULL, NULL, dropt_handle_bool, &showHelp, dropt_attr_halt | dropt_attr_hidden },
 		{ '\0', "version", "Shows version information.", NULL, dropt_handle_bool, &showVersion, dropt_attr_halt },
@@ -302,56 +304,75 @@ bool setCmdLineArguments(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	if (argc > 0) {
+	if (argc > 1) {
 
-		char** remains = dropt_parse(droptContext, -1, &argv[1]);
+		char** remains = nullptr;
 
-		if (dropt_get_error(droptContext) != dropt_error_none) {
-			cerr << dropt_get_error_message(droptContext) << endl;
-			exit(EXIT_FAILURE);
-		}
+		if ((strcmp("--cli", argv[1]) == 0) || (strcmp("-c", argv[1]) == 0)) {
 
-		if (showHelp) {
-			cout << "Usage: " << executableName << " [options] [--] [forwarded arguments]" << endl << endl << "Options:" << endl;
-			dropt_print_help(stdout, droptContext, nullptr);
-		} else if (showVersion) {
-			cout << executableName << " version " << PACKR_VERSION_STRING << endl;
+			// only parse command line if the first argument is "--cli"
+
+			remains = dropt_parse(droptContext, -1, &argv[1]);
+
+			if (dropt_get_error(droptContext) != dropt_error_none) {
+				cerr << dropt_get_error_message(droptContext) << endl;
+				exit(EXIT_FAILURE);
+			}
+
+			if (showHelp) {
+
+				cout << "Usage: " << executableName << " [java arguments]" << endl;
+				cout << "       " << executableName << " -c [options] [-- [java arguments]]" << endl;
+				cout << endl << "Options:" << endl;
+
+				dropt_print_help(stdout, droptContext, nullptr);
+
+			} else if (showVersion) {
+
+				cout << executableName << " version " << PACKR_VERSION_STRING << endl;
+			
+			} else {
+
+				// evalute parameters
+
+				verbose = _verbose != 0;
+
+				if (cwd != nullptr) {
+					cout << "Using working directory " << cwd << " ..." << endl;
+					workingDir = string(cwd);
+				}
+
+				if (config != nullptr) {
+					cout << "Using configuration file " << config << " ..." << endl;
+					configurationPath = string(config);
+				}
+
+			}
+
 		} else {
-
-			// evalute parameters
-
-			verbose = _verbose != 0;
-
-			if (cwd != nullptr) {
-				cout << "Using working directory " << cwd << " ..." << endl;
-				workingDir = string(cwd);
-			}
-
-			if (config != nullptr) {
-				cout << "Using configuration file " << config << " ..." << endl;
-				configurationPath = string(config);
-			}
-
-			// count number of unparsed arguments
-
-			char** cnt = remains;
-			while (*cnt != nullptr) {
-				cmdLineArgc++;
-				cnt++;
-			}
-
-			// copy unparsed arguments
-
-			cmdLineArgv = new char*[cmdLineArgc];
-			cmdLineArgc = 0;
-
-			while (*remains != nullptr) {
-				cmdLineArgv[cmdLineArgc] = strdup(*remains);
-				cmdLineArgc++;
-				remains++;
-			}
-
+			// treat all arguments as "remains"
+			remains = &argv[1];
 		}
+
+		// count number of unparsed arguments
+
+		char** cnt = remains;
+		while (*cnt != nullptr) {
+			cmdLineArgc++;
+			cnt++;
+		}
+
+		// copy unparsed arguments
+
+		cmdLineArgv = new char*[cmdLineArgc];
+		cmdLineArgc = 0;
+
+		while (*remains != nullptr) {
+			cmdLineArgv[cmdLineArgc] = strdup(*remains);
+			cmdLineArgc++;
+			remains++;
+		}
+
 	}
 
 	dropt_free_context(droptContext);
