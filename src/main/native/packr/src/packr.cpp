@@ -243,24 +243,39 @@ static vector<string> extractClassPath(const sajson::value& classPath) {
 	return paths;
 }
 
-string getExecutableDirectory(const char* argv0) {
+string getExecutableDirectory(const char* executablePath) {
 
-	const char* delim = strrchr(argv0, '/');
+	const char* delim = strrchr(executablePath, '/');
 	if (delim == nullptr) {
-		delim = strrchr(argv0, '\\');
+		delim = strrchr(executablePath, '\\');
 	}
 
 	if (delim != nullptr) {
-		return string(argv0, delim - argv0);
+		return string(executablePath, delim - executablePath);
 	}
 
-	return string(argv0);
+	return string("");
+}
+
+string getExecutableName(const char* executablePath) {
+
+	const char* delim = strrchr(executablePath, '/');
+	if (delim == nullptr) {
+		delim = strrchr(executablePath, '\\');
+	}
+
+	if (delim != nullptr) {
+		return string(++delim);
+	}
+
+	return string(executablePath);
 }
 
 bool setCmdLineArguments(int argc, char** argv) {
 
-	executableName = string(getExecutableName(argv[0]));
-	workingDir = getExecutableDirectory(argv[0]);
+	const char* executablePath = getExecutablePath(argv[0]);
+	workingDir = getExecutableDirectory(executablePath);
+	executableName = getExecutableName(executablePath);
 
 	dropt_bool showHelp = 0;
 	dropt_bool showVersion = 0;

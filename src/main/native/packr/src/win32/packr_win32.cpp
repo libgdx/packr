@@ -84,18 +84,7 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, Create
 	return (*getDefaultJavaVMInitArgs != nullptr) && (*createJavaVM != nullptr);
 }
 
-const char* getExecutableName(const char* argv0) {
-
-	const char* delim = strrchr(argv0, '\\');
-	if (delim != nullptr) {
-		return ++delim;
-	}
-
-	delim = strrchr(argv0, '/');
-	if (delim != nullptr) {
-		return ++delim;
-	}
-
+const char* getExecutablePath(const char* argv0) {
 	return argv0;
 }
 

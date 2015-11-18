@@ -46,7 +46,7 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, Create
 	return true;
 }
 
-const char* getExecutableName(const char* argv0) {
+const char* getExecutablePath(const char* argv0) {
 
     static char buf[PATH_MAX];
     uint32_t size = sizeof(buf);
@@ -55,12 +55,7 @@ const char* getExecutableName(const char* argv0) {
         return argv0;
 	}
 
-    const char* delim = strrchr(buf, '/');
-    if (delim != nullptr) {
-        return ++delim;
-    }
-
-    return argv0;
+    return buf;
 }
 
 bool changeWorkingDir(const char* directory) {
