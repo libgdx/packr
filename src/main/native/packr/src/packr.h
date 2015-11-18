@@ -18,7 +18,7 @@ extern "C" {
 
 	/* platform-dependent functions */
 	bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM);
-	const char* getExecutableName(const char* argv0);
+	const char* getExecutablePath(const char* argv0);
 	bool changeWorkingDir(const char* directory);
 
 	/* entry point for all platforms - called from main()/WinMain() */

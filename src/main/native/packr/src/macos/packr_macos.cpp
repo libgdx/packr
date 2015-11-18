@@ -85,18 +85,16 @@ extern "C" {
     int _NSGetExecutablePath(char* buf, uint32_t* bufsize);
 }
 
-const char* getExecutableName(const char* argv0) {
+const char* getExecutablePath(const char* argv0) {
 
     static char buf[MAXPATHLEN];
     uint32_t size = sizeof(buf);
-    _NSGetExecutablePath(buf, &size);
 
-    const char* delim = strrchr(buf, '/');
-    if (delim != nullptr) {
-        return ++delim;
+    if (_NSGetExecutablePath(buf, &size) == -1) {
+        return argv0;
     }
 
-    return argv0;
+    return buf;
 }
 
 bool changeWorkingDir(const char* directory) {
