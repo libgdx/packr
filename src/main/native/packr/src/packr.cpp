@@ -243,9 +243,24 @@ static vector<string> extractClassPath(const sajson::value& classPath) {
 	return paths;
 }
 
+string getExecutableDirectory(const char* argv0) {
+
+	const char* delim = strrchr(argv0, '/');
+	if (delim == nullptr) {
+		delim = strrchr(argv0, '\\');
+	}
+
+	if (delim != nullptr) {
+		return string(argv0, delim - argv0);
+	}
+
+	return string(argv0);
+}
+
 bool setCmdLineArguments(int argc, char** argv) {
 
 	executableName = string(getExecutableName(argv[0]));
+	workingDir = getExecutableDirectory(argv[0]);
 
 	dropt_bool showHelp = 0;
 	dropt_bool showVersion = 0;
@@ -334,7 +349,9 @@ void* launchJavaVM(void*) {
 	// change working directory
 
 	if (!workingDir.empty()) {
-		cout << "Changing working directory ..." << endl;
+		if (verbose) {
+			cout << "Changing working directory to " << workingDir << " ..." << endl;
+		}
 		if (!changeWorkingDir(workingDir.c_str())) {
 			cerr << "Warning: failed to change working directory to " << workingDir << endl;
 		}

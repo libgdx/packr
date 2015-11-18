@@ -1,2 +1,3 @@
 fips/
 fips-*/
+!fips-configs/
