@@ -433,7 +433,7 @@ public class Packr {
 		if(params.get("platform") == null) error();
 		if(params.get("jdk") == null) error();
 		if(params.get("executable") == null) error();
-		if(params.get("appjar") == null) error();
+		if(params.get("classpath") == null) error();
 		if(params.get("mainclass") == null) error();
 		if(params.get("outdir") == null) error();
 		
