@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+"""fips main entry"""
+import os
+import sys
+import subprocess
+proj_path = os.path.dirname(os.path.abspath(__file__))
+fips_path = os.path.dirname(proj_path) + '/fips'
+if not os.path.isdir(fips_path) :
+    print("\033[93m=== cloning fips build system to '{}':\033[0m".format(fips_path))
+    subprocess.call(['git', 'clone', 'https://github.com/floooh/fips.git', fips_path]) 
+sys.path.insert(0,fips_path)
+try :
+    from mod import fips
+except ImportError :
+    print("\033[91m[ERROR]\033[0m failed to initialize fips build system in '{}'".format(proj_path)) 
+    sys.exit(10)
+fips.run(fips_path, proj_path, sys.argv)

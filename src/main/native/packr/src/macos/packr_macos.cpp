@@ -1,53 +1,41 @@
 /*******************************************************************************
- * Copyright 2011 See AUTHORS file.
- * 
+ * Copyright 2015 See AUTHORS file.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
+#include "../packr.h"
 
-#include <stdio.h>
-#include <jni.h>
-#include <string>
+#include <dlfcn.h>
+#include <iostream>
 #include <pthread.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <sys/param.h>
-#include <launcher.h>
 #include <unistd.h>
 
-extern "C" { int _NSGetExecutablePath(char* buf, uint32_t* bufsize); }
+using namespace std;
 
+const char __CLASS_PATH_DELIM = ':';
 
-std::string getExecutableDir() {
-    char buf[MAXPATHLEN];
-    uint32_t size = sizeof(buf);
-    _NSGetExecutablePath(buf, &size);
-    std::string path = std::string(buf);
-    return path.substr(0, path.find_last_of('/'));
+void sourceCallBack(void* info) {
+
 }
-
-bool changeWorkingDir(std::string dir) {
-    return chdir(dir.c_str()) == 0;
-}
-
-int g_argc;
-char** g_argv;
-
-
-void sourceCallBack (  void *info  ) {}
 
 int main(int argc, char** argv) {
-    g_argc = argc;
-    g_argv = argv;
-    
+
+    if (!setCmdLineArguments(argc, argv)) {
+        return EXIT_FAILURE;
+    }
+
     CFRunLoopSourceContext sourceContext;
     pthread_t vmthread;
     struct rlimit limit;
@@ -58,7 +46,7 @@ int main(int argc, char** argv) {
             stack_size = (size_t)limit.rlim_cur;
         }
     }
-    
+
     pthread_attr_t thread_attr;
     pthread_attr_init(&thread_attr);
     pthread_attr_setscope(&thread_attr, PTHREAD_SCOPE_SYSTEM);
@@ -66,9 +54,9 @@ int main(int argc, char** argv) {
     if (stack_size > 0) {
         pthread_attr_setstacksize(&thread_attr, stack_size);
     }
-    pthread_create(&vmthread, &thread_attr, launchVM, 0);
+    pthread_create(&vmthread, &thread_attr, launchJavaVM, 0);
     pthread_attr_destroy(&thread_attr);
-    
+
     /* Create a a sourceContext to be used by our source that makes */
     /* sure the CFRunLoop doesn't exit right away */
     sourceContext.version = 0;
@@ -81,10 +69,49 @@ int main(int argc, char** argv) {
     sourceContext.schedule = NULL;
     sourceContext.cancel = NULL;
     sourceContext.perform = &sourceCallBack;
-    
+
     CFRunLoopSourceRef sourceRef = CFRunLoopSourceCreate (NULL, 0, &sourceContext);
     CFRunLoopAddSource (CFRunLoopGetCurrent(),sourceRef,kCFRunLoopCommonModes);
     CFRunLoopRun();
-    
+
     return 0;
+}
+
+bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM) {
+
+    void* handle = dlopen("jre/lib/jli/libjli.dylib", RTLD_LAZY);
+    if (handle == NULL) {
+        cerr << dlerror() << endl;
+        return false;
+    }
+
+	*getDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs) dlsym(handle, "JNI_GetDefaultJavaVMInitArgs");
+	*createJavaVM = (CreateJavaVM) dlsym(handle, "JNI_CreateJavaVM");
+
+    if ((*getDefaultJavaVMInitArgs == nullptr) || (*createJavaVM == nullptr)) {
+        cerr << dlerror() << endl;
+        return false;
+    }
+
+	return true;
+}
+
+extern "C" {
+    int _NSGetExecutablePath(char* buf, uint32_t* bufsize);
+}
+
+const char* getExecutablePath(const char* argv0) {
+
+    static char buf[MAXPATHLEN];
+    uint32_t size = sizeof(buf);
+
+    if (_NSGetExecutablePath(buf, &size) == -1) {
+        return argv0;
+    }
+
+    return buf;
+}
+
+bool changeWorkingDir(const char* directory) {
+	return chdir(directory) == 0;
 }

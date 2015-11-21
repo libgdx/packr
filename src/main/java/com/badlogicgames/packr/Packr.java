@@ -45,8 +45,9 @@ import com.eclipsesource.json.JsonValue;
  *
  */
 public class Packr {
-	public static enum Platform {
-		windows,
+	public enum Platform {
+		windows32,
+		windows64,
 		linux32,
 		linux64,
 		mac
@@ -56,12 +57,14 @@ public class Packr {
 		public Platform platform;
 		public String jdk;
 		public String executable;
-		public String jar;
+		public List<String> classpath = new ArrayList<String>();
 		public String mainClass;
 		public List<String> vmArgs = new ArrayList<String>();
 		public String[] minimizeJre;
 		public List<String> resources = new ArrayList<String>();
 		public String outDir;
+		public String iconResource;
+		public String bundleIdentifier = "com.yourcompany.identifier";
 	}
 	
 	public void pack(Config config) throws IOException {
@@ -85,24 +88,35 @@ public class Packr {
 		
 		Map<String, String> values = new HashMap<String, String>();
 		values.put("${executable}", config.executable);
-		values.put("${bundleIdentifier}", "com.yourcompany.identifier"); // FIXME add as a param
-		
+		values.put("${bundleIdentifier}", config.bundleIdentifier);
+
 		// if this is a mac build, let's create the app bundle structure
 		if(config.platform == Platform.mac) {
 			new File(out, "Contents").mkdirs();
 			FileUtils.writeStringToFile(new File(out, "Contents/Info.plist"), readResourceAsString("/Info.plist", values));
 			target = new File(out, "Contents/MacOS");
 			target.mkdirs();
-			new File(out, "Contents/Resources").mkdirs();
-			// FIXME copy icons
+			File resources = new File(out, "Contents/Resources");
+			resources.mkdirs();
+			if(config.iconResource != null) {
+				// copy icon to Contents/Resources/icons.icns
+				File icons = new File(config.iconResource);
+				if(icons.exists()) {
+					FileUtils.copyFile(new File(config.iconResource), new File(resources, "icons.icns"));
+				}
+			}
 		}
 		
 		// write jar, exe and config to target folder
 		byte[] exe = null;
 		String extension = "";
 		switch(config.platform) {
-			case windows:
+			case windows32:
 				exe = readResource("/packr-windows.exe");
+				extension = ".exe";
+				break;
+			case windows64:
+				exe = readResource("/packr-windows-x64.exe");
 				extension = ".exe";
 				break;
 			case linux32:
@@ -117,7 +131,9 @@ public class Packr {
 		}
 		FileUtils.writeByteArrayToFile(new File(target, config.executable + extension), exe);
 		new File(target, config.executable + extension).setExecutable(true);
-		FileUtils.copyFile(new File(config.jar), new File(target, new File(config.jar).getName()));
+		for (String file : config.classpath) {
+			FileUtils.copyFile(new File(file), new File(target, new File(file).getName()));
+		}
 		writeConfig(config, new File(target, "config.json"));
 		
 		// add JRE from local or remote zip file
@@ -163,18 +179,28 @@ public class Packr {
 	private void writeConfig(Config config, File file) throws IOException {
 		StringBuilder builder = new StringBuilder();
 		builder.append("{\n");
-		builder.append("   \"jar\": \"" + new File(config.jar).getName() + "\",\n");
-		builder.append("   \"mainClass\": \"" + config.mainClass + "\",\n");
-		builder.append("   \"vmArgs\": [\n");
+		builder.append("  \"classPath\": [");
+		
+		{
+			String delim = "\n";
+			for (String f : config.classpath) {
+				builder.append(delim).append("    \"" + new File(f).getName() + "\"");
+				delim = ",\n";
+			}
+			builder.append("],\n");
+		}
+		
+		builder.append("  \"mainClass\": \"" + config.mainClass + "\",\n");
+		builder.append("  \"vmArgs\": [\n");
 		for(int i = 0; i < config.vmArgs.size(); i++) {
 			String vmArg = config.vmArgs.get(i);
-			builder.append("      \"" + vmArg + "\"");
+			builder.append("    \"" + vmArg + "\"");
 			if(i < config.vmArgs.size() - 1) {
 				builder.append(",");
 			}
 			builder.append("\n");
 		}
-		builder.append("   ]");
+		builder.append("  ]\n");
 		builder.append("}");
 		FileUtils.writeStringToFile(file, builder.toString());
 	}
@@ -185,7 +211,7 @@ public class Packr {
 		System.out.println("unpacking rt.jar");
 		ZipUtil.unpack(new File(outDir, "jre/lib/rt.jar"), new File(outDir, "jre/lib/rt"));
 		
-		if(config.platform == Platform.windows) {
+		if(config.platform == Platform.windows32 || config.platform == Platform.windows64) {
 			FileUtils.deleteDirectory(new File(outDir, "jre/bin/client"));
 			for(File file: new File(outDir, "jre/bin").listFiles()) {
 				if(file.getName().endsWith(".exe")) file.delete();
@@ -211,25 +237,27 @@ public class Packr {
 		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt"));
 		
 		// let's remove any shared libs not used on the platform, e.g. libgdx/lwjgl natives
-		File jar = new File(outDir, new File(config.jar).getName());
-		File jarDir = new File(outDir, jar.getName()+ ".tmp");
-		ZipUtil.unpack(jar, jarDir);
+		for (String classpath : config.classpath) {
+			File jar = new File(outDir, new File(classpath).getName());
+			File jarDir = new File(outDir, jar.getName()+ ".tmp");
+			ZipUtil.unpack(jar, jarDir);
 		
-		Set<String> extensions = new HashSet<String>();
-		if(config.platform != Platform.linux32 && config.platform != Platform.linux64) { extensions.add(".so"); }
-		if(config.platform != Platform.windows) { extensions.add(".dll"); }
-		if(config.platform != Platform.mac) { extensions.add(".dylib"); }
-		
-		for(Object obj: FileUtils.listFiles(jarDir, TrueFileFilter.INSTANCE , TrueFileFilter.INSTANCE )) {
-			File file = new File(obj.toString());
-			for(String extension: extensions) {
-				if(file.getName().endsWith(extension)) file.delete();
+			Set<String> extensions = new HashSet<String>();
+			if(config.platform != Platform.linux32 && config.platform != Platform.linux64) { extensions.add(".so"); }
+			if(config.platform != Platform.windows32 && config.platform != Platform.windows64) { extensions.add(".dll"); }
+			if(config.platform != Platform.mac) { extensions.add(".dylib"); }
+			
+			for(Object obj: FileUtils.listFiles(jarDir, TrueFileFilter.INSTANCE , TrueFileFilter.INSTANCE )) {
+				File file = new File(obj.toString());
+				for(String extension: extensions) {
+					if(file.getName().endsWith(extension)) file.delete();
+				}
 			}
+			
+			jar.delete();
+			ZipUtil.pack(jarDir, jar);
+			FileUtils.deleteDirectory(jarDir);
 		}
-		
-		jar.delete();
-		ZipUtil.pack(jarDir, jar);
-		FileUtils.deleteDirectory(jarDir);
 	}
 
 	private void copyResources(File targetDir, List<String> resources) throws IOException {
@@ -288,8 +316,12 @@ public class Packr {
 			config.platform = Platform.valueOf(arguments.get("platform"));
 			config.jdk = arguments.get("jdk");
 			config.executable = arguments.get("executable");
-			config.jar = arguments.get("appjar");
+			config.classpath =  Arrays.asList(arguments.get("classpath").split(";"));
+			config.iconResource = arguments.get("icon");
 			config.mainClass = arguments.get("mainclass");
+			if(arguments.get("bundleidentifier") != null) {
+				config.bundleIdentifier = arguments.get("bundleidentifier");
+			}
 			if(arguments.get("vmargs") != null) {
 				config.vmArgs = Arrays.asList(arguments.get("vmargs").split(";"));
 			}
@@ -318,12 +350,16 @@ public class Packr {
 				config.platform = Platform.valueOf(json.get("platform").asString());
 				config.jdk = json.get("jdk").asString();
 				config.executable = json.get("executable").asString();
-				config.jar = json.get("appjar").asString();
+				config.classpath = toStringArray(json.get("classpath").asArray());
+				if(json.get("icon") != null) {
+					config.iconResource = json.get("icon").asString();
+				}
 				config.mainClass = json.get("mainclass").asString();
+				if(json.get("bundleidentifier") != null) {
+					config.bundleIdentifier = json.get("bundleidentifier").asString();
+				}
 				if(json.get("vmargs") != null) {
-					for(JsonValue val: json.get("vmargs").asArray()) {
-						config.vmArgs.add(val.asString());
-					}
+					config.vmArgs = toStringArray(json.get("vmargs").asArray());
 				}
 				config.outDir = json.get("outdir").asString();
 				if(json.get("minimizejre") != null) {
@@ -362,12 +398,18 @@ public class Packr {
 	
 	private static void printHelp() {
 		System.out.println("Usage: packr <args>");
-		System.out.println("-platform <windows|linux|mac>        ... operating system to pack for");
-		System.out.println("-jdk <path-or-url>                   ... path to a JDK to be bundled (needs to fit platform).");
+		System.out.println("-platform <windows32|windows64|linux32|linux64|mac>");
+		System.out.println("                                     ... operating system to pack for");
+		System.out.println("-jdk <path-or-url>                   ... path to a JDK to be bundled (needs to fit platform)");
 		System.out.println("                                         Can be a ZIP file or URL to a ZIP file");
 		System.out.println("-executable <name>                   ... name of the executable, e.g. 'mygame', without extension");
-		System.out.println("-appjar <file>                       ... JAR file containing code and assets to be packed");
+		System.out.println("-classpath <file.jar>                ... JAR file containing code and assets to be packed");
+		System.out.println("                                         Can contain multiple JAR files, separated by ;");
+		System.out.println("-icon <file>                         ... file containing icon resources (needs to fit platform)");
+		System.out.println("                                         Only supported on OS X (.icns)");
 		System.out.println("-mainclass <main-class>              ... fully qualified main class name, e.g. com/badlogic/MyApp");
+		System.out.println("-bundleidentifier <identifier>       ... bundle identifier, e.g. com.badlogic");
+		System.out.println("                                         Only used for Info.plist on OS X");
 		System.out.println("-vmargs <args>                       ... arguments passed to the JVM, e.g. -Xmx1G, separated by ;");
 		System.out.println("-minimizejre <configfile>            ... minimize the JRE by removing folders and files specified in the config file");
 		System.out.println("                                         three config files come with packr: 'soft' and 'hard' which may or may not break your app");
@@ -391,7 +433,7 @@ public class Packr {
 		if(params.get("platform") == null) error();
 		if(params.get("jdk") == null) error();
 		if(params.get("executable") == null) error();
-		if(params.get("appjar") == null) error();
+		if(params.get("classpath") == null) error();
 		if(params.get("mainclass") == null) error();
 		if(params.get("outdir") == null) error();
 		
