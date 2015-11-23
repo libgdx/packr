@@ -55,6 +55,19 @@ static bool attachToConsole(int argc, char** argv) {
 	return attach;
 }
 
+static void printLastError() {
+
+	LPTSTR buffer;
+	DWORD errorCode = GetLastError();
+
+	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+				  nullptr, errorCode, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), (LPTSTR) &buffer, 0, nullptr);
+
+	cerr << "Error code [" << errorCode << "]: " << buffer;
+
+	LocalFree(buffer);
+}
+
 int CALLBACK WinMain(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -89,14 +102,24 @@ int main(int argc, char** argv) {
 bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM) {
 
 	HINSTANCE hinstLib = LoadLibrary(TEXT("jre\\bin\\server\\jvm.dll"));
-	if (hinstLib == NULL) {
+	if (hinstLib == nullptr) {
+		printLastError();
 		return false;
 	}
 
 	*getDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs) GetProcAddress(hinstLib, "JNI_GetDefaultJavaVMInitArgs");
-	*createJavaVM = (CreateJavaVM) GetProcAddress(hinstLib, "JNI_CreateJavaVM");
+	if (*getDefaultJavaVMInitArgs == nullptr) {
+		printLastError();
+		return false;
+	}
 
-	return (*getDefaultJavaVMInitArgs != nullptr) && (*createJavaVM != nullptr);
+	*createJavaVM = (CreateJavaVM) GetProcAddress(hinstLib, "JNI_CreateJavaVM");
+	if (*createJavaVM == nullptr) {
+		printLastError();
+		return false;
+	}
+
+	return true;
 }
 
 const char* getExecutablePath(const char* argv0) {
