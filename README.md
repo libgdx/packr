@@ -49,8 +49,8 @@ Alternatively, you can put all the command line arguments into a JSON file which
        "-Xmx1G"
     ],
     "resources": [
-        "pom.xml",
-        "src/main/resources"
+        "src/main/resources",
+        "path/to/other/assets"
     ],
     "minimizejre": "soft",
     "outdir": "out-mac"

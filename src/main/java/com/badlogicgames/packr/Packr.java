@@ -187,7 +187,7 @@ public class Packr {
 				builder.append(delim).append("    \"" + new File(f).getName() + "\"");
 				delim = ",\n";
 			}
-			builder.append("],\n");
+			builder.append("\n  ],\n");
 		}
 		
 		builder.append("  \"mainClass\": \"" + config.mainClass + "\",\n");
