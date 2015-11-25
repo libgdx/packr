@@ -43,7 +43,9 @@ Alternatively, you can put all the command line arguments into a JSON file which
     "platform": "mac",
     "jdk": "/Users/badlogic/Downloads/openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip",
     "executable": "myapp",
-    "classpath": "myapp.jar",
+    "classpath": [
+        "myapp.jar"
+    ],
     "mainclass": "com.my.app.MainClass",
     "vmargs": [
        "-Xmx1G"
