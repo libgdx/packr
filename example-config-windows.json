@@ -2,7 +2,9 @@
     "platform": "windows",
     "jdk": "C:/Users/badlogic/Downloads/openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-windows-i586-image.zip",
     "executable": "myapp",
-    "classpath": "target/packr-1.0-SNAPSHOT.jar",
+    "classpath": [
+        "target/packr-2.0-SNAPSHOT.jar"
+    ],
     "mainclass": "com.badlogicgames.packr.TestApp",
     "vmargs": [
     	"-Xmx1G"
