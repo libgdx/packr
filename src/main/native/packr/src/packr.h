@@ -15,9 +15,10 @@
  ******************************************************************************/
 #pragma once
 
+#include <functional>
 #include <jni.h>
 
-#define PACKR_VERSION_STRING "2.0beta1"
+#define PACKR_VERSION_STRING "2.0beta2"
 
 #if !defined(JNI_VERSION_1_8)
 # define JNI_VERSION_1_8 0x00010008
@@ -25,6 +26,12 @@
 
 typedef jint(JNICALL *GetDefaultJavaVMInitArgs)(void*);
 typedef jint(JNICALL *CreateJavaVM)(JavaVM**, void**, void*);
+
+typedef std::function<void* (void*)> LaunchJavaVMDelegate;
+typedef std::function<void (LaunchJavaVMDelegate delegate, const JavaVMInitArgs& args)> LaunchJavaVMCallback;
+
+#define defaultLaunchVMDelegate \
+	[](LaunchJavaVMDelegate delegate, const JavaVMInitArgs&) { delegate(nullptr); }
 
 extern "C" {
 
@@ -38,6 +45,6 @@ extern "C" {
 
 	/* entry point for all platforms - called from main()/WinMain() */
 	bool setCmdLineArguments(int argc, char** argv);
-	void* launchJavaVM(void*);
+	void launchJavaVM(LaunchJavaVMCallback callback);
 
 }

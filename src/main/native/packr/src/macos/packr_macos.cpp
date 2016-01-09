@@ -30,49 +30,78 @@ void sourceCallBack(void* info) {
 
 }
 
+
+/*
+    Simple wrapper to call std::function from a C-style function
+    signature. Usually one would use func.target<c-func>() to do
+    conversion, but I failed to get this compiling with XCode.
+*/
+static LaunchJavaVMDelegate s_delegate = NULL;
+void* launchVM(void* param) {
+    return s_delegate(param);
+}
+
 int main(int argc, char** argv) {
 
     if (!setCmdLineArguments(argc, argv)) {
         return EXIT_FAILURE;
     }
 
-    CFRunLoopSourceContext sourceContext;
-    pthread_t vmthread;
-    struct rlimit limit;
-    size_t stack_size = 0;
-    int rc = getrlimit(RLIMIT_STACK, &limit);
-    if (rc == 0) {
-        if (limit.rlim_cur != 0LL) {
-            stack_size = (size_t)limit.rlim_cur;
+    launchJavaVM([](LaunchJavaVMDelegate delegate, const JavaVMInitArgs& args) {
+
+        for (jint arg = 0; arg < args.nOptions; arg++) {
+            const char* optionString = args.options[arg].optionString;
+            if (strcmp("-XstartOnFirstThread", optionString) == 0) {
+
+                cout << "Starting JVM on main thread (-XstartOnFirstThread found) ..." << endl;
+
+                delegate(nullptr);
+                return;
+            }
         }
-    }
 
-    pthread_attr_t thread_attr;
-    pthread_attr_init(&thread_attr);
-    pthread_attr_setscope(&thread_attr, PTHREAD_SCOPE_SYSTEM);
-    pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
-    if (stack_size > 0) {
-        pthread_attr_setstacksize(&thread_attr, stack_size);
-    }
-    pthread_create(&vmthread, &thread_attr, launchJavaVM, 0);
-    pthread_attr_destroy(&thread_attr);
+        // copy delegate; see launchVM() for remarks
+        s_delegate = delegate;
 
-    /* Create a a sourceContext to be used by our source that makes */
-    /* sure the CFRunLoop doesn't exit right away */
-    sourceContext.version = 0;
-    sourceContext.info = NULL;
-    sourceContext.retain = NULL;
-    sourceContext.release = NULL;
-    sourceContext.copyDescription = NULL;
-    sourceContext.equal = NULL;
-    sourceContext.hash = NULL;
-    sourceContext.schedule = NULL;
-    sourceContext.cancel = NULL;
-    sourceContext.perform = &sourceCallBack;
+        CFRunLoopSourceContext sourceContext;
+        pthread_t vmthread;
+        struct rlimit limit;
+        size_t stack_size = 0;
+        int rc = getrlimit(RLIMIT_STACK, &limit);
+        if (rc == 0) {
+            if (limit.rlim_cur != 0LL) {
+                stack_size = (size_t)limit.rlim_cur;
+            }
+        }
 
-    CFRunLoopSourceRef sourceRef = CFRunLoopSourceCreate (NULL, 0, &sourceContext);
-    CFRunLoopAddSource (CFRunLoopGetCurrent(),sourceRef,kCFRunLoopCommonModes);
-    CFRunLoopRun();
+        pthread_attr_t thread_attr;
+        pthread_attr_init(&thread_attr);
+        pthread_attr_setscope(&thread_attr, PTHREAD_SCOPE_SYSTEM);
+        pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
+        if (stack_size > 0) {
+            pthread_attr_setstacksize(&thread_attr, stack_size);
+        }
+        pthread_create(&vmthread, &thread_attr, launchVM, 0);
+        pthread_attr_destroy(&thread_attr);
+
+        /* Create a a sourceContext to be used by our source that makes */
+        /* sure the CFRunLoop doesn't exit right away */
+        sourceContext.version = 0;
+        sourceContext.info = NULL;
+        sourceContext.retain = NULL;
+        sourceContext.release = NULL;
+        sourceContext.copyDescription = NULL;
+        sourceContext.equal = NULL;
+        sourceContext.hash = NULL;
+        sourceContext.schedule = NULL;
+        sourceContext.cancel = NULL;
+        sourceContext.perform = &sourceCallBack;
+
+        CFRunLoopSourceRef sourceRef = CFRunLoopSourceCreate(NULL, 0, &sourceContext);
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), sourceRef, kCFRunLoopCommonModes);
+        CFRunLoopRun();
+
+    });
 
     return 0;
 }

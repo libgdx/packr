@@ -344,7 +344,7 @@ bool setCmdLineArguments(int argc, char** argv) {
 			} else if (showVersion) {
 
 				cout << executableName << " version " << PACKR_VERSION_STRING << endl;
-			
+
 			} else {
 
 				// evalute parameters
@@ -394,7 +394,7 @@ bool setCmdLineArguments(int argc, char** argv) {
 	return showHelp == 0 && showVersion == 0;
 }
 
-void* launchJavaVM(void*) {
+void launchJavaVM(LaunchJavaVMCallback callback) {
 
 	// change working directory
 
@@ -478,80 +478,92 @@ void* launchJavaVM(void*) {
 	args.nOptions = vmArgc;
 	args.options = options;
 
-	// create JVM
+	/*
+		Reroute JVM creation through platform-dependent code.
 
-	JavaVM* jvm = nullptr;
-	JNIEnv* env = nullptr;
+		On OS X this is used to decide if packr needs to spawn an additional thread, and create
+		its own RunLoop.
 
-	cout << "Creating Java VM ..." << endl;
+		Done as lambda to capture local variables, and remain in function scope.
+	*/
 
-	if (createJavaVM(&jvm, (void**) &env, &args) < 0) {
-		cout << "Error: failed to create Java VM!" << endl;
-		exit(EXIT_FAILURE);
-	}
+	callback([&](void*) {
 
-	// create array of arguments to pass to Java main()
+		// create JVM
 
-	cout << "Passing command line arguments ..." << endl;
+		JavaVM* jvm = nullptr;
+		JNIEnv* env = nullptr;
 
-	jobjectArray appArgs = env->NewObjectArray(cmdLineArgc, env->FindClass("java/lang/String"), nullptr);
-	for (size_t i = 0; i < cmdLineArgc; i++) {
-		cout << "  # " << cmdLineArgv[i] << endl;
-		jstring arg = env->NewStringUTF(cmdLineArgv[i]);
-		env->SetObjectArrayElement(appArgs, i, arg);
-	}
+		cout << "Creating Java VM ..." << endl;
 
-	// load main class & method from classpath
+		if (createJavaVM(&jvm, (void**) &env, &args) < 0) {
+			cout << "Error: failed to create Java VM!" << endl;
+			exit(EXIT_FAILURE);
+		}
 
-	cout << "Loading JAR file ..." << endl;
+		// create array of arguments to pass to Java main()
 
-	if (!hasJsonValue(jsonRoot, "mainClass", sajson::TYPE_STRING)) {
-		cerr << "Error: no 'mainClass' element found in config!" << endl;
-		exit(EXIT_FAILURE);
-	}
+		cout << "Passing command line arguments ..." << endl;
 
-	if (!hasJsonValue(jsonRoot, "classPath", sajson::TYPE_ARRAY)) {
-		cerr << "Error: no 'classPath' array found in config!" << endl;
-		exit(EXIT_FAILURE);
-	}
+		jobjectArray appArgs = env->NewObjectArray(cmdLineArgc, env->FindClass("java/lang/String"), nullptr);
+		for (size_t i = 0; i < cmdLineArgc; i++) {
+			cout << "  # " << cmdLineArgv[i] << endl;
+			jstring arg = env->NewStringUTF(cmdLineArgv[i]);
+			env->SetObjectArrayElement(appArgs, i, arg);
+		}
 
-	const string main = getJsonValue(jsonRoot, "mainClass").as_string();
-	sajson::value jsonClassPath = getJsonValue(jsonRoot, "classPath");
-	vector<string> classPath = extractClassPath(jsonClassPath);
+		// load main class & method from classpath
 
-	jclass mainClass = nullptr;
-	jmethodID mainMethod = nullptr;
+		cout << "Loading JAR file ..." << endl;
 
-	if (loadStaticMethod(env, classPath, main, &mainClass, &mainMethod) != 0) {
-		cerr << "Error: failed to load/find main class " << main << endl;
-		exit(EXIT_FAILURE);
-	}
+		if (!hasJsonValue(jsonRoot, "mainClass", sajson::TYPE_STRING)) {
+			cerr << "Error: no 'mainClass' element found in config!" << endl;
+			exit(EXIT_FAILURE);
+		}
 
-	// call main() method
+		if (!hasJsonValue(jsonRoot, "classPath", sajson::TYPE_ARRAY)) {
+			cerr << "Error: no 'classPath' array found in config!" << endl;
+			exit(EXIT_FAILURE);
+		}
 
-	cout << "Invoking static " << main << ".main() function ..." << endl;
+		const string main = getJsonValue(jsonRoot, "mainClass").as_string();
+		sajson::value jsonClassPath = getJsonValue(jsonRoot, "classPath");
+		vector<string> classPath = extractClassPath(jsonClassPath);
 
-	env->CallStaticVoidMethod(mainClass, mainMethod, appArgs);
+		jclass mainClass = nullptr;
+		jmethodID mainMethod = nullptr;
 
-	// cleanup
+		if (loadStaticMethod(env, classPath, main, &mainClass, &mainMethod) != 0) {
+			cerr << "Error: failed to load/find main class " << main << endl;
+			exit(EXIT_FAILURE);
+		}
 
-	for (size_t vmArg = 0; vmArg < vmArgc; vmArg++) {
-		free(options[vmArg].optionString);
-	}
+		// call main() method
 
-	delete[] options;
+		cout << "Invoking static " << main << ".main() function ..." << endl;
 
-	for (size_t cmdLineArg = 0; cmdLineArg < cmdLineArgc; cmdLineArg++) {
-		free(cmdLineArgv[cmdLineArg]);
-	}
+		env->CallStaticVoidMethod(mainClass, mainMethod, appArgs);
 
-	delete[] cmdLineArgv;
+		// cleanup
 
-	// blocks this thread until the Java main() method exits
+		for (size_t vmArg = 0; vmArg < vmArgc; vmArg++) {
+			free(options[vmArg].optionString);
+		}
 
-	jvm->DestroyJavaVM();
+		delete[] options;
 
-	cout << "Destroyed Java VM ..." << endl;
+		for (size_t cmdLineArg = 0; cmdLineArg < cmdLineArgc; cmdLineArg++) {
+			free(cmdLineArgv[cmdLineArg]);
+		}
 
-	return nullptr;
+		delete[] cmdLineArgv;
+
+		// blocks this thread until the Java main() method exits
+
+		jvm->DestroyJavaVM();
+
+		cout << "Destroyed Java VM ..." << endl;
+
+		return nullptr;
+	}, args);
 }
