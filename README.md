@@ -16,7 +16,7 @@ java -jar packr.jar \
      -classpath myapp.jar \
      -mainclass "com.my.app.MainClass" \
      -vmargs "-Xmx1G" \
-     -resources pom.xml;src/main/resources \
+     -resources src/main/resources;path/to/other/assets \
      -minimizejre "soft" \
      -outdir out
 ```
@@ -37,7 +37,6 @@ java -jar packr.jar \
 
 Alternatively, you can put all the command line arguments into a JSON file which might look like this:
 
-> my-packaging-config.json
 ```json
 {
     "platform": "mac",
@@ -62,7 +61,7 @@ Alternatively, you can put all the command line arguments into a JSON file which
 You can then invoke the tool like this:
 
 ```bash
-java -jar packr.jar my-packaging-config.json
+java -jar packr.jar my-packr-config.json
 ```
 
 Finally, you can use packr from within your code. Just add the JAR file to your project, either manually, or via the following Maven dependency:
@@ -145,17 +144,17 @@ outdir/
          icons.icns [if config.icon is set]
 ```
 
-You can futher modify the Info.plist to your liking, e.g. add icons, a bundle identifier etc. If your `outdir` has the `.app` extension it will be treated as an application bundle by Mac OS X.
+You can further modify the Info.plist to your liking, e.g. add icons, a bundle identifier etc. If your `outdir` has the `.app` extension it will be treated as an application bundle by Mac OS X.
 
 ## Executable command line interface
 
 By default, the native executables forward any command line parameters to your Java application's main() function. So, with the configurations above, `./myapp -x y.z` is passed as `com.my.app.MainClass.main(new String[] {"-x", "y.z" })`.
 
-The executables themselves expose an own interface, which has to be explicitely enabled by passing `-c` or `--cli` as the **very first** parameter. In this case, a special delimiter paramter `--` is used to separate the native CLI from parameters to be passed to Java. In this case, the example above would be equal to `./myapp -c [arguments] -- -x y.z`.
+The executables themselves expose an own interface, which has to be explicitly enabled by passing `-c` or `--cli` as the **very first** parameter. In this case, a special delimiter parameter `--` is used to separate the native CLI from parameters to be passed to Java. In this case, the example above would be equal to `./myapp -c [arguments] -- -x y.z`.
 
-Try `./myapp -c --help` for a list of available options.
+Try `./myapp -c --help` for a list of available options. They are also listed [here](https://github.com/libgdx/packr/blob/master/src/main/native/README.md#command-line-interface).
 
-The Windows executables do not show any output by default. Here you can use `myapp.exe -c --console --help` to spawn a console window, making terminal output visible.
+> Note: On Windows, the executable does not show any output by default. Here you can use `myapp.exe -c --console --help` to spawn a console window, making terminal output visible.
 
 ## Building
 
@@ -167,13 +166,14 @@ mvn clean package
 
 This will create a `packr-VERSION.jar` file in `target` which you can invoke as described in the Usage section above.
 
-If you want to compile the native executables used by packr, please follow [these instructions](https://github.com/libgdx/packr/blob/master/src/main/native/README.md). Each of the build scripts will create executable files for the specific platform and copy them to src/main/resources.
+If you want to compile the native executables, please follow [these instructions](https://github.com/libgdx/packr/blob/master/src/main/native/README.md). Each of the build scripts will create executable files for the specific platform and copy them to src/main/resources.
 
 ## Limitations
 
   * Icons aren't set yet on Windows and Linux, you need to do that manually.
   * Minimum platform requirement on MacOS is OS X 10.7.
-  * JRE minimization is very conservative. Depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr
+  * JRE minimization is very conservative. Depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr.
+  * On MacOS, the JVM is spawned in its own thread by default, which is a requirement of AWT. This does not work with code based on LWJGL3/GLFW, which needs the JVM be spawned on the main thread. You can enforce the latter with the `-XstartOnFirstThread` VM argument in your packr config.
 
 ## License & Contributions
 
