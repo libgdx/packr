@@ -7,12 +7,12 @@
     ],
     "mainclass": "com.badlogicgames.packr.TestApp",
     "vmargs": [
-    	"-Xmx1G"
+    	"Xmx1G"
     ],
     "resources": [
         "pom.xml",
         "src/main/resources"
     ],
     "minimizejre": "soft",
-    "outdir": "out-mac"
+    "output": "out-mac"
 }

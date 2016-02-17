@@ -1,12 +1,51 @@
-jre/lib/rt/com/sun/corba
-jre/lib/rt/com/sun/jmx
-jre/lib/rt/com/sun/jndi 
-jre/lib/rt/com/sun/media
-jre/lib/rt/com/sun/naming
-jre/lib/rt/com/sun/org
-jre/lib/rt/com/sun/rowset
-jre/lib/rt/com/sun/script
-jre/lib/rt/com/sun/xml
-jre/lib/rt/sun/applet
-jre/lib/rt/sun/corba
-jre/lib/rt/sun/management
+{
+  "reduce": [
+    {
+      "archive": "jre/lib/rt.jar",
+      "paths": [
+        "com/sun/corba",
+        "com/sun/jmx",
+        "com/sun/jndi",
+        "com/sun/media",
+        "com/sun/naming",
+        "com/sun/org",
+        "com/sun/rowset",
+        "com/sun/script",
+        "com/sun/xml",
+        "sun/applet",
+        "sun/corba",
+        "sun/management"
+      ]
+    },
+    {
+      "archive": "jre/lib/charsets.jar",
+      "paths": [
+      ]
+    },
+    {
+      "archive": "jre/lib/jsse.jar",
+      "paths": [
+      ]
+    },
+    {
+      "archive": "jre/lib/resources.jar",
+      "paths": [
+      ]
+    }
+  ],
+  "remove": [
+    {
+      "platform": "*",
+      "paths": [
+        "jre/lib/rhino.jar"
+      ]
+    },
+    {
+      "platform": "windows",
+      "paths": [
+        "jre/bin/*.exe",
+        "jre/bin/client"
+      ]
+    }
+  ]
+}
