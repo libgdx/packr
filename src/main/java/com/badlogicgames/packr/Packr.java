@@ -351,7 +351,7 @@ public class Packr {
 				config.vmArgs = Arrays.asList(arguments.get("vmargs").split(";"));
 			}
 			config.outDir = arguments.get("outdir");
-			if (arguments.get("minimizejre") != null) {
+			if (arguments.get("minimizejre") != null && arguments.get("jre") == null) {
 				if (new File(arguments.get("minimizejre")).exists()) {
 					config.minimizeJre = FileUtils.readFileToString(new File(arguments.get("minimizejre")))
 							.split("\r?\n");
@@ -392,7 +392,7 @@ public class Packr {
 					config.vmArgs = toStringArray(json.get("vmargs").asArray());
 				}
 				config.outDir = json.get("outdir").asString();
-				if (json.get("minimizejre") != null) {
+				if (json.get("minimizejre") != null && json.get("jre") == null) {
 					if (new File(json.get("minimizejre").asString()).exists()) {
 						config.minimizeJre = FileUtils.readFileToString(new File(json.get("minimizejre").asString()))
 								.split("\r?\n");
