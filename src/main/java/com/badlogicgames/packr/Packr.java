@@ -63,6 +63,9 @@ public class Packr {
 		public String outDir;
 		public String iconResource;
 		public String bundleIdentifier = "com.yourcompany.identifier";
+		public String version;
+		public String versionMajor;
+		public String versionMinor;
 	}
 
 	public void pack(Config config) throws IOException {
@@ -87,6 +90,9 @@ public class Packr {
 		Map<String, String> values = new HashMap<String, String>();
 		values.put("${executable}", config.executable);
 		values.put("${bundleIdentifier}", config.bundleIdentifier);
+		values.put("${version}", config.version);
+		values.put("${versionMajor}", config.versionMajor);
+		values.put("${versionMinor}", config.versionMinor);
 
 		// if this is a mac build, let's create the app bundle structure
 		if (config.platform == Platform.mac) {
@@ -334,84 +340,148 @@ public class Packr {
 	}
 
 	public static void main(String[] args) throws IOException {
-		if (args.length > 1) {
-			Map<String, String> arguments = parseArgs(args);
-			Config config = new Config();
-			config.platform = Platform.valueOf(arguments.get("platform"));
-			config.jdk = arguments.get("jdk");
-			config.jre = arguments.get("jre");
-			config.executable = arguments.get("executable");
-			config.classpath = Arrays.asList(arguments.get("classpath").split(";"));
-			config.iconResource = arguments.get("icon");
-			config.mainClass = arguments.get("mainclass");
-			if (arguments.get("bundleidentifier") != null) {
-				config.bundleIdentifier = arguments.get("bundleidentifier");
-			}
-			if (arguments.get("vmargs") != null) {
-				config.vmArgs = Arrays.asList(arguments.get("vmargs").split(";"));
-			}
-			config.outDir = arguments.get("outdir");
-			if (arguments.get("minimizejre") != null && arguments.get("jre") == null) {
-				if (new File(arguments.get("minimizejre")).exists()) {
-					config.minimizeJre = FileUtils.readFileToString(new File(arguments.get("minimizejre")))
-							.split("\r?\n");
-				} else {
-					InputStream in = Packr.class.getResourceAsStream("/minimize/" + arguments.get("minimizejre"));
-					if (in != null) {
-						config.minimizeJre = IOUtils.toString(in).split("\r?\n");
-						in.close();
-					} else {
-						config.minimizeJre = new String[0];
-					}
-				}
-			}
-			if (arguments.get("resources") != null)
-				config.resources = Arrays.asList(arguments.get("resources").split(";"));
-			new Packr().pack(config);
+
+		if (args.length == 0) {
+			printHelp();
+			return;
+		}
+
+		Packr packr = new Packr();
+		if (args.length == 1) {
+			Config config = prepareConfigFromFile(args[0]);
+			packr.pack(config);
+			return;
 		} else {
-			if (args.length == 0) {
-				printHelp();
+			Map<String, String> arguments = parseArgs(args);
+			Config config = null;
+			if (arguments.containsKey("config")) {
+				// Prepare config based on file contents
+				config = prepareConfigFromFile(arguments.get("config"));
+
+				// Override config version values with args if provided
+				setConfigVersionFromArgs(arguments, config);
 			} else {
-				JsonObject json = JsonObject.readFrom(FileUtils.readFileToString(new File(args[0])));
-				Config config = new Config();
-				config.platform = Platform.valueOf(json.get("platform").asString());
-				if (json.get("jdk") != null)
-					config.jdk = json.get("jdk").asString();
-				if (json.get("jre") != null)
-					config.jre = json.get("jre").asString();
-				config.executable = json.get("executable").asString();
-				config.classpath = toStringArray(json.get("classpath").asArray());
-				if (json.get("icon") != null) {
-					config.iconResource = json.get("icon").asString();
-				}
-				config.mainClass = json.get("mainclass").asString();
-				if (json.get("bundleidentifier") != null) {
-					config.bundleIdentifier = json.get("bundleidentifier").asString();
-				}
-				if (json.get("vmargs") != null) {
-					config.vmArgs = toStringArray(json.get("vmargs").asArray());
-				}
-				config.outDir = json.get("outdir").asString();
-				if (json.get("minimizejre") != null && json.get("jre") == null) {
-					if (new File(json.get("minimizejre").asString()).exists()) {
-						config.minimizeJre = FileUtils.readFileToString(new File(json.get("minimizejre").asString()))
-								.split("\r?\n");
-					} else {
-						InputStream in = Packr.class.getResourceAsStream("/minimize/" + json.get("minimizejre"));
-						if (in != null) {
-							config.minimizeJre = IOUtils.toString(in).split("\r?\n");
-							in.close();
-						} else {
-							config.minimizeJre = new String[0];
-						}
-					}
-				}
-				if (json.get("resources") != null) {
-					config.resources = toStringArray(json.get("resources").asArray());
-				}
-				new Packr().pack(config);
+				config = prepareConfigFromArgs(arguments);
+			}
+			packr.pack(config);
+		}
+	}
+
+	private static void setConfigVersionFromArgs(Map<String, String> arguments, Config config) {
+		if (arguments.size() > 1) {
+			if (arguments.get("version") != null) {
+				config.version = arguments.get("version");
+			} else {
+				config.version = "1.0";
+			}
+
+			if (arguments.get("versionMajor") != null) {
+				config.versionMajor = arguments.get("versionMajor");
+			} else {
+				config.versionMajor = "1";
+			}
+
+			if (arguments.get("versionMinor") != null) {
+				config.versionMinor = arguments.get("versionMinor");
+			} else {
+				config.versionMinor = "0";
 			}
 		}
+	}
+
+	private static Config prepareConfigFromArgs(Map<String, String> arguments) throws IOException {
+		Config config = new Config();
+		config.platform = Platform.valueOf(arguments.get("platform"));
+		config.jdk = arguments.get("jdk");
+		config.jre = arguments.get("jre");
+		config.executable = arguments.get("executable");
+		config.classpath = Arrays.asList(arguments.get("classpath").split(";"));
+		config.iconResource = arguments.get("icon");
+		config.mainClass = arguments.get("mainclass");
+		if (arguments.get("bundleidentifier") != null) {
+			config.bundleIdentifier = arguments.get("bundleidentifier");
+		}
+
+		setConfigVersionFromArgs(arguments, config);
+
+		if (arguments.get("vmargs") != null) {
+			config.vmArgs = Arrays.asList(arguments.get("vmargs").split(";"));
+		}
+		config.outDir = arguments.get("outdir");
+		if (arguments.get("minimizejre") != null && arguments.get("jre") == null) {
+			if (new File(arguments.get("minimizejre")).exists()) {
+				config.minimizeJre = FileUtils.readFileToString(new File(arguments.get("minimizejre"))).split("\r?\n");
+			} else {
+				InputStream in = Packr.class.getResourceAsStream("/minimize/" + arguments.get("minimizejre"));
+				if (in != null) {
+					config.minimizeJre = IOUtils.toString(in).split("\r?\n");
+					in.close();
+				} else {
+					config.minimizeJre = new String[0];
+				}
+			}
+		}
+		if (arguments.get("resources") != null)
+			config.resources = Arrays.asList(arguments.get("resources").split(";"));
+
+		return config;
+	}
+
+	private static Config prepareConfigFromFile(String configFile) throws IOException {
+		JsonObject json = JsonObject.readFrom(FileUtils.readFileToString(new File(configFile)));
+		Config config = new Config();
+		config.platform = Platform.valueOf(json.get("platform").asString());
+		if (json.get("jdk") != null)
+			config.jdk = json.get("jdk").asString();
+		if (json.get("jre") != null)
+			config.jre = json.get("jre").asString();
+		config.executable = json.get("executable").asString();
+		config.classpath = toStringArray(json.get("classpath").asArray());
+		if (json.get("icon") != null) {
+			config.iconResource = json.get("icon").asString();
+		}
+		config.mainClass = json.get("mainclass").asString();
+		if (json.get("bundleidentifier") != null) {
+			config.bundleIdentifier = json.get("bundleidentifier").asString();
+		}
+		if (json.get("version") != null) {
+			config.version = json.get("version").asString();
+		} else {
+			config.version = "1.0";
+		}
+		if (json.get("versionMajor") != null) {
+			config.versionMajor = json.get("versionMajor").asString();
+		} else {
+			config.versionMajor = "1";
+		}
+		if (json.get("versionMinor") != null) {
+			config.versionMinor = json.get("versionMinor").asString();
+		} else {
+			config.versionMinor = "0";
+		}
+		if (json.get("vmargs") != null) {
+			config.vmArgs = toStringArray(json.get("vmargs").asArray());
+		}
+		config.outDir = json.get("outdir").asString();
+		if (json.get("minimizejre") != null && json.get("jre") == null) {
+			if (new File(json.get("minimizejre").asString()).exists()) {
+				config.minimizeJre = FileUtils.readFileToString(new File(json.get("minimizejre").asString()))
+						.split("\r?\n");
+			} else {
+				InputStream in = Packr.class.getResourceAsStream("/minimize/" + json.get("minimizejre"));
+				if (in != null) {
+					config.minimizeJre = IOUtils.toString(in).split("\r?\n");
+					in.close();
+				} else {
+					config.minimizeJre = new String[0];
+				}
+			}
+		}
+		if (json.get("resources") != null) {
+			config.resources = toStringArray(json.get("resources").asArray());
+		}
+
+		return config;
 	}
 
 	private static List<String> toStringArray(JsonArray array) {
@@ -428,7 +498,15 @@ public class Packr {
 	}
 
 	private static void printHelp() {
-		System.out.println("Usage: packr <args>");
+		System.out.println("Usages:");
+		System.out.println("------------------------------------------------------------------------");
+		System.out.println("packr <args>");
+		System.out.println("packr -config <configFile> <args>");
+		System.out.println("");
+		System.out.println("Args:");
+		System.out.println("------------------------------------------------------------------------");
+		System.out.println("-config <file>");
+		System.out.println("                                     ... config file to use");
 		System.out.println("-platform <windows32|windows64|linux32|linux64|mac>");
 		System.out.println("                                     ... operating system to pack for");
 		System.out.println(
@@ -455,13 +533,16 @@ public class Packr {
 				"-resources <files-and-folders>       ... additional files and folders to be packed next to the");
 		System.out.println("                                         executable. Entries are separated by a ;");
 		System.out.println("-outdir <dir>                        ... output directory");
+		System.out.println(
+				"-version <version>                   ... version to set in CFBundleShortVersionString in Info.plist");
+		System.out
+				.println("-versionMajor <majorVersion>         ... version to set in IFMajorVersion key in Info.plist");
+		System.out
+				.println("-versionMinor <minorVersion>         ... version to set in IFMinorVersion key in Info.plist");
+		System.out.println("");
 	}
 
 	private static Map<String, String> parseArgs(String[] args) {
-		if (args.length < 12) {
-			error();
-		}
-
 		Map<String, String> params = new HashMap<String, String>();
 		for (int i = 0; i < args.length; i += 2) {
 			String param = args[i].replace("-", "");
@@ -469,18 +550,20 @@ public class Packr {
 			params.put(param, value);
 		}
 
-		if (params.get("platform") == null)
-			error();
-		if (params.get("jdk") == null)
-			error();
-		if (params.get("executable") == null)
-			error();
-		if (params.get("classpath") == null)
-			error();
-		if (params.get("mainclass") == null)
-			error();
-		if (params.get("outdir") == null)
-			error();
+		if (!params.containsKey("config")) {
+			if (params.get("platform") == null)
+				error();
+			if (params.get("jdk") == null)
+				error();
+			if (params.get("executable") == null)
+				error();
+			if (params.get("classpath") == null)
+				error();
+			if (params.get("mainclass") == null)
+				error();
+			if (params.get("outdir") == null)
+				error();
+		}
 
 		return params;
 	}
