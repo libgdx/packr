@@ -13,15 +13,15 @@
   <key>CFBundleIconFile</key>
   <string>icons.icns</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.0</string>
+  <string>${version}</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>IFMajorVersion</key>
-  <integer>0</integer>
+  <integer>${versionMajor}</integer>
   <key>IFMinorVersion</key>
-  <integer>1</integer>
+  <integer>${versionMinor}</integer>
   <key>NSHighResolutionCapable</key>
   <true/>
 </dict>

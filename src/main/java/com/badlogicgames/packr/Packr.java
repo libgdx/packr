@@ -39,23 +39,21 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 
 /**
- * Takes a couple of parameters and a JRE and bundles them into a platform specific 
- * distributable (zip on Windows and Linux, app bundle on Mac OS X).
+ * Takes a couple of parameters and a JRE and bundles them into a platform
+ * specific distributable (zip on Windows and Linux, app bundle on Mac OS X).
+ * 
  * @author badlogic
  *
  */
 public class Packr {
 	public enum Platform {
-		windows32,
-		windows64,
-		linux32,
-		linux64,
-		mac
+		windows32, windows64, linux32, linux64, mac
 	}
-	
+
 	public static class Config {
 		public Platform platform;
 		public String jdk;
+		public String jre;
 		public String executable;
 		public List<String> classpath = new ArrayList<String>();
 		public String mainClass;
@@ -65,69 +63,76 @@ public class Packr {
 		public String outDir;
 		public String iconResource;
 		public String bundleIdentifier = "com.yourcompany.identifier";
+		public String version;
+		public String versionMajor;
+		public String versionMinor;
 	}
-	
+
 	public void pack(Config config) throws IOException {
 		// create output dir
 		File out = new File(config.outDir);
 		File target = out;
-		if(out.exists()) {
-			if(new File(".").equals(out)) {
+		if (out.exists()) {
+			if (new File(".").equals(out)) {
 				System.out.println("Output directory equals working directory, aborting");
 				System.exit(-1);
 			}
-			if(new File("/").equals(out)) {
+			if (new File("/").equals(out)) {
 				System.out.println("Output directory equals root, aborting");
 				System.exit(-1);
 			}
-			
+
 			System.out.println("Output directory '" + out.getAbsolutePath() + "' exists, deleting");
 			FileUtils.deleteDirectory(out);
 		}
 		out.mkdirs();
-		
+
 		Map<String, String> values = new HashMap<String, String>();
 		values.put("${executable}", config.executable);
 		values.put("${bundleIdentifier}", config.bundleIdentifier);
+		values.put("${version}", config.version);
+		values.put("${versionMajor}", config.versionMajor);
+		values.put("${versionMinor}", config.versionMinor);
 
 		// if this is a mac build, let's create the app bundle structure
-		if(config.platform == Platform.mac) {
+		if (config.platform == Platform.mac) {
 			new File(out, "Contents").mkdirs();
-			FileUtils.writeStringToFile(new File(out, "Contents/Info.plist"), readResourceAsString("/Info.plist", values));
+			FileUtils.writeStringToFile(new File(out, "Contents/Info.plist"),
+					readResourceAsString("/Info.plist", values));
 			target = new File(out, "Contents/MacOS");
 			target.mkdirs();
 			File resources = new File(out, "Contents/Resources");
 			resources.mkdirs();
-			if(config.iconResource != null) {
+			if (config.iconResource != null) {
 				// copy icon to Contents/Resources/icons.icns
 				File icons = new File(config.iconResource);
-				if(icons.exists()) {
+				if (icons.exists()) {
 					FileUtils.copyFile(new File(config.iconResource), new File(resources, "icons.icns"));
 				}
 			}
 		}
-		
+
 		// write jar, exe and config to target folder
 		byte[] exe = null;
 		String extension = "";
-		switch(config.platform) {
-			case windows32:
-				exe = readResource("/packr-windows.exe");
-				extension = ".exe";
-				break;
-			case windows64:
-				exe = readResource("/packr-windows-x64.exe");
-				extension = ".exe";
-				break;
-			case linux32:
-				exe = readResource("/packr-linux");
-				break;
-			case linux64:
-				exe = readResource("/packr-linux-x64");
-				break;
-			case mac:
-				exe = readResource("/packr-mac");
-				break;
+		switch (config.platform) {
+		case windows32:
+			exe = readResource("/packr-windows.exe");
+			extension = ".exe";
+			break;
+		case windows64:
+			exe = readResource("/packr-windows-x64.exe");
+			extension = ".exe";
+			break;
+		case linux32:
+			exe = readResource("/packr-linux");
+			break;
+		case linux64:
+			exe = readResource("/packr-linux-x64");
+			break;
+		case mac:
+			exe = readResource("/packr-mac");
+			break;
 		}
 		FileUtils.writeByteArrayToFile(new File(target, config.executable + extension), exe);
 		new File(target, config.executable + extension).setExecutable(true);
@@ -135,52 +140,64 @@ public class Packr {
 			FileUtils.copyFile(new File(file), new File(target, new File(file).getName()));
 		}
 		writeConfig(config, new File(target, "config.json"));
-		
-		// add JRE from local or remote zip file
-		File jdkFile = null;		
-		if(config.jdk.startsWith("http://") || config.jdk.startsWith("https://")) {
-			System.out.println("Downloading JDK from '" + config.jdk + "'");
-			jdkFile = new File(target, "jdk.zip");
-			InputStream in = new URL(config.jdk).openStream();
-			OutputStream outJdk = FileUtils.openOutputStream(jdkFile);
-			IOUtils.copy(in, outJdk);
-			in.close();
-			outJdk.close();
+
+		if (config.jre != null && !config.jre.isEmpty()) {
+			// add JRE from zip
+			System.out.println("Adding JRE from zip " + config.jre);
+			File jreFile = new File(config.jre);
+			File tmp = new File(target, "tmp");
+			tmp.mkdirs();
+			ZipUtil.unpack(jreFile, tmp);
+			FileUtils.copyDirectory(tmp, new File(target, "jre"));
+			FileUtils.deleteDirectory(tmp);
 		} else {
-			jdkFile = new File(config.jdk);			
+			// add JRE from local or remote zip file packed inside JDK
+
+			File jdkFile = null;
+			if (config.jdk.startsWith("http://") || config.jdk.startsWith("https://")) {
+				System.out.println("Downloading JDK from '" + config.jdk + "'");
+				jdkFile = new File(target, "jdk.zip");
+				InputStream in = new URL(config.jdk).openStream();
+				OutputStream outJdk = FileUtils.openOutputStream(jdkFile);
+				IOUtils.copy(in, outJdk);
+				in.close();
+				outJdk.close();
+			} else {
+				jdkFile = new File(config.jdk);
+			}
+			File tmp = new File(target, "tmp");
+			tmp.mkdirs();
+			System.out.println("Unpacking JRE");
+			ZipUtil.unpack(jdkFile, tmp);
+			File jre = searchJre(tmp);
+			if (jre == null) {
+				System.out.println("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
+				System.exit(-1);
+			}
+			FileUtils.copyDirectory(jre, new File(target, "jre"));
+			FileUtils.deleteDirectory(tmp);
+			if (config.jdk.startsWith("http://") || config.jdk.startsWith("https://")) {
+				jdkFile.delete();
+			}
 		}
-		File tmp = new File(target, "tmp");
-		tmp.mkdirs();
-		System.out.println("Unpacking JRE");
-		ZipUtil.unpack(jdkFile, tmp);
-		File jre = searchJre(tmp);
-		if(jre == null) {
-			System.out.println("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
-			System.exit(-1);
-		}
-		FileUtils.copyDirectory(jre, new File(target, "jre"));
-		FileUtils.deleteDirectory(tmp);
-		if(config.jdk.startsWith("http://") || config.jdk.startsWith("https://")) {
-			jdkFile.delete();
-		}
-		
+
 		// copy resources
 		System.out.println("copying resources");
 		copyResources(target, config.resources);
-		
-		// perform tree shaking		
-		if(config.minimizeJre != null) {	
-			minimizeJre(config, target);			
+
+		// perform tree shaking
+		if (config.minimizeJre != null) {
+			minimizeJre(config, target);
 		}
-		
+
 		System.out.println("Done!");
 	}
-	
+
 	private void writeConfig(Config config, File file) throws IOException {
 		StringBuilder builder = new StringBuilder();
 		builder.append("{\n");
 		builder.append("  \"classPath\": [");
-		
+
 		{
 			String delim = "\n";
 			for (String f : config.classpath) {
@@ -189,13 +206,13 @@ public class Packr {
 			}
 			builder.append("\n  ],\n");
 		}
-		
+
 		builder.append("  \"mainClass\": \"" + config.mainClass + "\",\n");
 		builder.append("  \"vmArgs\": [\n");
-		for(int i = 0; i < config.vmArgs.size(); i++) {
+		for (int i = 0; i < config.vmArgs.size(); i++) {
 			String vmArg = config.vmArgs.get(i);
 			builder.append("    \"" + vmArg + "\"");
-			if(i < config.vmArgs.size() - 1) {
+			if (i < config.vmArgs.size() - 1) {
 				builder.append(",");
 			}
 			builder.append("\n");
@@ -210,50 +227,61 @@ public class Packr {
 		System.out.println("minimizing JRE");
 		System.out.println("unpacking rt.jar");
 		ZipUtil.unpack(new File(outDir, "jre/lib/rt.jar"), new File(outDir, "jre/lib/rt"));
-		
-		if(config.platform == Platform.windows32 || config.platform == Platform.windows64) {
+
+		if (config.platform == Platform.windows32 || config.platform == Platform.windows64) {
 			FileUtils.deleteDirectory(new File(outDir, "jre/bin/client"));
-			for(File file: new File(outDir, "jre/bin").listFiles()) {
-				if(file.getName().endsWith(".exe")) file.delete();
+			for (File file : new File(outDir, "jre/bin").listFiles()) {
+				if (file.getName().endsWith(".exe"))
+					file.delete();
 			}
 		} else {
 			FileUtils.deleteDirectory(new File(outDir, "jre/bin"));
 		}
-		for(String minimizedDir : config.minimizeJre) {
+		for (String minimizedDir : config.minimizeJre) {
 			minimizedDir = minimizedDir.trim();
 			File file = new File(outDir, minimizedDir);
 			try {
-				if(file.isDirectory()) FileUtils.deleteDirectory(new File(outDir, minimizedDir));
-				else file.delete();
+				if (file.isDirectory())
+					FileUtils.deleteDirectory(new File(outDir, minimizedDir));
+				else
+					file.delete();
 			} catch (Exception e) {
 				System.out.println("Failed to delete file " + file.getPath() + ": " + e.getMessage());
 			}
 		}
 		new File(outDir, "jre/lib/rhino.jar").delete();
-		
+
 		System.out.println("packing rt.jar");
 		new File(outDir, "jre/lib/rt.jar").delete();
 		ZipUtil.pack(new File(outDir, "jre/lib/rt"), new File(outDir, "jre/lib/rt.jar"));
 		FileUtils.deleteDirectory(new File(outDir, "jre/lib/rt"));
-		
-		// let's remove any shared libs not used on the platform, e.g. libgdx/lwjgl natives
+
+		// let's remove any shared libs not used on the platform, e.g.
+		// libgdx/lwjgl natives
 		for (String classpath : config.classpath) {
 			File jar = new File(outDir, new File(classpath).getName());
-			File jarDir = new File(outDir, jar.getName()+ ".tmp");
+			File jarDir = new File(outDir, jar.getName() + ".tmp");
 			ZipUtil.unpack(jar, jarDir);
-		
+
 			Set<String> extensions = new HashSet<String>();
-			if(config.platform != Platform.linux32 && config.platform != Platform.linux64) { extensions.add(".so"); }
-			if(config.platform != Platform.windows32 && config.platform != Platform.windows64) { extensions.add(".dll"); }
-			if(config.platform != Platform.mac) { extensions.add(".dylib"); }
-			
-			for(Object obj: FileUtils.listFiles(jarDir, TrueFileFilter.INSTANCE , TrueFileFilter.INSTANCE )) {
+			if (config.platform != Platform.linux32 && config.platform != Platform.linux64) {
+				extensions.add(".so");
+			}
+			if (config.platform != Platform.windows32 && config.platform != Platform.windows64) {
+				extensions.add(".dll");
+			}
+			if (config.platform != Platform.mac) {
+				extensions.add(".dylib");
+			}
+
+			for (Object obj : FileUtils.listFiles(jarDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)) {
 				File file = new File(obj.toString());
-				for(String extension: extensions) {
-					if(file.getName().endsWith(extension)) file.delete();
+				for (String extension : extensions) {
+					if (file.getName().endsWith(extension))
+						file.delete();
 				}
 			}
-			
+
 			jar.delete();
 			ZipUtil.pack(jarDir, jar);
 			FileUtils.deleteDirectory(jarDir);
@@ -261,31 +289,33 @@ public class Packr {
 	}
 
 	private void copyResources(File targetDir, List<String> resources) throws IOException {
-		for(String resource: resources) {
+		for (String resource : resources) {
 			File file = new File(resource);
-			if(!file.exists()) {
+			if (!file.exists()) {
 				System.out.println("resource '" + file.getAbsolutePath() + "' doesn't exist");
 				System.exit(-1);
 			}
-			if(file.isFile()) {
+			if (file.isFile()) {
 				FileUtils.copyFile(file, new File(targetDir, file.getName()));
 			}
-			if(file.isDirectory()) {
+			if (file.isDirectory()) {
 				File target = new File(targetDir, file.getName());
 				target.mkdirs();
 				FileUtils.copyDirectory(file, target);
 			}
 		}
 	}
-	
+
 	private File searchJre(File tmp) {
-		if(tmp.getName().equals("jre") && tmp.isDirectory() && (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
+		if (tmp.getName().equals("jre") && tmp.isDirectory()
+				&& (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
 			return tmp;
 		} else {
-			for(File child: tmp.listFiles()) {
-				if(child.isDirectory()) {
+			for (File child : tmp.listFiles()) {
+				if (child.isDirectory()) {
 					File found = searchJre(child);
-					if(found != null) return found;
+					if (found != null)
+						return found;
 				}
 			}
 			return null;
@@ -295,148 +325,246 @@ public class Packr {
 	private byte[] readResource(String resource) throws IOException {
 		return IOUtils.toByteArray(Packr.class.getResourceAsStream(resource));
 	}
-	
+
 	private String readResourceAsString(String resource, Map<String, String> values) throws IOException {
 		String txt = IOUtils.toString(Packr.class.getResourceAsStream(resource), "UTF-8");
 		return replace(txt, values);
 	}
-	
-	private String replace (String txt, Map<String, String> values) {
+
+	private String replace(String txt, Map<String, String> values) {
 		for (String key : values.keySet()) {
 			String value = values.get(key);
 			txt = txt.replace(key, value);
 		}
 		return txt;
 	}
-	
+
 	public static void main(String[] args) throws IOException {
-		if(args.length > 1) {
-			Map<String, String> arguments = parseArgs(args);
-			Config config = new Config();
-			config.platform = Platform.valueOf(arguments.get("platform"));
-			config.jdk = arguments.get("jdk");
-			config.executable = arguments.get("executable");
-			config.classpath =  Arrays.asList(arguments.get("classpath").split(";"));
-			config.iconResource = arguments.get("icon");
-			config.mainClass = arguments.get("mainclass");
-			if(arguments.get("bundleidentifier") != null) {
-				config.bundleIdentifier = arguments.get("bundleidentifier");
-			}
-			if(arguments.get("vmargs") != null) {
-				config.vmArgs = Arrays.asList(arguments.get("vmargs").split(";"));
-			}
-			config.outDir = arguments.get("outdir");
-			if(arguments.get("minimizejre") != null) {
-				if(new File(arguments.get("minimizejre")).exists()) {
-					config.minimizeJre = FileUtils.readFileToString(new File(arguments.get("minimizejre"))).split("\r?\n");
-				} else {
-					InputStream in = Packr.class.getResourceAsStream("/minimize/" + arguments.get("minimizejre"));
-					if(in != null) {
-						config.minimizeJre = IOUtils.toString(in).split("\r?\n");
-						in.close();
-					} else {
-						config.minimizeJre = new String[0];
-					}
-				}
-			}
-			if(arguments.get("resources") != null) config.resources = Arrays.asList(arguments.get("resources").split(";"));
-			new Packr().pack(config);
+
+		if (args.length == 0) {
+			printHelp();
+			return;
+		}
+
+		Packr packr = new Packr();
+		if (args.length == 1) {
+			Config config = prepareConfigFromFile(args[0]);
+			packr.pack(config);
+			return;
 		} else {
-			if(args.length == 0) {
-				printHelp();
+			Map<String, String> arguments = parseArgs(args);
+			Config config = null;
+			if (arguments.containsKey("config")) {
+				// Prepare config based on file contents
+				config = prepareConfigFromFile(arguments.get("config"));
+
+				// Override config version values with args if provided
+				setConfigVersionFromArgs(arguments, config);
 			} else {
-				JsonObject json = JsonObject.readFrom(FileUtils.readFileToString(new File(args[0])));
-				Config config = new Config();
-				config.platform = Platform.valueOf(json.get("platform").asString());
-				config.jdk = json.get("jdk").asString();
-				config.executable = json.get("executable").asString();
-				config.classpath = toStringArray(json.get("classpath").asArray());
-				if(json.get("icon") != null) {
-					config.iconResource = json.get("icon").asString();
-				}
-				config.mainClass = json.get("mainclass").asString();
-				if(json.get("bundleidentifier") != null) {
-					config.bundleIdentifier = json.get("bundleidentifier").asString();
-				}
-				if(json.get("vmargs") != null) {
-					config.vmArgs = toStringArray(json.get("vmargs").asArray());
-				}
-				config.outDir = json.get("outdir").asString();
-				if(json.get("minimizejre") != null) {
-					if(new File(json.get("minimizejre").asString()).exists()) {
-						config.minimizeJre = FileUtils.readFileToString(new File(json.get("minimizejre").asString())).split("\r?\n");
-					} else {
-						InputStream in = Packr.class.getResourceAsStream("/minimize/" + json.get("minimizejre"));
-						if(in != null) {
-							config.minimizeJre = IOUtils.toString(in).split("\r?\n");
-							in.close();
-						} else {
-							config.minimizeJre = new String[0];
-						}
-					}
-				}
-				if(json.get("resources") != null) {
-					config.resources = toStringArray(json.get("resources").asArray());
-				}
-				new Packr().pack(config);
+				config = prepareConfigFromArgs(arguments);
+			}
+			packr.pack(config);
+		}
+	}
+
+	private static void setConfigVersionFromArgs(Map<String, String> arguments, Config config) {
+		if (arguments.size() > 1) {
+			if (arguments.get("version") != null) {
+				config.version = arguments.get("version");
+			} else {
+				config.version = "1.0";
+			}
+
+			if (arguments.get("versionMajor") != null) {
+				config.versionMajor = arguments.get("versionMajor");
+			} else {
+				config.versionMajor = "1";
+			}
+
+			if (arguments.get("versionMinor") != null) {
+				config.versionMinor = arguments.get("versionMinor");
+			} else {
+				config.versionMinor = "0";
 			}
 		}
 	}
-	
+
+	private static Config prepareConfigFromArgs(Map<String, String> arguments) throws IOException {
+		Config config = new Config();
+		config.platform = Platform.valueOf(arguments.get("platform"));
+		config.jdk = arguments.get("jdk");
+		config.jre = arguments.get("jre");
+		config.executable = arguments.get("executable");
+		config.classpath = Arrays.asList(arguments.get("classpath").split(";"));
+		config.iconResource = arguments.get("icon");
+		config.mainClass = arguments.get("mainclass");
+		if (arguments.get("bundleidentifier") != null) {
+			config.bundleIdentifier = arguments.get("bundleidentifier");
+		}
+
+		setConfigVersionFromArgs(arguments, config);
+
+		if (arguments.get("vmargs") != null) {
+			config.vmArgs = Arrays.asList(arguments.get("vmargs").split(";"));
+		}
+		config.outDir = arguments.get("outdir");
+		if (arguments.get("minimizejre") != null && arguments.get("jre") == null) {
+			if (new File(arguments.get("minimizejre")).exists()) {
+				config.minimizeJre = FileUtils.readFileToString(new File(arguments.get("minimizejre"))).split("\r?\n");
+			} else {
+				InputStream in = Packr.class.getResourceAsStream("/minimize/" + arguments.get("minimizejre"));
+				if (in != null) {
+					config.minimizeJre = IOUtils.toString(in).split("\r?\n");
+					in.close();
+				} else {
+					config.minimizeJre = new String[0];
+				}
+			}
+		}
+		if (arguments.get("resources") != null)
+			config.resources = Arrays.asList(arguments.get("resources").split(";"));
+
+		return config;
+	}
+
+	private static Config prepareConfigFromFile(String configFile) throws IOException {
+		JsonObject json = JsonObject.readFrom(FileUtils.readFileToString(new File(configFile)));
+		Config config = new Config();
+		config.platform = Platform.valueOf(json.get("platform").asString());
+		if (json.get("jdk") != null)
+			config.jdk = json.get("jdk").asString();
+		if (json.get("jre") != null)
+			config.jre = json.get("jre").asString();
+		config.executable = json.get("executable").asString();
+		config.classpath = toStringArray(json.get("classpath").asArray());
+		if (json.get("icon") != null) {
+			config.iconResource = json.get("icon").asString();
+		}
+		config.mainClass = json.get("mainclass").asString();
+		if (json.get("bundleidentifier") != null) {
+			config.bundleIdentifier = json.get("bundleidentifier").asString();
+		}
+		if (json.get("version") != null) {
+			config.version = json.get("version").asString();
+		} else {
+			config.version = "1.0";
+		}
+		if (json.get("versionMajor") != null) {
+			config.versionMajor = json.get("versionMajor").asString();
+		} else {
+			config.versionMajor = "1";
+		}
+		if (json.get("versionMinor") != null) {
+			config.versionMinor = json.get("versionMinor").asString();
+		} else {
+			config.versionMinor = "0";
+		}
+		if (json.get("vmargs") != null) {
+			config.vmArgs = toStringArray(json.get("vmargs").asArray());
+		}
+		config.outDir = json.get("outdir").asString();
+		if (json.get("minimizejre") != null && json.get("jre") == null) {
+			if (new File(json.get("minimizejre").asString()).exists()) {
+				config.minimizeJre = FileUtils.readFileToString(new File(json.get("minimizejre").asString()))
+						.split("\r?\n");
+			} else {
+				InputStream in = Packr.class.getResourceAsStream("/minimize/" + json.get("minimizejre"));
+				if (in != null) {
+					config.minimizeJre = IOUtils.toString(in).split("\r?\n");
+					in.close();
+				} else {
+					config.minimizeJre = new String[0];
+				}
+			}
+		}
+		if (json.get("resources") != null) {
+			config.resources = toStringArray(json.get("resources").asArray());
+		}
+
+		return config;
+	}
+
 	private static List<String> toStringArray(JsonArray array) {
 		List<String> result = new ArrayList<String>();
-		for(JsonValue value: array) {
+		for (JsonValue value : array) {
 			result.add(value.asString());
 		}
 		return result;
 	}
-	
+
 	private static void error() {
 		printHelp();
 		System.exit(-1);
 	}
-	
+
 	private static void printHelp() {
-		System.out.println("Usage: packr <args>");
+		System.out.println("Usages:");
+		System.out.println("------------------------------------------------------------------------");
+		System.out.println("packr <args>");
+		System.out.println("packr -config <configFile> <args>");
+		System.out.println("");
+		System.out.println("Args:");
+		System.out.println("------------------------------------------------------------------------");
+		System.out.println("-config <file>");
+		System.out.println("                                     ... config file to use");
 		System.out.println("-platform <windows32|windows64|linux32|linux64|mac>");
 		System.out.println("                                     ... operating system to pack for");
-		System.out.println("-jdk <path-or-url>                   ... path to a JDK to be bundled (needs to fit platform)");
+		System.out.println(
+				"-jdk <path-or-url>                   ... path to a JDK to be bundled (needs to fit platform)");
 		System.out.println("                                         Can be a ZIP file or URL to a ZIP file");
-		System.out.println("-executable <name>                   ... name of the executable, e.g. 'mygame', without extension");
+		System.out.println(
+				"-executable <name>                   ... name of the executable, e.g. 'mygame', without extension");
 		System.out.println("-classpath <file.jar>                ... JAR file containing code and assets to be packed");
 		System.out.println("                                         Can contain multiple JAR files, separated by ;");
-		System.out.println("-icon <file>                         ... file containing icon resources (needs to fit platform)");
+		System.out.println(
+				"-icon <file>                         ... file containing icon resources (needs to fit platform)");
 		System.out.println("                                         Only supported on OS X (.icns)");
-		System.out.println("-mainclass <main-class>              ... fully qualified main class name, e.g. com/badlogic/MyApp");
+		System.out.println(
+				"-mainclass <main-class>              ... fully qualified main class name, e.g. com/badlogic/MyApp");
 		System.out.println("-bundleidentifier <identifier>       ... bundle identifier, e.g. com.badlogic");
 		System.out.println("                                         Only used for Info.plist on OS X");
-		System.out.println("-vmargs <args>                       ... arguments passed to the JVM, e.g. -Xmx1G, separated by ;");
-		System.out.println("-minimizejre <configfile>            ... minimize the JRE by removing folders and files specified in the config file");
-		System.out.println("                                         three config files come with packr: 'soft' and 'hard' which may or may not break your app");
-		System.out.println("-resources <files-and-folders>       ... additional files and folders to be packed next to the");
+		System.out.println(
+				"-vmargs <args>                       ... arguments passed to the JVM, e.g. -Xmx1G, separated by ;");
+		System.out.println(
+				"-minimizejre <configfile>            ... minimize the JRE by removing folders and files specified in the config file");
+		System.out.println(
+				"                                         three config files come with packr: 'soft' and 'hard' which may or may not break your app");
+		System.out.println(
+				"-resources <files-and-folders>       ... additional files and folders to be packed next to the");
 		System.out.println("                                         executable. Entries are separated by a ;");
 		System.out.println("-outdir <dir>                        ... output directory");
+		System.out.println(
+				"-version <version>                   ... version to set in CFBundleShortVersionString in Info.plist");
+		System.out
+				.println("-versionMajor <majorVersion>         ... version to set in IFMajorVersion key in Info.plist");
+		System.out
+				.println("-versionMinor <minorVersion>         ... version to set in IFMinorVersion key in Info.plist");
+		System.out.println("");
 	}
-	
-	private static Map<String, String> parseArgs (String[] args) {
-		if (args.length < 12) {
-			error();
-		}
 
+	private static Map<String, String> parseArgs(String[] args) {
 		Map<String, String> params = new HashMap<String, String>();
 		for (int i = 0; i < args.length; i += 2) {
 			String param = args[i].replace("-", "");
 			String value = args[i + 1];
 			params.put(param, value);
 		}
-		
-		if(params.get("platform") == null) error();
-		if(params.get("jdk") == null) error();
-		if(params.get("executable") == null) error();
-		if(params.get("classpath") == null) error();
-		if(params.get("mainclass") == null) error();
-		if(params.get("outdir") == null) error();
-		
+
+		if (!params.containsKey("config")) {
+			if (params.get("platform") == null)
+				error();
+			if (params.get("jdk") == null)
+				error();
+			if (params.get("executable") == null)
+				error();
+			if (params.get("classpath") == null)
+				error();
+			if (params.get("mainclass") == null)
+				error();
+			if (params.get("outdir") == null)
+				error();
+		}
+
 		return params;
 	}
 }
