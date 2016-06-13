@@ -134,8 +134,43 @@ const char* getExecutablePath(const char* argv0) {
     static char buf[MAXPATHLEN];
     uint32_t size = sizeof(buf);
 
-    if (_NSGetExecutablePath(buf, &size) == -1) {
-        return argv0;
+    // first, try to obtain the MacOS bundle resources folder
+
+    char resourcesDir[MAXPATHLEN];
+    bool foundResources = false;
+
+    CFBundleRef bundle = CFBundleGetMainBundle();
+    if (bundle != NULL) {
+        CFURLRef resources = CFBundleCopyResourcesDirectoryURL(bundle);
+        if (resources != NULL) {
+            foundResources = CFURLGetFileSystemRepresentation(resources, true, (UInt8*) resourcesDir, size);
+            CFRelease(resources);
+        }
+    }
+
+    // as a fallback, default to the executable path
+
+    char executablePath[MAXPATHLEN];
+    bool foundPath = _NSGetExecutablePath(executablePath, &size) != -1;
+
+    // mangle path and executable name; the main application divides them again
+
+    if (foundResources && foundPath) {
+        const char* executableName = strrchr(executablePath, '/') + 1;
+        strcpy(buf, resourcesDir);
+        strcat(buf, "/");
+        strcat(buf, executableName);
+        cout << "Using bundle resource folder [1]: " << resourcesDir << "/[" << executableName << "]" << endl;
+    } else if (foundResources) {
+        strcpy(buf, resourcesDir);
+        strcat(buf, "/packr");
+        cout << "Using bundle resource folder [2]: " << resourcesDir << endl;
+    } else if (foundPath) {
+        strcpy(buf, executablePath);
+        cout << "Using executable path: " << executablePath << endl;
+    } else {
+        strcpy(buf, argv0);
+        cout << "Using [argv0] path: " << argv0 << endl;
     }
 
     return buf;
