@@ -199,10 +199,10 @@ outdir/
       Info.plist
       MacOS/
          executable
+      Resources/
          yourjar.jar
          config.json
          jre/
-      Resources/
          icons.icns [if config.icon is set]
 ```
 
