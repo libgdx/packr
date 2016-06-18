@@ -1,0 +1,113 @@
+{
+  "reduce": [
+    {
+      "archive": "jre/lib/charsets.jar",
+      "paths": [
+      ]
+    },
+    {
+      "archive": "jre/lib/deploy.jar",
+      "paths": [
+      ]
+    },
+    {
+      "archive": "jre/lib/jce.jar",
+      "paths": [
+      ]
+    },
+    {
+      "archive": "jre/lib/jsse.jar",
+      "paths": [
+      ]
+    },
+    {
+      "archive": "jre/lib/resources.jar",
+      "paths": [
+      ]
+    },
+    {
+      "archive": "jre/lib/rt.jar",
+      "paths": [
+      ]
+    }
+  ],
+  "remove": [
+    {
+      "platform": "*",
+      "paths": [
+        "jre/lib/ext",
+        "jre/bin/rmid",
+        "jre/bin/rmiregistry",
+        "jre/bin/tnameserv",
+        "jre/bin/keytool",
+        "jre/bin/policytool",
+        "jre/bin/orbd",
+        "jre/bin/servertool",
+        "jre/bin/javaws",
+        "jre/lib/javaws.jar",
+        "jre/lib/jfr.jar",
+        "jre/lib/oblique-fonts",
+        "jre/lib/desktop",
+        "jre/plugin",
+
+        "jre/THIRDPARTYLICENSEREADME-JAVAFX.txt",
+        "jre/lib/ant-javafx.jar",
+        "jre/lib/javafx.properties",
+        "jre/lib/jfxswt.jar"
+      ]
+    },
+    {
+      "platform": "windows",
+      "paths": [
+        "jre/bin/rmid.exe",
+        "jre/bin/rmiregistry.exe",
+        "jre/bin/tnameserv.exe",
+        "jre/bin/keytool.exe",
+        "jre/bin/kinit.exe",
+        "jre/bin/klist.exe",
+        "jre/bin/ktab.exe",
+        "jre/bin/policytool.exe",
+        "jre/bin/orbd.exe",
+        "jre/bin/servertool.exe",
+        "jre/bin/javaws.exe",
+        "jre/bin/jfr.dll",
+
+        "jre/bin/java.exe",
+        "jre/bin/javaw.exe",
+        "jre/bin/javacpl.exe",
+        "jre/bin/jucheck.exe",
+        "jre/bin/dtplugin",
+        "jre/bin/jabswitch.exe",
+        "jre/bin/java_crw_demo.dll",
+        "jre/bin/JavaAccessBridge-32.dll",
+        "jre/bin/JavaAccessBridge.dll",
+        "jre/bin/JAWTAccessBridge-32.dll",
+        "jre/bin/JAWTAccessBridge.dll",
+        "jre/bin/WindowsAccessBridge-32.dll",
+        "jre/bin/WindowsAccessBridge.dll",
+        "jre/bin/wsdetect.dll",
+        "jre/bin/plugin2",
+        "jre/bin/deploy.dll",
+        "jre/bin/javacpl.cpl",
+        "jre/lib/deploy.jar",
+        "jre/lib/plugin.jar",
+        "jre/lib/deploy",
+
+        "jre/bin/decora-sse.dll",
+        "jre/bin/fxplugins.dll",
+        "jre/bin/glass.dll",
+        "jre/bin/glib-lite.dll",
+        "jre/bin/gstreamer-lite.dll",
+        "jre/bin/javafx-font.dll",
+        "jre/bin/javafx_font_t2k.dll",
+        "jre/bin/javafx-iio.dll",
+        "jre/bin/jfxmedia.dll",
+        "jre/bin/jfxwebkit.dll",
+        "jre/bin/prism_common.dll",
+        "jre/bin/prism-d3d.dll",
+        "jre/bin/prism_es2.dll",
+        "jre/bin/prism_sw.dll"
+      ]
+    }
+  ]
+}
