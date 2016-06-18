@@ -46,7 +46,7 @@ public class Packr {
 		config.validate();
 		this.config = config;
 
-		File output = config.outDir;
+		PackrOutput output = new PackrOutput(config.outDir, config.outDir);
 
 		cleanOrCreateOutputFolder(output);
 
@@ -67,16 +67,17 @@ public class Packr {
 		System.out.println("Done!");
 	}
 
-	private void cleanOrCreateOutputFolder(File output) throws IOException {
-		if (output.exists()) {
-			System.out.println("Cleaning output directory '" + output.getAbsolutePath() + "' ...");
-			FileUtils.deleteDirectory(output);
+	private void cleanOrCreateOutputFolder(PackrOutput output) throws IOException {
+		File folder = output.executableFolder;
+		if (folder.exists()) {
+			System.out.println("Cleaning output directory '" + folder.getAbsolutePath() + "' ...");
+			FileUtils.deleteDirectory(folder);
 		} else {
-			PackrFileUtils.mkdirs(output);
+			PackrFileUtils.mkdirs(folder);
 		}
 	}
 
-	private File buildMacBundle(File output) throws IOException {
+	private PackrOutput buildMacBundle(PackrOutput output) throws IOException {
 
 		if (config.platform != PackrConfig.Platform.MacOS) {
 			return output;
@@ -95,13 +96,15 @@ public class Packr {
 
 		// create folder structure
 
-		PackrFileUtils.mkdirs(new File(output, "Contents"));
-		FileUtils.writeStringToFile(new File(output, "Contents/Info.plist"), readResourceAsString("/Info.plist", values));
+		File root = output.executableFolder;
 
-		File target = new File(output, "Contents/MacOS");
+		PackrFileUtils.mkdirs(new File(root, "Contents"));
+		FileUtils.writeStringToFile(new File(root, "Contents/Info.plist"), readResourceAsString("/Info.plist", values));
+
+		File target = new File(root, "Contents/MacOS");
 		PackrFileUtils.mkdirs(target);
 
-		File resources = new File(output, "Contents/Resources");
+		File resources = new File(root, "Contents/Resources");
 		PackrFileUtils.mkdirs(resources);
 
 		if (config.iconResource != null) {
@@ -111,10 +114,10 @@ public class Packr {
 			}
 		}
 
-		return target;
+		return new PackrOutput(target, resources);
 	}
 
-	private void copyExecutableAndClasspath(File output) throws IOException {
+	private void copyExecutableAndClasspath(PackrOutput output) throws IOException {
 		byte[] exe = null;
 		String extension = "";
 
@@ -139,13 +142,13 @@ public class Packr {
 		}
 
 		System.out.println("Copying executable ...");
-		FileUtils.writeByteArrayToFile(new File(output, config.executable + extension), exe);
-		PackrFileUtils.chmodX(new File(output, config.executable + extension));
+		FileUtils.writeByteArrayToFile(new File(output.executableFolder, config.executable + extension), exe);
+		PackrFileUtils.chmodX(new File(output.executableFolder, config.executable + extension));
 
 		System.out.println("Copying classpath(s) ...");
 		for (String file : config.classpath) {
 			File cpSrc = new File(file);
-			File cpDst = new File(output, new File(file).getName());
+			File cpDst = new File(output.resourcesFolder, new File(file).getName());
 
 			if (cpSrc.isFile()) {
 				FileUtils.copyFile(cpSrc, cpDst);
@@ -157,7 +160,7 @@ public class Packr {
 		}
 	}
 
-	private void writeConfig(File output) throws IOException {
+	private void writeConfig(PackrOutput output) throws IOException {
 
 		StringBuilder builder = new StringBuilder();
 		builder.append("{\n");
@@ -188,10 +191,10 @@ public class Packr {
 		builder.append("  ]\n");
 		builder.append("}");
 
-		FileUtils.writeStringToFile(new File(output, "config.json"), builder.toString());
+		FileUtils.writeStringToFile(new File(output.resourcesFolder, "config.json"), builder.toString());
 	}
 
-	private void copyJRE(File output) throws IOException {
+	private void copyJRE(PackrOutput output) throws IOException {
 
 		File jdkFile;
 		boolean fetchFromRemote = config.jdk.startsWith("http://") || config.jdk.startsWith("https://");
@@ -199,7 +202,7 @@ public class Packr {
 		// add JRE from local or remote zip file
 		if (fetchFromRemote) {
 			System.out.println("Downloading JDK from '" + config.jdk + "' ...");
-			jdkFile = new File(output, "jdk.zip");
+			jdkFile = new File(output.resourcesFolder, "jdk.zip");
 			InputStream in = new URL(config.jdk).openStream();
 			OutputStream outJdk = FileUtils.openOutputStream(jdkFile);
 			IOUtils.copy(in, outJdk);
@@ -210,7 +213,7 @@ public class Packr {
 		}
 
 		System.out.println("Unpacking JRE ...");
-		File tmp = new File(output, "tmp");
+		File tmp = new File(output.resourcesFolder, "tmp");
 		PackrFileUtils.mkdirs(tmp);
 		ZipUtil.unpack(jdkFile, tmp);
 
@@ -219,7 +222,7 @@ public class Packr {
 			throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
 		}
 
-		FileUtils.copyDirectory(jre, new File(output, "jre"));
+		FileUtils.copyDirectory(jre, new File(output.resourcesFolder, "jre"));
 		FileUtils.deleteDirectory(tmp);
 
 		if (fetchFromRemote) {
@@ -248,7 +251,7 @@ public class Packr {
 		return null;
 	}
 
-	private void copyResources(File output) throws IOException {
+	private void copyResources(PackrOutput output) throws IOException {
 		if (config.resources != null) {
 			System.out.println("Copying resources ...");
 
@@ -258,11 +261,11 @@ public class Packr {
 				}
 
 				if (file.isFile()) {
-					FileUtils.copyFile(file, new File(output, file.getName()));
+					FileUtils.copyFile(file, new File(output.resourcesFolder, file.getName()));
 				}
 
 				if (file.isDirectory()) {
-					File target = new File(output, file.getName());
+					File target = new File(output.resourcesFolder, file.getName());
 					PackrFileUtils.mkdirs(target);
 					FileUtils.copyDirectory(file, target);
 				}

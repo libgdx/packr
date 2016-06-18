@@ -30,7 +30,7 @@ import java.util.Set;
  */
 class PackrReduce {
 
-	static void minimizeJre(File output, PackrConfig config) throws IOException {
+	static void minimizeJre(PackrOutput output, PackrConfig config) throws IOException {
 		if (config.minimizeJre == null) {
 			return;
 		}
@@ -46,7 +46,7 @@ class PackrReduce {
 			JsonArray reduceArray = minimizeJson.get("reduce").asArray();
 			for (JsonValue reduce : reduceArray) {
 				String path = reduce.asObject().get("archive").asString();
-				File file = new File(output, path);
+				File file = new File(output.resourcesFolder, path);
 
 				if (!file.exists()) {
 					if (config.verbose) {
@@ -58,7 +58,7 @@ class PackrReduce {
 				boolean needsUnpack = !file.isDirectory();
 
 				File fileNoExt = needsUnpack
-						? new File(output, path.contains(".") ? path.substring(0, path.lastIndexOf('.')) : path)
+						? new File(output.resourcesFolder, path.contains(".") ? path.substring(0, path.lastIndexOf('.')) : path)
 						: file;
 
 				if (needsUnpack) {
@@ -113,7 +113,7 @@ class PackrReduce {
 
 				JsonArray removeFilesArray = remove.asObject().get("paths").asArray();
 				for (JsonValue removeFile : removeFilesArray) {
-					removeFileWildcard(output, removeFile.asString(), config);
+					removeFileWildcard(output.resourcesFolder, removeFile.asString(), config);
 				}
 			}
 		}
@@ -184,13 +184,13 @@ class PackrReduce {
 		return json;
 	}
 
-	static void removePlatformLibs(File output, PackrConfig config) throws IOException {
+	static void removePlatformLibs(PackrOutput output, PackrConfig config) throws IOException {
 		System.out.println("Removing foreign platform libs ...");
 
 		// let's remove any shared libs not used on the platform, e.g. libGDX/LWJGL natives
 		for (String classpath : config.classpath) {
-			File jar = new File(output, new File(classpath).getName());
-			File jarDir = new File(output, jar.getName() + ".tmp");
+			File jar = new File(output.resourcesFolder, new File(classpath).getName());
+			File jarDir = new File(output.resourcesFolder, jar.getName() + ".tmp");
 
 			if (config.verbose) {
 				if (jar.isDirectory()) {
