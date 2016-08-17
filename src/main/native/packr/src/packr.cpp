@@ -127,42 +127,26 @@ static int loadStaticMethod(JNIEnv* env, const vector<string>& classPath, string
 	jmethodID threadGetLoader = env->GetMethodID(threadClass, "getContextClassLoader", "()Ljava/lang/ClassLoader;");
 	verify(env, threadGetLoader);
 
-	jobject loader = env->CallObjectMethod(thread, threadGetLoader);
-	verify(env, loader);
+	jobject contextClassLoader = env->CallObjectMethod(thread, threadGetLoader);
+	verify(env, contextClassLoader);
 
-#if 1
-
-	// URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{});
-
-	jclass urlClassLoaderClass = env->FindClass("java/net/URLClassLoader");
-	verify(env, urlClassLoaderClass);
-
-	jmethodID urlClassLoaderCtor = env->GetMethodID(urlClassLoaderClass, "<init>", "([Ljava/net/URL;)V");
+    // URLClassLoader urlClassLoader = new URLClassLoader(urlArray, contextClassLoader);
+    jclass urlClassLoaderClass = env->FindClass("java/net/URLClassLoader");
+    verify(env, urlClassLoaderClass);
+	
+	jmethodID urlClassLoaderCtor = env->GetMethodID(urlClassLoaderClass, "<init>", "([Ljava/net/URL;Ljava/lang/ClassLoader;)V");
 	verify(env, urlClassLoaderCtor);
 
-	jobject urlClassLoader = env->NewObject(urlClassLoaderClass, urlClassLoaderCtor, urlArray);
+	jobject urlClassLoader = env->NewObject(urlClassLoaderClass, urlClassLoaderCtor, urlArray, contextClassLoader);
 	verify(env, urlClassLoader);
-
-#else
-
-	// NOTE: shortcut assuming that the context classloader *IS A* URLClassLoader
-	// URLClassLoader urlClassLoader = ((URLClassLoader) contextClassLoader).addURL(url);
-
-	jclass urlClassLoaderClass = env->FindClass("java/net/URLClassLoader");
-	verify(env, urlClassLoaderClass);
-
-	jmethodID addUrlMethod = env->GetMethodID(urlClassLoaderClass, "addURL", "(Ljava/net/URL;)V");
-	verify(env, addUrlMethod);
-
-	for (size_t cp = 0; cp < numCp; cp++) {
-		jobject url = env->GetObjectArrayElement(urlArray, cp);
-		env->CallVoidMethod(loader, addUrlMethod, url);
-		verify(env, (void*) 1);
-	}
-
-	jobject urlClassLoader = loader;
-
-#endif
+    
+    // Set the contextClassLoader so that if the main-class loads classes later it has the right class loader.
+    // Tested with springframework that uses the context class loader to load resources from the Jar.
+    
+    // Thread.currentThread().setContextClassLoader(urlClassLoader)
+    jmethodID threadSetLoader = env->GetMethodID(threadClass, "setContextClassLoader", "(Ljava/lang/ClassLoader;)V");
+    verify(env, threadSetLoader);
+    env->CallVoidMethod(thread, threadSetLoader, urlClassLoader);
 
 	// Class<?> mainClass = urlClassLoader.loadClass(<main-class-name>)
 
