@@ -112,25 +112,19 @@ public class PackrConfig {
 			executable = commandLine.executable();
 		}
 
-		if (commandLine.classpath() != null) {
-			classpath = appendTo(classpath, commandLine.classpath());
-		}
+		classpath = appendTo(classpath, commandLine.classpath());
 
 		if (commandLine.mainClass() != null) {
 			mainClass = commandLine.mainClass();
 		}
 
-		if (commandLine.vmArgs() != null) {
-			vmArgs = appendTo(vmArgs, commandLine.vmArgs());
-		}
+		vmArgs = appendTo(vmArgs, commandLine.vmArgs());
 
 		if (commandLine.minimizeJre() != null) {
 			minimizeJre = commandLine.minimizeJre();
 		}
 
-		if (commandLine.resources() != null) {
-			resources = appendTo(resources, commandLine.resources());
-		}
+		resources = appendTo(resources, commandLine.resources());
 
 		if (commandLine.outDir() != null) {
 			outDir = commandLine.outDir();
@@ -182,19 +176,21 @@ public class PackrConfig {
 
 	private <T> List<T> appendTo(List<T> list, List<T> append) {
 		if (list == null) {
-			return append;
+			return append != null ? append : new ArrayList<T>();
 		}
 
-		for (T item : append) {
-			boolean duplicate = false;
-			for (T cmp : list) {
-				if (cmp.equals(item)) {
-					duplicate = true;
-					break;
+		if (append != null) {
+			for (T item : append) {
+				boolean duplicate = false;
+				for (T cmp : list) {
+					if (cmp.equals(item)) {
+						duplicate = true;
+						break;
+					}
 				}
-			}
-			if (!duplicate) {
-				list.add(item);
+				if (!duplicate) {
+					list.add(item);
+				}
 			}
 		}
 
@@ -226,8 +222,12 @@ public class PackrConfig {
 				throw new IOException("Output directory equals working directory, aborting");
 			}
 			if(new File("/").equals(outDir)) {
-				throw new IOException("Output directory equals root, aborting");
+				throw new IOException("Output directory points to root folder.");
 			}
+		}
+
+		if (classpath.isEmpty()) {
+			throw new IOException("Empty class path. Please check your commandline or configuration.");
 		}
 	}
 
