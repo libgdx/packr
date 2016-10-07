@@ -101,7 +101,7 @@ config.classpath = Arrays.asList("myjar.jar");
 config.mainClass = "com.my.app.MainClass";
 config.vmArgs = Arrays.asList("Xmx1G");
 config.minimizeJre = "soft";
-config.outDir = "out-mac";
+config.outDir = new java.io.File("out-mac");
 
 new Packr().pack(config);
 ```
