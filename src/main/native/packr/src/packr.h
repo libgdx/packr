@@ -18,7 +18,7 @@
 #include <functional>
 #include <jni.h>
 
-#define PACKR_VERSION_STRING "2.0beta2"
+#define PACKR_VERSION_STRING "2.0"
 
 #if !defined(JNI_VERSION_1_8)
 # define JNI_VERSION_1_8 0x00010008
