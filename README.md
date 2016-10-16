@@ -30,7 +30,7 @@ java -jar packr.jar \
 | Parameter | Meaning |
 | --- | --- |
 | platform | one of "windows32", "windows64", "linux32", "linux64", "mac" |
-| jdk | ZIP file location or URL to an OpenJDK or Oracle JDK build containing a JRE. Prebuild OpenJDK packages can be found at https://github.com/alexkasko/openjdk-unofficial-builds |
+| jdk | ZIP file location or URL to ZIP file of an OpenJDK or Oracle JDK build containing a JRE. Prebuild OpenJDK packages can be found at https://github.com/alexkasko/openjdk-unofficial-builds. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script|
 | executable | name of the native executable, without extension such as ".exe" |
 | classpath | file locations of the JAR files to package |
 | mainclass | the fully qualified name of the main class, using dots to delimit package names |

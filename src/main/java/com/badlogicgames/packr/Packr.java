@@ -215,7 +215,12 @@ public class Packr {
 		System.out.println("Unpacking JRE ...");
 		File tmp = new File(output.resourcesFolder, "tmp");
 		PackrFileUtils.mkdirs(tmp);
-		ZipUtil.unpack(jdkFile, tmp);
+
+		if (jdkFile.isDirectory()) {
+			FileUtils.copyDirectoryToDirectory(jdkFile, tmp);
+		} else {
+			ZipUtil.unpack(jdkFile, tmp);
+		}
 
 		File jre = searchJre(tmp);
 		if (jre == null) {
