@@ -196,42 +196,47 @@ public class Packr {
 
 	private void copyJRE(PackrOutput output) throws IOException {
 
-		File jdkFile;
-		boolean fetchFromRemote = config.jdk.startsWith("http://") || config.jdk.startsWith("https://");
+		boolean useJre = config.jre != null && !config.jre.isEmpty();
+		String path = useJre ? config.jre : config.jdk;
+		
+		File jFile;
+		boolean fetchFromRemote = path.startsWith("http://") || path.startsWith("https://");
 
-		// add JRE from local or remote zip file
+		// add JDK/JRE from local or remote zip file
 		if (fetchFromRemote) {
-			System.out.println("Downloading JDK from '" + config.jdk + "' ...");
-			jdkFile = new File(output.resourcesFolder, "jdk.zip");
-			InputStream in = new URL(config.jdk).openStream();
-			OutputStream outJdk = FileUtils.openOutputStream(jdkFile);
+			System.out.println("Downloading from '" + path + "' ...");
+			jFile = new File(output.resourcesFolder, "jFile.zip");
+			InputStream in = new URL(path).openStream();
+			OutputStream outJdk = FileUtils.openOutputStream(jFile);
 			IOUtils.copy(in, outJdk);
 			in.close();
 			outJdk.close();
 		} else {
-			jdkFile = new File(config.jdk);
+			jFile = new File(path);
 		}
 
-		System.out.println("Unpacking JRE ...");
-		File tmp = new File(output.resourcesFolder, "tmp");
-		PackrFileUtils.mkdirs(tmp);
-
-		if (jdkFile.isDirectory()) {
-			FileUtils.copyDirectoryToDirectory(jdkFile, tmp);
-		} else {
-			ZipUtil.unpack(jdkFile, tmp);
+		if (!useJre) {
+			System.out.println("Unpacking JRE from JDK ...");
+			File tmp = new File(output.resourcesFolder, "tmp");
+			PackrFileUtils.mkdirs(tmp);
+	
+			if (jFile.isDirectory()) {
+				FileUtils.copyDirectoryToDirectory(jFile, tmp);
+			} else {
+				ZipUtil.unpack(jFile, tmp);
+			}
+	
+			File jre = searchJre(tmp);
+			if (jre == null) {
+				throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
+			}
+	
+			FileUtils.copyDirectory(jre, new File(output.resourcesFolder, "jre"));
+			FileUtils.deleteDirectory(tmp);
 		}
-
-		File jre = searchJre(tmp);
-		if (jre == null) {
-			throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
-		}
-
-		FileUtils.copyDirectory(jre, new File(output.resourcesFolder, "jre"));
-		FileUtils.deleteDirectory(tmp);
 
 		if (fetchFromRemote) {
-			PackrFileUtils.delete(jdkFile);
+			PackrFileUtils.delete(jFile);
 		}
 	}
 
