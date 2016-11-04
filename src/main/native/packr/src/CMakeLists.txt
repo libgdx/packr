@@ -10,10 +10,9 @@ fips_files(packr.cpp packr.h)
 
 if (FIPS_WINDOWS)
     fips_dir(win32)
-    fips_files(packr_win32.cpp)
+    fips_files(packr_win32.cpp packr_win32.manifest)
     if (FIPS_MSVC)
-        # link time code generation in release builds
-        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /INCREMENTAL:no /LTCG")
+        set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /INCREMENTAL:no")
     endif()
     if (FIPS_WIN32)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
