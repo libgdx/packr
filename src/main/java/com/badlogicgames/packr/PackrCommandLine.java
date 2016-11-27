@@ -43,6 +43,9 @@ public interface PackrCommandLine {
 	@Option(description = "target operating system", longName = "platform", defaultToNull = true)
 	String platform();
 
+	@Option(description = "file path or a URL to a JRE to be bundled", longName = "jre", defaultToNull = true)
+	String jre();
+	
 	@Option(description = "file path or URL to a JDK to be bundled", longName = "jdk", defaultToNull = true)
 	String jdk();
 

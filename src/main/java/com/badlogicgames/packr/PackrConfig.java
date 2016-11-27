@@ -60,6 +60,7 @@ public class PackrConfig {
 
 	public Platform platform;
 	public String jdk;
+	public String jre;
 	public String executable;
 	public List<String> classpath;
 	public String mainClass;
@@ -76,11 +77,12 @@ public class PackrConfig {
 
 	}
 
-	public PackrConfig(Platform platform, String jdk, String executable,
-					   List<String> classpath, String mainClass, File outDir) throws IOException {
+	public PackrConfig(Platform platform, String jdk, String jre,
+					   String executable, List<String> classpath, String mainClass, File outDir) throws IOException {
 
 		this.platform = platform;
 		this.jdk = jdk;
+		this.jre = jre;
 		this.executable = executable;
 		this.classpath = classpath;
 		this.mainClass = mainClass;
@@ -102,6 +104,10 @@ public class PackrConfig {
 
 		if (commandLine.platform() != null) {
 			platform = Platform.byDesc(commandLine.platform());
+		}
+		
+		if (commandLine.jre() != null) {
+			jre = commandLine.jre();
 		}
 
 		if (commandLine.jdk() != null) {
@@ -144,7 +150,10 @@ public class PackrConfig {
 		JsonObject json = JsonObject.readFrom(FileUtils.readFileToString(configJson));
 
 		platform = Platform.byDesc(json.get("platform").asString());
-		jdk = json.get("jdk").asString();
+		if (json.get("jdk") != null)
+			jdk = json.get("jdk").asString();
+		if (json.get("jre") != null)
+			jre = json.get("jre").asString();
 		executable = json.get("executable").asString();
 		classpath = toStringArray(json.get("classpath").asArray());
 		mainClass = json.get("mainclass").asString();
