@@ -55,7 +55,7 @@ static bool attachToConsole(int argc, char** argv) {
 	return attach;
 }
 
-static void printLastError() {
+static void printLastError(const char* reason) {
 
 	LPTSTR buffer;
 	DWORD errorCode = GetLastError();
@@ -63,7 +63,7 @@ static void printLastError() {
 	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 				  nullptr, errorCode, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), (LPTSTR) &buffer, 0, nullptr);
 
-	cerr << "Error code [" << errorCode << "]: " << buffer;
+	cerr << "Error code [" << errorCode << "] when trying to " << reason << ": " << buffer;
 
 	LocalFree(buffer);
 }
@@ -101,21 +101,38 @@ int main(int argc, char** argv) {
 
 bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM) {
 
-	HINSTANCE hinstLib = LoadLibrary(TEXT("jre\\bin\\server\\jvm.dll"));
+	LPCTSTR jvmDLLPath = TEXT("jre\\bin\\server\\jvm.dll");
+
+	HINSTANCE hinstLib = LoadLibrary(jvmDLLPath);
 	if (hinstLib == nullptr) {
-		printLastError();
+		DWORD errorCode = GetLastError();
+		if (errorCode == 126) {
+			
+			// "The specified module could not be found."
+			// load msvcr100.dll from the bundled JRE, then try again
+			cout << "Failed to load jvm.dll. Trying to load msvcr100.dll first ..." << endl;
+
+			HINSTANCE hinstVCR = LoadLibrary(TEXT("jre\\bin\\msvcr100.dll"));
+			if (hinstVCR != nullptr) {
+				hinstLib = LoadLibrary(jvmDLLPath);
+			}
+		}
+	}
+
+	if (hinstLib == nullptr) {
+		printLastError("load jvm.dll");
 		return false;
 	}
 
 	*getDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs) GetProcAddress(hinstLib, "JNI_GetDefaultJavaVMInitArgs");
 	if (*getDefaultJavaVMInitArgs == nullptr) {
-		printLastError();
+		printLastError("obtain JNI_GetDefaultJavaVMInitArgs address");
 		return false;
 	}
 
 	*createJavaVM = (CreateJavaVM) GetProcAddress(hinstLib, "JNI_CreateJavaVM");
 	if (*createJavaVM == nullptr) {
-		printLastError();
+		printLastError("obtain JNI_CreateJavaVM address");
 		return false;
 	}
 
