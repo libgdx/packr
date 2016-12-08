@@ -54,18 +54,25 @@ class PackrFileUtils {
 	 */
 	static void copyDirectory(File sourceDirectory, File targetDirectory) throws IOException {
 
-		Path sourcePath = Paths.get(sourceDirectory.toURI());
+		final Path sourcePath = Paths.get(sourceDirectory.toURI());
 		final Path targetPath = Paths.get(targetDirectory.toURI());
 
 		Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
 			@Override
 			public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-				return super.preVisitDirectory(dir, attrs);
+				Path relative = sourcePath.relativize(dir);
+				Path target = targetPath.resolve(relative);
+				File folder = target.toFile();
+				if (!folder.exists()) {
+					mkdirs(folder);
+				}
+				return FileVisitResult.CONTINUE;
 			}
 
 			@Override
 			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-				Path target = targetPath.resolve(file);
+				Path relative = sourcePath.relativize(file);
+				Path target = targetPath.resolve(relative);
 				Files.copy(file, target, StandardCopyOption.COPY_ATTRIBUTES);
 				return FileVisitResult.CONTINUE;
 			}

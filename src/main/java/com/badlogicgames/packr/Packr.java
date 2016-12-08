@@ -137,7 +137,13 @@ public class Packr {
 		}
 
 		System.out.println("Copying executable ...");
-		new FileOutputStream(new File(output.executableFolder, config.executable + extension)).write(exe);
+
+		try (OutputStream writer = new FileOutputStream(
+				new File(output.executableFolder, config.executable + extension))) {
+
+			writer.write(exe);
+		}
+
 		PackrFileUtils.chmodX(new File(output.executableFolder, config.executable + extension));
 
 		System.out.println("Copying classpath(s) ...");
@@ -186,7 +192,9 @@ public class Packr {
 		builder.append("  ]\n");
 		builder.append("}");
 
-		new FileWriter(new File(output.resourcesFolder, "config.json")).write(builder.toString());
+		try (Writer writer = new FileWriter(new File(output.resourcesFolder, "config.json"))) {
+			writer.write(builder.toString());
+		}
 	}
 
 	private void copyJRE(PackrOutput output) throws IOException {
