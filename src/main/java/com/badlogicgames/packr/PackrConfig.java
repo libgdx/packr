@@ -33,6 +33,7 @@ import java.util.List;
  * Command line parameters can be used to override (single-argument parameters) or extend
  * (multi-argument parameters) JSON settings.
  */
+@SuppressWarnings("WeakerAccess")
 public class PackrConfig {
 
 	public enum Platform {
@@ -150,7 +151,7 @@ public class PackrConfig {
 		mainClass = json.get("mainclass").asString();
 		if(json.get("vmargs") != null) {
 			List<String> vmArgs = toStringArray(json.get("vmargs").asArray());
-			this.vmArgs = new ArrayList<String>();
+			this.vmArgs = new ArrayList<>();
 			for (String vmArg : vmArgs) {
 				if (vmArg.startsWith("-")) {
 					this.vmArgs.add(vmArg.substring(1));
@@ -198,7 +199,7 @@ public class PackrConfig {
 	}
 
 	private List<String> toStringArray(JsonArray array) {
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 		for(JsonValue value: array) {
 			result.add(value.asString());
 		}
@@ -206,7 +207,7 @@ public class PackrConfig {
 	}
 
 	private List<File> toFileArray(JsonArray array) {
-		List<File> result = new ArrayList<File>();
+		List<File> result = new ArrayList<>();
 		for(JsonValue value: array) {
 			result.add(new File(value.asString()));
 		}

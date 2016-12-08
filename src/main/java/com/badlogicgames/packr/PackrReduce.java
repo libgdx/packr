@@ -203,7 +203,7 @@ class PackrReduce {
 				ZipUtil.unpack(jar, jarDir);
 			}
 
-			Set<String> extensions = new HashSet<String>();
+			Set<String> extensions = new HashSet<>();
 
 			switch (config.platform) {
 				case Windows32:
