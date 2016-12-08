@@ -17,9 +17,8 @@
 package com.badlogicgames.packr;
 
 import com.eclipsesource.json.*;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.zeroturnaround.zip.ZipUtil;
+import org.zeroturnaround.zip.commons.FileUtils;
 
 import java.io.*;
 import java.util.HashSet;
@@ -223,14 +222,16 @@ class PackrReduce {
 					break;
 			}
 
-			for (Object obj : FileUtils.listFiles(jarDir, TrueFileFilter.INSTANCE , TrueFileFilter.INSTANCE)) {
-				File file = new File(obj.toString());
-				for (String extension: extensions) {
-					if (file.getName().endsWith(extension)) {
-						if (config.verbose) {
-							System.out.println("  # Removing '" + file.getPath() + "'");
+			File[] files = jarDir.listFiles();
+			if (files != null) {
+				for (File file : files) {
+					for (String extension : extensions) {
+						if (file.getName().endsWith(extension)) {
+							if (config.verbose) {
+								System.out.println("  # Removing '" + file.getPath() + "'");
+							}
+							PackrFileUtils.delete(file);
 						}
-						PackrFileUtils.delete(file);
 					}
 				}
 			}

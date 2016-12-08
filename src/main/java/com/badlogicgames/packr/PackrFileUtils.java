@@ -16,8 +16,12 @@
 
 package com.badlogicgames.packr;
 
+import org.zeroturnaround.zip.commons.FileUtilsV2_2;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 
 /**
  * Some file utility wrappers to check for function results, and to raise exceptions in case of error.
@@ -40,6 +44,42 @@ class PackrFileUtils {
 		if (!path.delete()) {
 			throw new IOException("Can't delete file or folder: " + path);
 		}
+	}
+
+	/**
+	 * Copies directories, preserving file attributes.
+	 *
+	 * The {@link org.zeroturnaround.zip.commons.FileUtilsV2_2#copyDirectory(File, File)} function does not
+	 * preserve file attributes.
+	 */
+	static void copyDirectory(File sourceDirectory, File targetDirectory) throws IOException {
+
+		Path sourcePath = Paths.get(sourceDirectory.toURI());
+		final Path targetPath = Paths.get(targetDirectory.toURI());
+
+		Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
+			@Override
+			public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+				return super.preVisitDirectory(dir, attrs);
+			}
+
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				Path target = targetPath.resolve(file);
+				Files.copy(file, target, StandardCopyOption.COPY_ATTRIBUTES);
+				return FileVisitResult.CONTINUE;
+			}
+		});
+	}
+
+	static void deleteDirectory(File directory) throws IOException {
+		FileUtilsV2_2.deleteDirectory(directory);
+	}
+
+	static void copyFile(File source, File target) throws IOException {
+		Path sourcePath = Paths.get(source.toURI());
+		Path targetPath = Paths.get(target.toURI());
+		Files.copy(sourcePath, targetPath, StandardCopyOption.COPY_ATTRIBUTES);
 	}
 
 }

@@ -16,17 +16,11 @@
 
 package com.badlogicgames.packr;
 
-import com.lexicalscope.jewel.cli.ArgumentValidationException;
-import com.lexicalscope.jewel.cli.CliFactory;
-import com.lexicalscope.jewel.cli.ValidationFailure;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
+import com.lexicalscope.jewel.cli.*;
 import org.zeroturnaround.zip.ZipUtil;
+import org.zeroturnaround.zip.commons.IOUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,13 +28,14 @@ import java.util.Map;
 /**
  * Takes a couple of parameters and a JRE and bundles them into a platform specific
  * distributable (zip on Windows and Linux, app bundle on Mac OS X).
- * @author badlogic
  *
+ * @author badlogic
  */
 public class Packr {
 
 	private PackrConfig config;
 
+	@SuppressWarnings("WeakerAccess")
 	public void pack(PackrConfig config) throws IOException {
 
 		config.validate();
@@ -71,7 +66,7 @@ public class Packr {
 		File folder = output.executableFolder;
 		if (folder.exists()) {
 			System.out.println("Cleaning output directory '" + folder.getAbsolutePath() + "' ...");
-			FileUtils.deleteDirectory(folder);
+			PackrFileUtils.deleteDirectory(folder);
 		} else {
 			PackrFileUtils.mkdirs(folder);
 		}
@@ -84,7 +79,7 @@ public class Packr {
 		}
 
 		// replacement strings for Info.plist
-		Map<String, String> values = new HashMap<String, String>();
+		Map<String, String> values = new HashMap<>();
 
 		values.put("${executable}", config.executable);
 
@@ -99,7 +94,7 @@ public class Packr {
 		File root = output.executableFolder;
 
 		PackrFileUtils.mkdirs(new File(root, "Contents"));
-		FileUtils.writeStringToFile(new File(root, "Contents/Info.plist"), readResourceAsString("/Info.plist", values));
+		new FileWriter(new File(root, "Contents/Info.plist")).write(readResourceAsString("/Info.plist", values));
 
 		File target = new File(root, "Contents/MacOS");
 		PackrFileUtils.mkdirs(target);
@@ -110,7 +105,7 @@ public class Packr {
 		if (config.iconResource != null) {
 			// copy icon to Contents/Resources/icons.icns
 			if (config.iconResource.exists()) {
-				FileUtils.copyFile(config.iconResource, new File(resources, "icons.icns"));
+				PackrFileUtils.copyFile(config.iconResource, new File(resources, "icons.icns"));
 			}
 		}
 
@@ -142,7 +137,7 @@ public class Packr {
 		}
 
 		System.out.println("Copying executable ...");
-		FileUtils.writeByteArrayToFile(new File(output.executableFolder, config.executable + extension), exe);
+		new FileOutputStream(new File(output.executableFolder, config.executable + extension)).write(exe);
 		PackrFileUtils.chmodX(new File(output.executableFolder, config.executable + extension));
 
 		System.out.println("Copying classpath(s) ...");
@@ -151,9 +146,9 @@ public class Packr {
 			File cpDst = new File(output.resourcesFolder, new File(file).getName());
 
 			if (cpSrc.isFile()) {
-				FileUtils.copyFile(cpSrc, cpDst);
+				PackrFileUtils.copyFile(cpSrc, cpDst);
 			} else if (cpSrc.isDirectory()) {
-				FileUtils.copyDirectory(cpSrc, cpDst);
+				PackrFileUtils.copyDirectory(cpSrc, cpDst);
 			} else {
 				System.err.println("Warning! Classpath not found: " + cpSrc);
 			}
@@ -191,7 +186,7 @@ public class Packr {
 		builder.append("  ]\n");
 		builder.append("}");
 
-		FileUtils.writeStringToFile(new File(output.resourcesFolder, "config.json"), builder.toString());
+		new FileWriter(new File(output.resourcesFolder, "config.json")).write(builder.toString());
 	}
 
 	private void copyJRE(PackrOutput output) throws IOException {
@@ -204,7 +199,7 @@ public class Packr {
 			System.out.println("Downloading JDK from '" + config.jdk + "' ...");
 			jdkFile = new File(output.resourcesFolder, "jdk.zip");
 			InputStream in = new URL(config.jdk).openStream();
-			OutputStream outJdk = FileUtils.openOutputStream(jdkFile);
+			OutputStream outJdk = new FileOutputStream(jdkFile);
 			IOUtils.copy(in, outJdk);
 			in.close();
 			outJdk.close();
@@ -217,7 +212,7 @@ public class Packr {
 		PackrFileUtils.mkdirs(tmp);
 
 		if (jdkFile.isDirectory()) {
-			FileUtils.copyDirectoryToDirectory(jdkFile, tmp);
+			PackrFileUtils.copyDirectory(jdkFile, tmp);
 		} else {
 			ZipUtil.unpack(jdkFile, tmp);
 		}
@@ -227,8 +222,8 @@ public class Packr {
 			throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
 		}
 
-		FileUtils.copyDirectory(jre, new File(output.resourcesFolder, "jre"));
-		FileUtils.deleteDirectory(tmp);
+		PackrFileUtils.copyDirectory(jre, new File(output.resourcesFolder, "jre"));
+		PackrFileUtils.deleteDirectory(tmp);
 
 		if (fetchFromRemote) {
 			PackrFileUtils.delete(jdkFile);
@@ -266,13 +261,13 @@ public class Packr {
 				}
 
 				if (file.isFile()) {
-					FileUtils.copyFile(file, new File(output.resourcesFolder, file.getName()));
+					PackrFileUtils.copyFile(file, new File(output.resourcesFolder, file.getName()));
 				}
 
 				if (file.isDirectory()) {
 					File target = new File(output.resourcesFolder, file.getName());
 					PackrFileUtils.mkdirs(target);
-					FileUtils.copyDirectory(file, target);
+					PackrFileUtils.copyDirectory(file, target);
 				}
 			}
 		}
