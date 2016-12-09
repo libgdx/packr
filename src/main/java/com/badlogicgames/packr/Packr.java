@@ -302,7 +302,8 @@ public class Packr {
 
 		try {
 
-			PackrCommandLine commandLine = CliFactory.parseArguments(PackrCommandLine.class, args);
+			PackrCommandLine commandLine = CliFactory.parseArguments(
+					PackrCommandLine.class, args.length > 0 ? args : new String[] { "-h" });
 
 			if (commandLine.help()) {
 				return;
