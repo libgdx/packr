@@ -119,5 +119,11 @@
 			<artifactId>jewelcli</artifactId>
 			<version>0.8.9</version>
 		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>1.6.6</version>
+			<optional>true</optional>
+		</dependency>
 	</dependencies>
 </project>
