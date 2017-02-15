@@ -201,6 +201,8 @@ class PackrReduce {
 
 			if (!jar.isDirectory()) {
 				ZipUtil.unpack(jar, jarDir);
+			} else {
+				jarDir = jar; // run in-place for directories
 			}
 
 			Set<String> extensions = new HashSet<>();
