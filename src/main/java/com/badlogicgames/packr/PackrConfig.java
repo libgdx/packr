@@ -149,7 +149,7 @@ public class PackrConfig {
 		executable = json.get("executable").asString();
 		classpath = toStringArray(json.get("classpath").asArray());
 		mainClass = json.get("mainclass").asString();
-		if(json.get("vmargs") != null) {
+		if (json.get("vmargs") != null) {
 			List<String> vmArgs = toStringArray(json.get("vmargs").asArray());
 			this.vmArgs = new ArrayList<>();
 			for (String vmArg : vmArgs) {
@@ -160,17 +160,17 @@ public class PackrConfig {
 				}
 			}
 		}
-		if(json.get("minimizejre") != null) {
+		if (json.get("minimizejre") != null) {
 			minimizeJre = json.get("minimizejre").asString();
 		}
-		if(json.get("resources") != null) {
+		if (json.get("resources") != null) {
 			resources = toFileArray(json.get("resources").asArray());
 		}
 		outDir = new File(json.get("output").asString());
-		if(json.get("icon") != null) {
+		if (json.get("icon") != null) {
 			iconResource = new File(json.get("icon").asString());
 		}
-		if(json.get("bundle") != null) {
+		if (json.get("bundle") != null) {
 			bundleIdentifier = json.get("bundle").asString();
 		}
 	}
@@ -200,7 +200,7 @@ public class PackrConfig {
 
 	private List<String> toStringArray(JsonArray array) {
 		List<String> result = new ArrayList<>();
-		for(JsonValue value: array) {
+		for (JsonValue value : array) {
 			result.add(value.asString());
 		}
 		return result;
@@ -208,7 +208,7 @@ public class PackrConfig {
 
 	private List<File> toFileArray(JsonArray array) {
 		List<File> result = new ArrayList<>();
-		for(JsonValue value: array) {
+		for (JsonValue value : array) {
 			result.add(new File(value.asString()));
 		}
 		return result;
@@ -218,17 +218,29 @@ public class PackrConfig {
 	 * Sanity checks for configuration settings. Because users like to break stuff.
 	 */
 	void validate() throws IOException {
+		validate(platform, "platform");
+		validate(jdk, "JDK");
+		validate(executable, "executable name");
+		validate(mainClass, "main class");
+		validate(outDir, "output folder");
+
 		if (outDir.exists()) {
 			if (new File(".").equals(outDir)) {
 				throw new IOException("Output directory equals working directory, aborting");
 			}
-			if(new File("/").equals(outDir)) {
+			if (new File("/").equals(outDir)) {
 				throw new IOException("Output directory points to root folder.");
 			}
 		}
 
 		if (classpath.isEmpty()) {
 			throw new IOException("Empty class path. Please check your commandline or configuration.");
+		}
+	}
+
+	private <T> void validate(T parameter, String name) throws IOException {
+		if (parameter == null) {
+			throw new IOException("No " + name + " specified. Please check your commandline or configuration.");
 		}
 	}
 
