@@ -336,12 +336,16 @@ bool setCmdLineArguments(int argc, char** argv) {
 				verbose = _verbose != 0;
 
 				if (cwd != nullptr) {
-					cout << "Using working directory " << cwd << " ..." << endl;
+					if (verbose) {
+						cout << "Using working directory " << cwd << " ..." << endl;
+					}
 					workingDir = string(cwd);
 				}
 
 				if (config != nullptr) {
-					cout << "Using configuration file " << config << " ..." << endl;
+					if (verbose) {
+						cout << "Using configuration file " << config << " ..." << endl;
+					}
 					configurationPath = string(config);
 				}
 
@@ -404,7 +408,9 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 
 	// load JVM library, get function pointers
 
-	cout << "Loading JVM runtime library ..." << endl;
+	if (verbose) {
+		cout << "Loading JVM runtime library ..." << endl;
+	}
 
 	GetDefaultJavaVMInitArgs getDefaultJavaVMInitArgs = nullptr;
 	CreateJavaVM createJavaVM = nullptr;
@@ -441,7 +447,9 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 
 	// fill VM options
 
-	cout << "Passing VM options ..." << endl;
+	if (verbose) {
+		cout << "Passing VM options ..." << endl;
+	}
 
 	size_t vmArgc = 0;
 	JavaVMOption* options = nullptr;
@@ -453,7 +461,9 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 		options = new JavaVMOption[vmArgc];
 		for (size_t vmArg = 0; vmArg < vmArgc; vmArg++) {
 			string vmArgValue = vmArgs.get_array_element(vmArg).as_string();
-			cout << "  # " << vmArgValue << endl;
+			if (verbose) {
+				cout << "  # " << vmArgValue << endl;
+			}
 			options[vmArg].optionString = strdup(vmArgValue.c_str());
 			options[vmArg].extraInfo = nullptr;
 		}
@@ -478,27 +488,35 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 		JavaVM* jvm = nullptr;
 		JNIEnv* env = nullptr;
 
-		cout << "Creating Java VM ..." << endl;
+		if (verbose) {
+			cout << "Creating Java VM ..." << endl;
+		}
 
 		if (createJavaVM(&jvm, (void**) &env, &args) < 0) {
-			cout << "Error: failed to create Java VM!" << endl;
+			cerr << "Error: failed to create Java VM!" << endl;
 			exit(EXIT_FAILURE);
 		}
 
 		// create array of arguments to pass to Java main()
 
-		cout << "Passing command line arguments ..." << endl;
+		if (verbose) {
+			cout << "Passing command line arguments ..." << endl;
+		}
 
 		jobjectArray appArgs = env->NewObjectArray(cmdLineArgc, env->FindClass("java/lang/String"), nullptr);
 		for (size_t i = 0; i < cmdLineArgc; i++) {
-			cout << "  # " << cmdLineArgv[i] << endl;
+			if (verbose) {
+				cout << "  # " << cmdLineArgv[i] << endl;
+			}
 			jstring arg = env->NewStringUTF(cmdLineArgv[i]);
 			env->SetObjectArrayElement(appArgs, i, arg);
 		}
 
 		// load main class & method from classpath
 
-		cout << "Loading JAR file ..." << endl;
+		if (verbose) {
+			cout << "Loading JAR file ..." << endl;
+		}
 
 		if (!hasJsonValue(jsonRoot, "mainClass", sajson::TYPE_STRING)) {
 			cerr << "Error: no 'mainClass' element found in config!" << endl;
@@ -524,7 +542,9 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 
 		// call main() method
 
-		cout << "Invoking static " << main << ".main() function ..." << endl;
+		if (verbose) {
+			cout << "Invoking static " << main << ".main() function ..." << endl;
+		}
 
 		env->CallStaticVoidMethod(mainClass, mainMethod, appArgs);
 
@@ -546,7 +566,9 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 
 		jvm->DestroyJavaVM();
 
-		cout << "Destroyed Java VM ..." << endl;
+		if (verbose) {
+			cout << "Destroyed Java VM ..." << endl;
+		}
 
 		return nullptr;
 	}, args);
