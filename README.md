@@ -39,7 +39,7 @@ java -jar packr.jar \
 | minimizejre | minimize the JRE by removing directories and files as specified by an additional config file. Comes with a few config files out of the box. See below for details on the minimization config file. |
 | output | the output directory |
 | icon (optional, OS X) | location of an AppBundle icon resource (.icns file) |
-| bundleidentifier (optional, OS X) | the bundle identifier of your Java application, e.g. "com.my.app" |
+| bundle (optional, OS X) | the bundle identifier of your Java application, e.g. "com.my.app" |
 | verbose | prints more status information during processing, which can be useful for debugging |
 | help | shows the command line interface help |
 
