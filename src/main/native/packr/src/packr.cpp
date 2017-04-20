@@ -26,7 +26,8 @@
 
 using namespace std;
 
-static bool verbose = false;
+bool verbose = false;
+
 static string workingDir;
 static string executableName;
 static string configurationPath("config.json");

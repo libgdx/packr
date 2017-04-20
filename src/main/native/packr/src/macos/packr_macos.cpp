@@ -53,7 +53,9 @@ int main(int argc, char** argv) {
             const char* optionString = args.options[arg].optionString;
             if (strcmp("-XstartOnFirstThread", optionString) == 0) {
 
-                cout << "Starting JVM on main thread (-XstartOnFirstThread found) ..." << endl;
+                if (verbose) {
+                    cout << "Starting JVM on main thread (-XstartOnFirstThread found) ..." << endl;
+                }
 
                 delegate(nullptr);
                 return;
@@ -160,17 +162,25 @@ const char* getExecutablePath(const char* argv0) {
         strcpy(buf, resourcesDir);
         strcat(buf, "/");
         strcat(buf, executableName);
-        cout << "Using bundle resource folder [1]: " << resourcesDir << "/[" << executableName << "]" << endl;
+        if (verbose) {
+            cout << "Using bundle resource folder [1]: " << resourcesDir << "/[" << executableName << "]" << endl;
+        }
     } else if (foundResources) {
         strcpy(buf, resourcesDir);
         strcat(buf, "/packr");
-        cout << "Using bundle resource folder [2]: " << resourcesDir << endl;
+        if (verbose) {
+            cout << "Using bundle resource folder [2]: " << resourcesDir << endl;
+        }
     } else if (foundPath) {
         strcpy(buf, executablePath);
-        cout << "Using executable path: " << executablePath << endl;
+        if (verbose) {
+            cout << "Using executable path: " << executablePath << endl;
+        }
     } else {
         strcpy(buf, argv0);
-        cout << "Using [argv0] path: " << argv0 << endl;
+        if (verbose) {
+            cout << "Using [argv0] path: " << argv0 << endl;
+        }
     }
 
     return buf;

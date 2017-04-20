@@ -35,6 +35,9 @@ typedef std::function<void (LaunchJavaVMDelegate delegate, const JavaVMInitArgs&
 
 extern "C" {
 
+	/* configuration */
+	extern bool verbose;
+
 	/* platform-dependent constants */
 	extern const char __CLASS_PATH_DELIM;
 
