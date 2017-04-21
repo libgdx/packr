@@ -202,6 +202,8 @@ class PackrReduce {
 
 			if (!jar.isDirectory()) {
 				ZipUtil.unpack(jar, jarDir);
+			} else {
+				FileUtils.copyDirectory(jar, jarDir);
 			}
 
 			Set<String> extensions = new HashSet<String>();
@@ -244,13 +246,17 @@ class PackrReduce {
 				PackrFileUtils.delete(jar);
 
 				ZipUtil.pack(jarDir, jar);
-				FileUtils.deleteDirectory(jarDir);
 
 				long afterLen = jar.length();
 				if (config.verbose) {
 					System.out.println("  # " + beforeLen / 1024 + " kb -> " + afterLen / 1024 + " kb");
 				}
+			} else {
+				FileUtils.deleteDirectory (jar);
+				FileUtils.copyDirectory(jarDir, jar);
 			}
+
+			FileUtils.deleteDirectory(jarDir);
 		}
 	}
 
