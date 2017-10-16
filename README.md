@@ -30,7 +30,7 @@ java -jar packr.jar \
 | Parameter | Meaning |
 | --- | --- |
 | platform | one of "windows32", "windows64", "linux32", "linux64", "mac" |
-| jdk | ZIP file location or URL to ZIP file of an OpenJDK or Oracle JDK build containing a JRE. Prebuild OpenJDK packages can be found at https://github.com/alexkasko/openjdk-unofficial-builds. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script|
+| jdk | directory, ZIP file, or URL to ZIP file of an OpenJDK or Oracle JDK build containing a JRE. Prebuild OpenJDK packages can be found at https://github.com/alexkasko/openjdk-unofficial-builds. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script|
 | executable | name of the native executable, without extension such as ".exe" |
 | classpath | file locations of the JAR files to package |
 | mainclass | the fully qualified name of the main class, using dots to delimit package names |
@@ -38,6 +38,7 @@ java -jar packr.jar \
 | resources (optional) | list of files and directories to be packaged next to the native executable |
 | minimizejre | minimize the JRE by removing directories and files as specified by an additional config file. Comes with a few config files out of the box. See below for details on the minimization config file. |
 | output | the output directory |
+| cachejre (optional) | An optional directory to cache the result of JRE extraction and minimization. See below for details. |
 | icon (optional, OS X) | location of an AppBundle icon resource (.icns file) |
 | bundleidentifier (optional, OS X) | the bundle identifier of your Java application, e.g. "com.my.app" |
 | verbose | prints more status information during processing, which can be useful for debugging |
@@ -158,6 +159,12 @@ Then, rhino.jar (about 1.1MB) and, in case of a Windows JRE, all executable file
 Packr comes with two such configurations out of the box, [`soft`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/soft) and [`hard`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/hard). The `hard` profile removes a few more files, and repacks some additional JAR files.
 
 There's also a new, *experimental* configuration, [`oraclejre8`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/oraclejre8), which reduces size of an Oracle 8 JRE following Oracle's redistribution rules described [here](http://www.oracle.com/technetwork/java/javase/jre-8-readme-2095710.html). It also repacks JAR files, reducing (unpacked) JRE size from about 180 mb to 70 mb. **This version is pretty much untested, so please use with care!**
+
+### Cache
+
+Extracting and minimizing a JRE can take quite some time. If the `cachejre` option is used, the result of these operations is cached in the given folder, and can be reused in subsequent runs of packr.
+
+As of now, packr doesn't do any elaborate checks to validate the content of this cache folder. So if you update the JDK, or change the minimize profile, you need to empty or remove this folder manually to force a change.
 
 ### Classpath
 

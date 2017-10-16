@@ -61,6 +61,9 @@ public interface PackrCommandLine {
 	@Option(description = "minimize JRE by removing folders and files specified in config file", longName = "minimizejre", defaultToNull = true)
 	String minimizeJre();
 
+	@Option(description = "folder to cache bundled JRE, to speedup builds", longName = "cachejre", defaultToNull = true)
+	File cacheJre();
+
 	@Option(description = "additional files and folders to be packed next to the executable", longName = "resources", defaultToNull = true)
 	List<File> resources();
 

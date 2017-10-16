@@ -66,6 +66,7 @@ public class PackrConfig {
 	public String mainClass;
 	public List<String> vmArgs;
 	public String minimizeJre;
+	public File cacheJre;
 	public List<File> resources;
 	public File outDir;
 	public File iconResource;
@@ -125,6 +126,10 @@ public class PackrConfig {
 			minimizeJre = commandLine.minimizeJre();
 		}
 
+		if (commandLine.cacheJre() != null) {
+			cacheJre = commandLine.cacheJre();
+		}
+
 		resources = appendTo(resources, commandLine.resources());
 
 		if (commandLine.outDir() != null) {
@@ -163,6 +168,9 @@ public class PackrConfig {
 		if (json.get("minimizejre") != null) {
 			minimizeJre = json.get("minimizejre").asString();
 		}
+		if (json.get("cachejre") != null) {
+			cacheJre = new File(json.get("cachejre").asString());
+		}
 		if (json.get("resources") != null) {
 			resources = toFileArray(json.get("resources").asArray());
 		}
@@ -177,7 +185,7 @@ public class PackrConfig {
 
 	private <T> List<T> appendTo(List<T> list, List<T> append) {
 		if (list == null) {
-			return append != null ? append : new ArrayList<T>();
+			return append != null ? append : new ArrayList<>();
 		}
 
 		if (append != null) {

@@ -29,7 +29,7 @@ import java.util.Set;
  */
 class PackrReduce {
 
-	static void minimizeJre(PackrOutput output, PackrConfig config) throws IOException {
+	static void minimizeJre(File output, PackrConfig config) throws IOException {
 		if (config.minimizeJre == null) {
 			return;
 		}
@@ -45,7 +45,7 @@ class PackrReduce {
 			JsonArray reduceArray = minimizeJson.get("reduce").asArray();
 			for (JsonValue reduce : reduceArray) {
 				String path = reduce.asObject().get("archive").asString();
-				File file = new File(output.resourcesFolder, path);
+				File file = new File(output, path);
 
 				if (!file.exists()) {
 					if (config.verbose) {
@@ -57,7 +57,7 @@ class PackrReduce {
 				boolean needsUnpack = !file.isDirectory();
 
 				File fileNoExt = needsUnpack
-						? new File(output.resourcesFolder, path.contains(".") ? path.substring(0, path.lastIndexOf('.')) : path)
+						? new File(output, path.contains(".") ? path.substring(0, path.lastIndexOf('.')) : path)
 						: file;
 
 				if (needsUnpack) {
@@ -112,7 +112,7 @@ class PackrReduce {
 
 				JsonArray removeFilesArray = remove.asObject().get("paths").asArray();
 				for (JsonValue removeFile : removeFilesArray) {
-					removeFileWildcard(output.resourcesFolder, removeFile.asString(), config);
+					removeFileWildcard(output, removeFile.asString(), config);
 				}
 			}
 		}

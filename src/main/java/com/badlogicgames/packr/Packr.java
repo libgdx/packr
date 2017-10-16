@@ -51,11 +51,9 @@ public class Packr {
 
 		writeConfig(output);
 
-		copyJRE(output);
+		copyAndMinimizeJRE(output, config);
 
 		copyResources(output);
-
-		PackrReduce.minimizeJre(output, config);
 
 		PackrReduce.removePlatformLibs(output, config);
 
@@ -197,44 +195,74 @@ public class Packr {
 		}
 	}
 
-	private void copyJRE(PackrOutput output) throws IOException {
+	private void copyAndMinimizeJRE(PackrOutput output, PackrConfig config) throws IOException {
 
-		File jdkFile;
-		boolean fetchFromRemote = config.jdk.startsWith("http://") || config.jdk.startsWith("https://");
+		boolean extractToCache = config.cacheJre != null;
+		boolean skipExtractToCache = false;
 
-		// add JRE from local or remote zip file
-		if (fetchFromRemote) {
-			System.out.println("Downloading JDK from '" + config.jdk + "' ...");
-			jdkFile = new File(output.resourcesFolder, "jdk.zip");
-			InputStream in = new URL(config.jdk).openStream();
-			OutputStream outJdk = new FileOutputStream(jdkFile);
-			IOUtils.copy(in, outJdk);
-			in.close();
-			outJdk.close();
+		// check if JRE extraction (and minimize) can be skipped
+		if (extractToCache && config.cacheJre.exists()) {
+			if (config.cacheJre.isDirectory()) {
+				// check if the cache directory is empty
+				String[] files = config.cacheJre.list();
+				skipExtractToCache = files != null && files.length > 0;
+			} else {
+				throw new IOException(config.cacheJre + " must be a directory");
+			}
+		}
+
+		// path to extract JRE to (cache, or target folder)
+		File jreStoragePath = extractToCache ? config.cacheJre : output.resourcesFolder;
+
+		if (skipExtractToCache) {
+			System.out.println("Using cached JRE in '" + config.cacheJre + "' ...");
 		} else {
-			jdkFile = new File(config.jdk);
+			// path to extract JRE from (folder, zip or remote)
+			boolean fetchFromRemote = config.jdk.startsWith("http://") || config.jdk.startsWith("https://");
+			File jdkFile = fetchFromRemote ? new File(jreStoragePath, "jdk.zip") : new File(config.jdk);
+
+			// download from remote
+			if (fetchFromRemote) {
+				System.out.println("Downloading JDK from '" + config.jdk + "' ...");
+				try (InputStream remote = new URL(config.jdk).openStream()) {
+					try (OutputStream outJdk = new FileOutputStream(jdkFile)) {
+						IOUtils.copy(remote, outJdk);
+					}
+				}
+			}
+
+			// unpack JDK zip (or copy if it's a folder)
+			System.out.println("Unpacking JRE ...");
+			File tmp = new File(jreStoragePath, "tmp");
+			PackrFileUtils.mkdirs(tmp);
+
+			if (jdkFile.isDirectory()) {
+				PackrFileUtils.copyDirectory(jdkFile, tmp);
+			} else {
+				ZipUtil.unpack(jdkFile, tmp);
+			}
+
+			// copy the JRE sub folder
+			File jre = searchJre(tmp);
+			if (jre == null) {
+				throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
+			}
+
+			PackrFileUtils.copyDirectory(jre, new File(jreStoragePath, "jre"));
+			PackrFileUtils.deleteDirectory(tmp);
+
+			if (fetchFromRemote) {
+				PackrFileUtils.delete(jdkFile);
+			}
+
+			// run minimize
+			PackrReduce.minimizeJre(jreStoragePath, config);
 		}
 
-		System.out.println("Unpacking JRE ...");
-		File tmp = new File(output.resourcesFolder, "tmp");
-		PackrFileUtils.mkdirs(tmp);
-
-		if (jdkFile.isDirectory()) {
-			PackrFileUtils.copyDirectory(jdkFile, tmp);
-		} else {
-			ZipUtil.unpack(jdkFile, tmp);
-		}
-
-		File jre = searchJre(tmp);
-		if (jre == null) {
-			throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
-		}
-
-		PackrFileUtils.copyDirectory(jre, new File(output.resourcesFolder, "jre"));
-		PackrFileUtils.deleteDirectory(tmp);
-
-		if (fetchFromRemote) {
-			PackrFileUtils.delete(jdkFile);
+		if (extractToCache) {
+			// if cache is used, copy again here; if the JRE is cached already,
+			// this is the only copy done (and everything above is skipped)
+			PackrFileUtils.copyDirectory(jreStoragePath, output.resourcesFolder);
 		}
 	}
 
