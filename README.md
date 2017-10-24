@@ -20,6 +20,7 @@ java -jar packr.jar \
      --jdk openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip \
      --executable myapp \
      --classpath myapp.jar \
+     --removelibs myapp.jar \
      --mainclass com.my.app.MainClass \
      --vmargs Xmx1G \
      --resources src/main/resources path/to/other/assets \
@@ -33,6 +34,7 @@ java -jar packr.jar \
 | jdk | directory, ZIP file, or URL to ZIP file of an OpenJDK or Oracle JDK build containing a JRE. Prebuild OpenJDK packages can be found at https://github.com/alexkasko/openjdk-unofficial-builds. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script|
 | executable | name of the native executable, without extension such as ".exe" |
 | classpath | file locations of the JAR files to package |
+| removelibs (optional) | file locations of JAR files to remove native libraries which do not match the target platform. See below for details. |
 | mainclass | the fully qualified name of the main class, using dots to delimit package names |
 | vmargs | list of arguments for the JVM, without leading dashes, e.g. "Xmx1G" |
 | resources (optional) | list of files and directories to be packaged next to the native executable |
@@ -52,6 +54,9 @@ Alternatively, you can put all the command line arguments into a JSON file which
     "jdk": "/Users/badlogic/Downloads/openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip",
     "executable": "myapp",
     "classpath": [
+        "myapp.jar"
+    ],
+    "removelibs": [
         "myapp.jar"
     ],
     "mainclass": "com.my.app.MainClass",
@@ -99,6 +104,7 @@ config.platform = PackrConfig.Platform.Windows32;
 config.jdk = "/User/badlogic/Downloads/openjdk-for-mac.zip";
 config.executable = "myapp";
 config.classpath = Arrays.asList("myjar.jar");
+config.removePlatformLibs = config.classpath;
 config.mainClass = "com.my.app.MainClass";
 config.vmArgs = Arrays.asList("Xmx1G");
 config.minimizeJre = "soft";
@@ -160,21 +166,23 @@ Packr comes with two such configurations out of the box, [`soft`](https://github
 
 There's also a new, *experimental* configuration, [`oraclejre8`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/oraclejre8), which reduces size of an Oracle 8 JRE following Oracle's redistribution rules described [here](http://www.oracle.com/technetwork/java/javase/jre-8-readme-2095710.html). It also repacks JAR files, reducing (unpacked) JRE size from about 180 mb to 70 mb. **This version is pretty much untested, so please use with care!**
 
-### Cache
+### The "removelibs" option
 
-Extracting and minimizing a JRE can take quite some time. If the `cachejre` option is used, the result of these operations is cached in the given folder, and can be reused in subsequent runs of packr.
-
-As of now, packr doesn't do any elaborate checks to validate the content of this cache folder. So if you update the JDK, or change the minimize profile, you need to empty or remove this folder manually to force a change.
-
-### Classpath
-
-Minimization aside, packr also removes all dynamic libraries which do not match the target platform from your project JAR file(s):
+Minimization aside, packr can remove all dynamic libraries which do not match the target platform from your project JAR file(s):
 
 | platform | files removed |
 | --- | --- |
 | Windows | `*.dylib`, `*.so` |
 | Linux | `*.dll`, `*.dylib` |
 | MacOS | `*.dll`, `*.so` |
+
+This step is optional. If you don't need it, just remove the configuration parameter to speed up packr.
+
+## Caching
+
+Extracting and minimizing a JRE can take quite some time. If the `cachejre` option is used, the result of these operations is cached in the given folder, and can be reused in subsequent runs of packr.
+
+As of now, packr doesn't do any elaborate checks to validate the content of this cache folder. So if you update the JDK, or change the minimize profile, you need to empty or remove this folder manually to force a change.
 
 ## Output
 

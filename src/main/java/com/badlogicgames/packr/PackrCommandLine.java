@@ -52,6 +52,9 @@ public interface PackrCommandLine {
 	@Option(description = "JAR file(s) containing code and assets to be packed", longName = "classpath", defaultToNull = true)
 	List<String> classpath();
 
+	@Option(description = "JAR file(s) to remove platform libs", longName = "removelibs", defaultToNull = true)
+	List<String> removePlatformLibs();
+
 	@Option(description = "fully qualified main class name, e.g. com.badlogic.MyApp", longName = "mainclass", defaultToNull = true)
 	String mainClass();
 

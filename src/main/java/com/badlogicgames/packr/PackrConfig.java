@@ -16,9 +16,7 @@
 
 package com.badlogicgames.packr;
 
-import com.eclipsesource.json.JsonArray;
-import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
+import com.eclipsesource.json.*;
 import org.zeroturnaround.zip.commons.FileUtils;
 
 import java.io.File;
@@ -29,7 +27,7 @@ import java.util.List;
 /**
  * The Packr configuration can be read from command line, read from a JSON config file, or
  * created from Java code directly.
- *
+ * <p>
  * Command line parameters can be used to override (single-argument parameters) or extend
  * (multi-argument parameters) JSON settings.
  */
@@ -63,6 +61,7 @@ public class PackrConfig {
 	public String jdk;
 	public String executable;
 	public List<String> classpath;
+	public List<String> removePlatformLibs;
 	public String mainClass;
 	public List<String> vmArgs;
 	public String minimizeJre;
@@ -116,6 +115,8 @@ public class PackrConfig {
 
 		classpath = appendTo(classpath, commandLine.classpath());
 
+		removePlatformLibs = appendTo(removePlatformLibs, commandLine.removePlatformLibs());
+
 		if (commandLine.mainClass() != null) {
 			mainClass = commandLine.mainClass();
 		}
@@ -153,6 +154,9 @@ public class PackrConfig {
 		jdk = json.get("jdk").asString();
 		executable = json.get("executable").asString();
 		classpath = toStringArray(json.get("classpath").asArray());
+		if (json.get("removelibs") != null) {
+			removePlatformLibs = toStringArray(json.get("removelibs").asArray());
+		}
 		mainClass = json.get("mainclass").asString();
 		if (json.get("vmargs") != null) {
 			List<String> vmArgs = toStringArray(json.get("vmargs").asArray());

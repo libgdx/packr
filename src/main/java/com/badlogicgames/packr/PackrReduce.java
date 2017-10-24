@@ -184,10 +184,14 @@ class PackrReduce {
 	}
 
 	static void removePlatformLibs(PackrOutput output, PackrConfig config) throws IOException {
+		if (config.removePlatformLibs == null || config.removePlatformLibs.isEmpty()) {
+			return;
+		}
+
 		System.out.println("Removing foreign platform libs ...");
 
 		// let's remove any shared libs not used on the platform, e.g. libGDX/LWJGL natives
-		for (String classpath : config.classpath) {
+		for (String classpath : config.removePlatformLibs) {
 			File jar = new File(output.resourcesFolder, new File(classpath).getName());
 			File jarDir = new File(output.resourcesFolder, jar.getName() + ".tmp");
 
