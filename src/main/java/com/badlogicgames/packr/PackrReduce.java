@@ -197,9 +197,9 @@ class PackrReduce {
 
 			if (config.verbose) {
 				if (jar.isDirectory()) {
-					System.out.println("  # Classpath '" + classpath + "' is a directory");
+					System.out.println("  # JAR '" + jar.getName() + "' is a directory");
 				} else {
-					System.out.println("  # Unpacking '" + classpath + "' ...");
+					System.out.println("  # Unpacking '" + jar.getName() + "' ...");
 				}
 			}
 
@@ -244,7 +244,7 @@ class PackrReduce {
 
 			if (!jar.isDirectory()) {
 				if (config.verbose) {
-					System.out.println("  # Repacking '" + classpath + "' ...");
+					System.out.println("  # Repacking '" + jar.getName() + "' ...");
 				}
 
 				long beforeLen = jar.length();
