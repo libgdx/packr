@@ -92,7 +92,10 @@ public class Packr {
 		File root = output.executableFolder;
 
 		PackrFileUtils.mkdirs(new File(root, "Contents"));
-		new FileWriter(new File(root, "Contents/Info.plist")).write(readResourceAsString("/Info.plist", values));
+		try (FileWriter info = new FileWriter(new File(root, "Contents/Info.plist"))) {
+			String plist = readResourceAsString("/Info.plist", values);
+			info.write(plist);
+		}
 
 		File target = new File(root, "Contents/MacOS");
 		PackrFileUtils.mkdirs(target);
