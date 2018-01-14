@@ -6,6 +6,7 @@
 - Fixed crash when classpath is a directory. (#90)
 - Added "cachejre" option to cache results of JRE extract & minimize steps.
 - Added "removelibs" option to specify JAR files which are subject for removal of platform libraries. If this parameter isn't used, it defaults to a copy of "classpath", which is the old behaviour.
+- Added NvOptimusEnablement and AmdPowerXpressRequestHighPerformance symbols. (#114)
 
 [2.0-SNAPSHOT and before]
 - Please check the Git log, or search the libGDX forums.
