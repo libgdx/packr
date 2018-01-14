@@ -26,6 +26,9 @@ using namespace std;
 
 const char __CLASS_PATH_DELIM = ';';
 
+__declspec(dllexport) DWORD NvOptimusEnablement = 1;
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+
 static void waitAtExit(void) {
 	cout << "Press ENTER key to exit.";
 	cin.get();
