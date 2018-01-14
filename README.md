@@ -42,7 +42,7 @@ java -jar packr.jar \
 | output | the output directory |
 | cachejre (optional) | An optional directory to cache the result of JRE extraction and minimization. See below for details. |
 | icon (optional, OS X) | location of an AppBundle icon resource (.icns file) |
-| bundleidentifier (optional, OS X) | the bundle identifier of your Java application, e.g. "com.my.app" |
+| bundle (optional, OS X) | the bundle identifier of your Java application, e.g. "com.my.app" |
 | verbose | prints more status information during processing, which can be useful for debugging |
 | help | shows the command line interface help |
 
