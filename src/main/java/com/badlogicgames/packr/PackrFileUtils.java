@@ -48,13 +48,13 @@ class PackrFileUtils {
 
 	/**
 	 * Copies directories, preserving file attributes.
-	 *
+	 * <p>
 	 * The {@link org.zeroturnaround.zip.commons.FileUtilsV2_2#copyDirectory(File, File)} function does not
 	 * preserve file attributes.
 	 */
 	static void copyDirectory(File sourceDirectory, File targetDirectory) throws IOException {
 
-		final Path sourcePath = Paths.get(sourceDirectory.toURI());
+		final Path sourcePath = Paths.get(sourceDirectory.toURI()).toRealPath();
 		final Path targetPath = Paths.get(targetDirectory.toURI());
 
 		Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {

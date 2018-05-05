@@ -65,9 +65,8 @@ public class Packr {
 		if (folder.exists()) {
 			System.out.println("Cleaning output directory '" + folder.getAbsolutePath() + "' ...");
 			PackrFileUtils.deleteDirectory(folder);
-		} else {
-			PackrFileUtils.mkdirs(folder);
 		}
+		PackrFileUtils.mkdirs(folder);
 	}
 
 	private PackrOutput buildMacBundle(PackrOutput output) throws IOException {
@@ -237,6 +236,9 @@ public class Packr {
 			// unpack JDK zip (or copy if it's a folder)
 			System.out.println("Unpacking JRE ...");
 			File tmp = new File(jreStoragePath, "tmp");
+			if (tmp.exists()) {
+				PackrFileUtils.deleteDirectory(tmp);
+			}
 			PackrFileUtils.mkdirs(tmp);
 
 			if (jdkFile.isDirectory()) {
