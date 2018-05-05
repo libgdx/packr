@@ -33,324 +33,325 @@ import java.util.Map;
  */
 public class Packr {
 
-	private PackrConfig config;
+  private PackrConfig config;
 
-	@SuppressWarnings("WeakerAccess")
-	public void pack(PackrConfig config) throws IOException {
+  @SuppressWarnings("WeakerAccess")
+  public void pack(PackrConfig config) throws IOException {
 
-		config.validate();
-		this.config = config;
+    config.validate();
+    this.config = config;
 
-		PackrOutput output = new PackrOutput(config.outDir, config.outDir);
+    PackrOutput output = new PackrOutput(config.outDir, config.outDir);
 
-		cleanOrCreateOutputFolder(output);
+    cleanOrCreateOutputFolder(output);
 
-		output = buildMacBundle(output);
+    output = buildMacBundle(output);
 
-		copyExecutableAndClasspath(output);
+    copyExecutableAndClasspath(output);
 
-		writeConfig(output);
+    writeConfig(output);
 
-		copyAndMinimizeJRE(output, config);
+    copyAndMinimizeJRE(output, config);
 
-		copyResources(output);
+    copyResources(output);
 
-		PackrReduce.removePlatformLibs(output, config);
+    PackrReduce.removePlatformLibs(output, config);
 
-		System.out.println("Done!");
-	}
+    System.out.println("Done!");
+  }
 
-	private void cleanOrCreateOutputFolder(PackrOutput output) throws IOException {
-		File folder = output.executableFolder;
-		if (folder.exists()) {
-			System.out.println("Cleaning output directory '" + folder.getAbsolutePath() + "' ...");
-			PackrFileUtils.deleteDirectory(folder);
-		} else {
-			PackrFileUtils.mkdirs(folder);
-		}
-	}
+  private void cleanOrCreateOutputFolder(PackrOutput output) throws IOException {
+    File folder = output.executableFolder;
+    if (folder.exists()) {
+      System.out.println("Cleaning output directory '" + folder.getAbsolutePath() + "' ...");
+      PackrFileUtils.deleteDirectory(folder);
+    }
+    PackrFileUtils.mkdirs(folder);
+  }
 
-	private PackrOutput buildMacBundle(PackrOutput output) throws IOException {
+  private PackrOutput buildMacBundle(PackrOutput output) throws IOException {
 
-		if (config.platform != PackrConfig.Platform.MacOS) {
-			return output;
-		}
+    if (config.platform != PackrConfig.Platform.MacOS) {
+      return output;
+    }
 
-		// replacement strings for Info.plist
-		Map<String, String> values = new HashMap<>();
+    // replacement strings for Info.plist
+    Map<String, String> values = new HashMap<>();
 
-		values.put("${executable}", config.executable);
+    values.put("${executable}", config.executable);
 
-		if (config.bundleIdentifier != null) {
-			values.put("${bundleIdentifier}", config.bundleIdentifier);
-		} else {
-			values.put("${bundleIdentifier}", config.mainClass.substring(0, config.mainClass.lastIndexOf('.')));
-		}
-
-		// create folder structure
-
-		File root = output.executableFolder;
-
-		PackrFileUtils.mkdirs(new File(root, "Contents"));
-		try (FileWriter info = new FileWriter(new File(root, "Contents/Info.plist"))) {
-			String plist = readResourceAsString("/Info.plist", values);
-			info.write(plist);
-		}
-
-		File target = new File(root, "Contents/MacOS");
-		PackrFileUtils.mkdirs(target);
-
-		File resources = new File(root, "Contents/Resources");
-		PackrFileUtils.mkdirs(resources);
-
-		if (config.iconResource != null) {
-			// copy icon to Contents/Resources/icons.icns
-			if (config.iconResource.exists()) {
-				PackrFileUtils.copyFile(config.iconResource, new File(resources, "icons.icns"));
-			}
-		}
-
-		return new PackrOutput(target, resources);
-	}
-
-	private void copyExecutableAndClasspath(PackrOutput output) throws IOException {
-		byte[] exe = null;
-		String extension = "";
-
-		switch (config.platform) {
-			case Windows32:
-				exe = readResource("/packr-windows.exe");
-				extension = ".exe";
-				break;
-			case Windows64:
-				exe = readResource("/packr-windows-x64.exe");
-				extension = ".exe";
-				break;
-			case Linux32:
-				exe = readResource("/packr-linux");
-				break;
-			case Linux64:
-				exe = readResource("/packr-linux-x64");
-				break;
-			case MacOS:
-				exe = readResource("/packr-mac");
-				break;
-		}
-
-		System.out.println("Copying executable ...");
-
-		try (OutputStream writer = new FileOutputStream(
-				new File(output.executableFolder, config.executable + extension))) {
-
-			writer.write(exe);
-		}
-
-		PackrFileUtils.chmodX(new File(output.executableFolder, config.executable + extension));
-
-		System.out.println("Copying classpath(s) ...");
-		for (String file : config.classpath) {
-			File cpSrc = new File(file);
-			File cpDst = new File(output.resourcesFolder, new File(file).getName());
-
-			if (cpSrc.isFile()) {
-				PackrFileUtils.copyFile(cpSrc, cpDst);
-			} else if (cpSrc.isDirectory()) {
-				PackrFileUtils.copyDirectory(cpSrc, cpDst);
-			} else {
-				System.err.println("Warning! Classpath not found: " + cpSrc);
-			}
-		}
-	}
-
-	private void writeConfig(PackrOutput output) throws IOException {
-
-		StringBuilder builder = new StringBuilder();
-		builder.append("{\n");
-		builder.append("  \"classPath\": [");
-
-		String delim = "\n";
-		for (String f : config.classpath) {
-			builder.append(delim).append("    \"").append(new File(f).getName()).append("\"");
-			delim = ",\n";
-		}
-		builder.append("\n  ],\n");
-
-		builder.append("  \"mainClass\": \"").append(config.mainClass).append("\",\n");
-		builder.append("  \"vmArgs\": [\n");
-
-		for (int i = 0; i < config.vmArgs.size(); i++) {
-			String vmArg = config.vmArgs.get(i);
-			builder.append("    \"");
-			if (!vmArg.startsWith("-")) {
-				builder.append("-");
-			}
-			builder.append(vmArg).append("\"");
-			if (i < config.vmArgs.size() - 1) {
-				builder.append(",");
-			}
-			builder.append("\n");
-		}
-		builder.append("  ]\n");
-		builder.append("}");
-
-		try (Writer writer = new FileWriter(new File(output.resourcesFolder, "config.json"))) {
-			writer.write(builder.toString());
-		}
-	}
-
-	private void copyAndMinimizeJRE(PackrOutput output, PackrConfig config) throws IOException {
-
-		boolean extractToCache = config.cacheJre != null;
-		boolean skipExtractToCache = false;
-
-		// check if JRE extraction (and minimize) can be skipped
-		if (extractToCache && config.cacheJre.exists()) {
-			if (config.cacheJre.isDirectory()) {
-				// check if the cache directory is empty
-				String[] files = config.cacheJre.list();
-				skipExtractToCache = files != null && files.length > 0;
-			} else {
-				throw new IOException(config.cacheJre + " must be a directory");
-			}
-		}
-
-		// path to extract JRE to (cache, or target folder)
-		File jreStoragePath = extractToCache ? config.cacheJre : output.resourcesFolder;
-
-		if (skipExtractToCache) {
-			System.out.println("Using cached JRE in '" + config.cacheJre + "' ...");
-		} else {
-			// path to extract JRE from (folder, zip or remote)
-			boolean fetchFromRemote = config.jdk.startsWith("http://") || config.jdk.startsWith("https://");
-			File jdkFile = fetchFromRemote ? new File(jreStoragePath, "jdk.zip") : new File(config.jdk);
-
-			// download from remote
-			if (fetchFromRemote) {
-				System.out.println("Downloading JDK from '" + config.jdk + "' ...");
-				try (InputStream remote = new URL(config.jdk).openStream()) {
-					try (OutputStream outJdk = new FileOutputStream(jdkFile)) {
-						IOUtils.copy(remote, outJdk);
-					}
-				}
-			}
-
-			// unpack JDK zip (or copy if it's a folder)
-			System.out.println("Unpacking JRE ...");
-			File tmp = new File(jreStoragePath, "tmp");
-			PackrFileUtils.mkdirs(tmp);
-
-			if (jdkFile.isDirectory()) {
-				PackrFileUtils.copyDirectory(jdkFile, tmp);
-			} else {
-				ZipUtil.unpack(jdkFile, tmp);
-			}
-
-			// copy the JRE sub folder
-			File jre = searchJre(tmp);
-			if (jre == null) {
-				throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
-			}
-
-			PackrFileUtils.copyDirectory(jre, new File(jreStoragePath, "jre"));
-			PackrFileUtils.deleteDirectory(tmp);
-
-			if (fetchFromRemote) {
-				PackrFileUtils.delete(jdkFile);
-			}
-
-			// run minimize
-			PackrReduce.minimizeJre(jreStoragePath, config);
-		}
-
-		if (extractToCache) {
-			// if cache is used, copy again here; if the JRE is cached already,
-			// this is the only copy done (and everything above is skipped)
-			PackrFileUtils.copyDirectory(jreStoragePath, output.resourcesFolder);
-		}
-	}
-
-	private File searchJre(File tmp) {
-		if (tmp.getName().equals("jre") && tmp.isDirectory()
-				&& (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
-			return tmp;
-		}
-
-		File[] childs = tmp.listFiles();
-		if (childs != null) {
-			for (File child : childs) {
-				if (child.isDirectory()) {
-					File found = searchJre(child);
-					if (found != null) {
-						return found;
-					}
-				}
-			}
-		}
-
-		return null;
-	}
-
-	private void copyResources(PackrOutput output) throws IOException {
-		if (config.resources != null) {
-			System.out.println("Copying resources ...");
-
-			for (File file : config.resources) {
-				if (!file.exists()) {
-					throw new IOException("Resource '" + file.getAbsolutePath() + "' doesn't exist");
-				}
-
-				if (file.isFile()) {
-					PackrFileUtils.copyFile(file, new File(output.resourcesFolder, file.getName()));
-				}
-
-				if (file.isDirectory()) {
-					File target = new File(output.resourcesFolder, file.getName());
-					PackrFileUtils.mkdirs(target);
-					PackrFileUtils.copyDirectory(file, target);
-				}
-			}
-		}
-	}
-
-	private byte[] readResource(String resource) throws IOException {
-		return IOUtils.toByteArray(Packr.class.getResourceAsStream(resource));
-	}
-
-	private String readResourceAsString(String resource, Map<String, String> values) throws IOException {
-		String txt = IOUtils.toString(Packr.class.getResourceAsStream(resource), "UTF-8");
-		return replace(txt, values);
-	}
-
-	private String replace(String txt, Map<String, String> values) {
-		for (String key : values.keySet()) {
-			String value = values.get(key);
-			txt = txt.replace(key, value);
-		}
-		return txt;
-	}
-
-	public static void main(String[] args) {
-
-		try {
-
-			PackrCommandLine commandLine = CliFactory.parseArguments(
-					PackrCommandLine.class, args.length > 0 ? args : new String[] { "-h" });
-
-			if (commandLine.help()) {
-				return;
-			}
-
-			new Packr().pack(new PackrConfig(commandLine));
-
-		} catch (ArgumentValidationException e) {
-			for (ValidationFailure failure : e.getValidationFailures()) {
-				System.err.println(failure.getMessage());
-			}
-			System.exit(-1);
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
-	}
+    if (config.bundleIdentifier != null) {
+      values.put("${bundleIdentifier}", config.bundleIdentifier);
+    } else {
+      values.put("${bundleIdentifier}", config.mainClass.substring(0, config.mainClass.lastIndexOf('.')));
+    }
+
+    // create folder structure
+
+    File root = output.executableFolder;
+
+    PackrFileUtils.mkdirs(new File(root, "Contents"));
+    try (FileWriter info = new FileWriter(new File(root, "Contents/Info.plist"))) {
+      String plist = readResourceAsString("/Info.plist", values);
+      info.write(plist);
+    }
+
+    File target = new File(root, "Contents/MacOS");
+    PackrFileUtils.mkdirs(target);
+
+    File resources = new File(root, "Contents/Resources");
+    PackrFileUtils.mkdirs(resources);
+
+    if (config.iconResource != null) {
+      // copy icon to Contents/Resources/icons.icns
+      if (config.iconResource.exists()) {
+        PackrFileUtils.copyFile(config.iconResource, new File(resources, "icons.icns"));
+      }
+    }
+
+    return new PackrOutput(target, resources);
+  }
+
+  private void copyExecutableAndClasspath(PackrOutput output) throws IOException {
+    byte[] exe = null;
+    String extension = "";
+
+    switch (config.platform) {
+      case Windows32:
+        exe = readResource("/packr-windows.exe");
+        extension = ".exe";
+        break;
+      case Windows64:
+        exe = readResource("/packr-windows-x64.exe");
+        extension = ".exe";
+        break;
+      case Linux32:
+        exe = readResource("/packr-linux");
+        break;
+      case Linux64:
+        exe = readResource("/packr-linux-x64");
+        break;
+      case MacOS:
+        exe = readResource("/packr-mac");
+        break;
+    }
+
+    System.out.println("Copying executable ...");
+
+    try (OutputStream writer = new FileOutputStream(
+        new File(output.executableFolder, config.executable + extension))) {
+
+      writer.write(exe);
+    }
+
+    PackrFileUtils.chmodX(new File(output.executableFolder, config.executable + extension));
+
+    System.out.println("Copying classpath(s) ...");
+    for (String file : config.classpath) {
+      File cpSrc = new File(file);
+      File cpDst = new File(output.resourcesFolder, new File(file).getName());
+
+      if (cpSrc.isFile()) {
+        PackrFileUtils.copyFile(cpSrc, cpDst);
+      } else if (cpSrc.isDirectory()) {
+        PackrFileUtils.copyDirectory(cpSrc, cpDst);
+      } else {
+        System.err.println("Warning! Classpath not found: " + cpSrc);
+      }
+    }
+  }
+
+  private void writeConfig(PackrOutput output) throws IOException {
+
+    StringBuilder builder = new StringBuilder();
+    builder.append("{\n");
+    builder.append("  \"classPath\": [");
+
+    String delim = "\n";
+    for (String f : config.classpath) {
+      builder.append(delim).append("    \"").append(new File(f).getName()).append("\"");
+      delim = ",\n";
+    }
+    builder.append("\n  ],\n");
+
+    builder.append("  \"mainClass\": \"").append(config.mainClass).append("\",\n");
+    builder.append("  \"vmArgs\": [\n");
+
+    for (int i = 0; i < config.vmArgs.size(); i++) {
+      String vmArg = config.vmArgs.get(i);
+      builder.append("    \"");
+      if (!vmArg.startsWith("-")) {
+        builder.append("-");
+      }
+      builder.append(vmArg).append("\"");
+      if (i < config.vmArgs.size() - 1) {
+        builder.append(",");
+      }
+      builder.append("\n");
+    }
+    builder.append("  ]\n");
+    builder.append("}");
+
+    try (Writer writer = new FileWriter(new File(output.resourcesFolder, "config.json"))) {
+      writer.write(builder.toString());
+    }
+  }
+
+  private void copyAndMinimizeJRE(PackrOutput output, PackrConfig config) throws IOException {
+
+    boolean extractToCache = config.cacheJre != null;
+    boolean skipExtractToCache = false;
+
+    // check if JRE extraction (and minimize) can be skipped
+    if (extractToCache && config.cacheJre.exists()) {
+      if (config.cacheJre.isDirectory()) {
+        // check if the cache directory is empty
+        String[] files = config.cacheJre.list();
+        skipExtractToCache = files != null && files.length > 0;
+      } else {
+        throw new IOException(config.cacheJre + " must be a directory");
+      }
+    }
+
+    // path to extract JRE to (cache, or target folder)
+    File jreStoragePath = extractToCache ? config.cacheJre : output.resourcesFolder;
+
+    if (skipExtractToCache) {
+      System.out.println("Using cached JRE in '" + config.cacheJre + "' ...");
+    } else {
+      // path to extract JRE from (folder, zip or remote)
+      boolean fetchFromRemote = config.jdk.startsWith("http://") || config.jdk.startsWith("https://");
+      File jdkFile = fetchFromRemote ? new File(jreStoragePath, "jdk.zip") : new File(config.jdk);
+
+      // download from remote
+      if (fetchFromRemote) {
+        System.out.println("Downloading JDK from '" + config.jdk + "' ...");
+        try (InputStream remote = new URL(config.jdk).openStream()) {
+          try (OutputStream outJdk = new FileOutputStream(jdkFile)) {
+            IOUtils.copy(remote, outJdk);
+          }
+        }
+      }
+
+      // unpack JDK zip (or copy if it's a folder)
+      System.out.println("Unpacking JRE ...");
+      File tmp = new File(jreStoragePath, "tmp");
+      if (tmp.exists())
+        PackrFileUtils.deleteDirectory(tmp);
+      PackrFileUtils.mkdirs(tmp);
+
+      if (jdkFile.isDirectory()) {
+        PackrFileUtils.copyDirectory(jdkFile, tmp);
+      } else {
+        ZipUtil.unpack(jdkFile, tmp);
+      }
+
+      // copy the JRE sub folder
+      File jre = searchJre(tmp);
+      if (jre == null) {
+        throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
+      }
+
+      PackrFileUtils.copyDirectory(jre, new File(jreStoragePath, "jre"));
+      PackrFileUtils.deleteDirectory(tmp);
+
+      if (fetchFromRemote) {
+        PackrFileUtils.delete(jdkFile);
+      }
+
+      // run minimize
+      PackrReduce.minimizeJre(jreStoragePath, config);
+    }
+
+    if (extractToCache) {
+      // if cache is used, copy again here; if the JRE is cached already,
+      // this is the only copy done (and everything above is skipped)
+      PackrFileUtils.copyDirectory(jreStoragePath, output.resourcesFolder);
+    }
+  }
+
+  private File searchJre(File tmp) {
+    if (tmp.getName().equals("jre") && tmp.isDirectory()
+        && (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
+      return tmp;
+    }
+
+    File[] childs = tmp.listFiles();
+    if (childs != null) {
+      for (File child : childs) {
+        if (child.isDirectory()) {
+          File found = searchJre(child);
+          if (found != null) {
+            return found;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private void copyResources(PackrOutput output) throws IOException {
+    if (config.resources != null) {
+      System.out.println("Copying resources ...");
+
+      for (File file : config.resources) {
+        if (!file.exists()) {
+          throw new IOException("Resource '" + file.getAbsolutePath() + "' doesn't exist");
+        }
+
+        if (file.isFile()) {
+          PackrFileUtils.copyFile(file, new File(output.resourcesFolder, file.getName()));
+        }
+
+        if (file.isDirectory()) {
+          File target = new File(output.resourcesFolder, file.getName());
+          PackrFileUtils.mkdirs(target);
+          PackrFileUtils.copyDirectory(file, target);
+        }
+      }
+    }
+  }
+
+  private byte[] readResource(String resource) throws IOException {
+    return IOUtils.toByteArray(Packr.class.getResourceAsStream(resource));
+  }
+
+  private String readResourceAsString(String resource, Map<String, String> values) throws IOException {
+    String txt = IOUtils.toString(Packr.class.getResourceAsStream(resource), "UTF-8");
+    return replace(txt, values);
+  }
+
+  private String replace(String txt, Map<String, String> values) {
+    for (String key : values.keySet()) {
+      String value = values.get(key);
+      txt = txt.replace(key, value);
+    }
+    return txt;
+  }
+
+  public static void main(String[] args) {
+
+    try {
+
+      PackrCommandLine commandLine = CliFactory.parseArguments(
+          PackrCommandLine.class, args.length > 0 ? args : new String[] { "-h" });
+
+      if (commandLine.help()) {
+        return;
+      }
+
+      new Packr().pack(new PackrConfig(commandLine));
+
+    } catch (ArgumentValidationException e) {
+      for (ValidationFailure failure : e.getValidationFailures()) {
+        System.err.println(failure.getMessage());
+      }
+      System.exit(-1);
+    } catch (IOException e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+  }
 
 }
