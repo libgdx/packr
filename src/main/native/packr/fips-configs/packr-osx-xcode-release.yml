@@ -3,5 +3,3 @@ platform: osx
 generator: Xcode
 build_tool: xcodebuild
 build_type: Release
-defines:
-    FIPS_OSX_UNIVERSAL: ON
