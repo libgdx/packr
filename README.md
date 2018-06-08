@@ -4,9 +4,9 @@ __Public Service Announcement: With packr v2.0, command line interfaces to both 
 
 ## About
 
-Packages your JAR, assets and a JVM for distribution on Windows, Linux and Mac OS X, adding a native executable file to make it appear like a native app. Packr is most suitable for GUI applications, such as games made with [libGDX](http://libgdx.badlogicgames.com/).
+Packages your JAR, assets and a JVM for distribution on Windows, Linux and Mac OS X, adding a native executable file to make it appear like a native app. Packr is most suitable for GUI applications, such as games made with [libGDX](https://libgdx.badlogicgames.com/).
 
-#### [Download Packr](http://bit.ly/packrgdx)
+#### [Download Packr](http://central.maven.org/maven2/com/bladecoder/packr/packr/2.1/packr-2.1.jar)
 
 ## Usage
 
