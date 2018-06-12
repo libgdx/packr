@@ -6,7 +6,9 @@ __Public Service Announcement: With packr v2.0, command line interfaces to both 
 
 Packages your JAR, assets and a JVM for distribution on Windows, Linux and Mac OS X, adding a native executable file to make it appear like a native app. Packr is most suitable for GUI applications, such as games made with [libGDX](http://libgdx.badlogicgames.com/).
 
-#### [Download Packr](http://bit.ly/packrgdx)
+## Download
+
+The latest build is available for [download here](https://libgdx.badlogicgames.com/ci/packr/packr.jar).
 
 ## Usage
 
@@ -89,10 +91,18 @@ java -jar packr.jar --output target/out-mac --vmargs Xms256m -- my-packr-config.
 Finally, you can use packr from within your Java code. Just add the JAR file to your project, either manually, or via the following Maven dependency:
 
 ```xml
+<repositories>
+  <repository>
+    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    <snapshots>
+      <enabled>true</enabled>
+    </snapshots>
+  </repository>
+</repositories>
 <dependency>
    <groupId>com.badlogicgames.packr</groupId>
    <artifactId>packr</artifactId>
-   <version>2.0</version>
+   <version>2.1</version>
 </dependency>
 ```
 
