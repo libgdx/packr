@@ -17,7 +17,6 @@
 package com.badlogicgames.packr;
 
 import com.lexicalscope.jewel.cli.*;
-import org.zeroturnaround.zip.ZipUtil;
 import org.zeroturnaround.zip.commons.IOUtils;
 
 import java.io.*;
@@ -244,7 +243,7 @@ public class Packr {
 			if (jdkFile.isDirectory()) {
 				PackrFileUtils.copyDirectory(jdkFile, tmp);
 			} else {
-				ZipUtil.unpack(jdkFile, tmp);
+				PackrFileUtils.unpack(jdkFile, tmp);
 			}
 
 			// copy the JRE sub folder

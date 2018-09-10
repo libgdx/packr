@@ -16,10 +16,15 @@
 
 package com.badlogicgames.packr;
 
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipUtils;
+import org.apache.commons.compress.utils.IOUtils;
+import org.zeroturnaround.zip.ZipUtil;
 import org.zeroturnaround.zip.commons.FileUtilsV2_2;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 
@@ -88,5 +93,56 @@ class PackrFileUtils {
 		Path targetPath = Paths.get(target.toURI());
 		Files.copy(sourcePath, targetPath, StandardCopyOption.COPY_ATTRIBUTES);
 	}
+
+	static void unpack(File packedFile, File outputDir) throws IOException {
+		String filename = packedFile.getName().toLowerCase();
+		if(filename.endsWith(".zip")) {
+			unZip(packedFile, outputDir);
+		} else if(filename.endsWith(".tar.gz")) {
+			File tarFile = unGzip(packedFile, outputDir);
+			unTar(tarFile, outputDir);
+			tarFile.delete();
+		}
+	}
+
+	private static void unZip(File zipFile, File outputDir) {
+		ZipUtil.unpack(zipFile, outputDir);
+	}
+
+	private static File unGzip(File targzFile, File outputDir) throws IOException {
+		System.out.println("unGzip (" + targzFile + ", " + outputDir);
+		String outFileName = GzipUtils.getUncompressedFilename(targzFile.getName());
+
+		// code from https://commons.apache.org/proper/commons-compress/examples.html
+		Path outputFile = outputDir.toPath().resolve(outFileName);
+		try(InputStream fin = Files.newInputStream(targzFile.toPath());
+			BufferedInputStream in = new BufferedInputStream(fin);
+			OutputStream out = Files.newOutputStream(outputFile);
+			GzipCompressorInputStream gzIn = new GzipCompressorInputStream(in)) {
+			IOUtils.copy(gzIn, out);
+		}
+
+		return outputFile.toFile();
+	}
+
+	private static void unTar(File tarFile, File outputDir) throws IOException {
+		System.out.println("unTar (" + tarFile + ", " + outputDir);
+		// code from https://memorynotfound.com/java-tar-example-compress-decompress-tar-tar-gz-files/
+		try (TarArchiveInputStream inputStream = new TarArchiveInputStream(new FileInputStream(tarFile))) {
+			TarArchiveEntry entry;
+			while((entry = inputStream.getNextTarEntry()) != null) {
+				if (entry.isDirectory()) {
+					continue;
+				}
+				File curfile = new File(outputDir, entry.getName());
+				File parent = curfile.getParentFile();
+				if (!parent.exists()) {
+					parent.mkdirs();
+				}
+				IOUtils.copy(inputStream, new FileOutputStream(curfile));
+			}
+		}
+	}
+
 
 }

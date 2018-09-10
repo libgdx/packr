@@ -1,0 +1,5 @@
+This is a openjdk, taken from http://jdk.java.net/10/
+
+For testing of unpacking it, it is stripped from all large content.
+This file is not usable any more.
+It is now only a defined archive for unit tests.
