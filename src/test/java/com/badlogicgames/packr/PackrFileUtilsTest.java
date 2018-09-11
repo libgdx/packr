@@ -31,4 +31,17 @@ class PackrFileUtilsTest {
         Arrays.sort(subDirFileNames);
         assertArrayEquals(new String[]{"conf", "include", "legal", "release"}, subDirFileNames);
     }
+
+    @Test
+    void getFileFromUrl() {
+        String url = "https://download.java.net/java/GA/jdk10/10.0.2/19aef61b38124481863b1413dce1855f/13/openjdk-10.0.2_linux-x64_bin.tar.gz";
+        String filename = "openjdk-10.0.2_linux-x64_bin.tar.gz";
+
+        // null-save test
+        assertEquals(null, PackrFileUtils.getFileFromUrl(null));
+        // file without path
+        assertEquals(filename, PackrFileUtils.getFileFromUrl(filename));
+        // full-blown test
+        assertEquals(filename, PackrFileUtils.getFileFromUrl(url));
+    }
 }

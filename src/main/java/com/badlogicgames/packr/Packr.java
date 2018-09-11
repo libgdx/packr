@@ -220,7 +220,9 @@ public class Packr {
 		} else {
 			// path to extract JRE from (folder, zip or remote)
 			boolean fetchFromRemote = config.jdk.startsWith("http://") || config.jdk.startsWith("https://");
-			File jdkFile = fetchFromRemote ? new File(jreStoragePath, "jdk.zip") : new File(config.jdk);
+			File jdkFile = fetchFromRemote ?
+					new File(jreStoragePath, PackrFileUtils.getFileFromUrl(config.jdk)) :
+					new File(config.jdk);
 
 			// download from remote
 			if (fetchFromRemote) {
@@ -271,7 +273,7 @@ public class Packr {
 	}
 
 	private File searchJre(File tmp) {
-		if (tmp.getName().equals("jre") && tmp.isDirectory()
+		if (tmp.isDirectory()
 				&& (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
 			return tmp;
 		}

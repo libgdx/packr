@@ -51,6 +51,14 @@ class PackrFileUtils {
 		}
 	}
 
+	static String getFileFromUrl(String url) {
+		if (url == null || !url.contains("/")) {
+			return url;
+		}
+		String[] split = url.split("/");
+		return split[split.length - 1];
+	}
+
 	/**
 	 * Copies directories, preserving file attributes.
 	 * <p>
@@ -143,6 +151,5 @@ class PackrFileUtils {
 			}
 		}
 	}
-
 
 }
