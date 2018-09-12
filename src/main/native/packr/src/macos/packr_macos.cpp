@@ -110,7 +110,12 @@ int main(int argc, char** argv) {
 
 bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM) {
 
+    /* old JDKs */
     void* handle = dlopen("jre/lib/jli/libjli.dylib", RTLD_LAZY);
+    if (handle == NULL) {
+        /* new JDKs */
+        handle = dlopen("lib/jli/libjli.dylib", RTLD_LAZY);
+    }
     if (handle == NULL) {
         cerr << dlerror() << endl;
         return false;
