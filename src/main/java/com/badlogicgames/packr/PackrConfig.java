@@ -150,14 +150,24 @@ public class PackrConfig {
 
 		JsonObject json = JsonObject.readFrom(FileUtils.readFileToString(configJson));
 
-		platform = Platform.byDesc(json.get("platform").asString());
-		jdk = json.get("jdk").asString();
-		executable = json.get("executable").asString();
-		classpath = toStringArray(json.get("classpath").asArray());
+		if (json.get("platform") != null) {
+			platform = Platform.byDesc(json.get("platform").asString());
+		}
+		if (json.get("jdk") != null) {
+			jdk = json.get("jdk").asString();
+		}
+		if (json.get("executable") != null) {
+			executable = json.get("executable").asString();
+		}
+		if (json.get("classpath") != null) {
+			classpath = toStringArray(json.get("classpath").asArray());
+		}
 		if (json.get("removelibs") != null) {
 			removePlatformLibs = toStringArray(json.get("removelibs").asArray());
 		}
-		mainClass = json.get("mainclass").asString();
+		if (json.get("mainclass") != null) {
+			mainClass = json.get("mainclass").asString();
+		}
 		if (json.get("vmargs") != null) {
 			List<String> vmArgs = toStringArray(json.get("vmargs").asArray());
 			this.vmArgs = new ArrayList<>();
@@ -178,7 +188,9 @@ public class PackrConfig {
 		if (json.get("resources") != null) {
 			resources = toFileArray(json.get("resources").asArray());
 		}
-		outDir = new File(json.get("output").asString());
+		if (json.get("output") != null) {
+			outDir = new File(json.get("output").asString());
+		}
 		if (json.get("icon") != null) {
 			iconResource = new File(json.get("icon").asString());
 		}
