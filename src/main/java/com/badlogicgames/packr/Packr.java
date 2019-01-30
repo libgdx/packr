@@ -17,13 +17,18 @@
 package com.badlogicgames.packr;
 
 import com.lexicalscope.jewel.cli.*;
-import org.zeroturnaround.zip.ZipUtil;
-import org.zeroturnaround.zip.commons.IOUtils;
 
 import java.io.*;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+
+import org.zeroturnaround.zip.ZipUtil;
+import org.zeroturnaround.zip.commons.IOUtils;
 
 /**
  * Takes a couple of parameters and a JRE and bundles them into a platform specific
@@ -219,6 +224,18 @@ public class Packr {
 		if (skipExtractToCache) {
 			System.out.println("Using cached JRE in '" + config.cacheJre + "' ...");
 		} else {
+
+			// check if env
+			if(config.jdk.startsWith("${") && config.jdk.endsWith("}")) {
+				final String envString = config.jdk.substring(2, config.jdk.length() - 1);
+				System.out.println("Environment JRE reference detected: " + envString);
+				config.jdk = System.getenv(envString);
+				if(config.jdk == null) {
+					throw new IOException("Invalid environment reference!");
+				}
+				System.out.println("Fetching JRE from " + envString + ": " + config.jdk + " ...");
+			}
+
 			// path to extract JRE from (folder, zip or remote)
 			boolean fetchFromRemote = config.jdk.startsWith("http://") || config.jdk.startsWith("https://");
 			File jdkFile = fetchFromRemote ? new File(jreStoragePath, "jdk.zip") : new File(config.jdk);
@@ -244,7 +261,17 @@ public class Packr {
 			if (jdkFile.isDirectory()) {
 				PackrFileUtils.copyDirectory(jdkFile, tmp);
 			} else {
-				ZipUtil.unpack(jdkFile, tmp);
+				if(config.jdk.endsWith(".zip"))	{
+					System.out.println(".zip file detected.");
+					ZipUtil.unpack(jdkFile, tmp);
+				} else {
+					if (config.jdk.endsWith(".tar.gz")) {
+						System.out.println(".tar.gz file detected.");
+						decompress(config.jdk, tmp);
+					} else {
+						throw new IOException("Invalid JRE configuration!");
+					}
+				}
 			}
 
 			// copy the JRE sub folder
@@ -271,8 +298,25 @@ public class Packr {
 		}
 	}
 
+	public static void decompress(String in, File out) throws IOException {
+		try (TarArchiveInputStream fin = new TarArchiveInputStream(new GzipCompressorInputStream(new FileInputStream(in)))){
+			TarArchiveEntry entry;
+			while ((entry = fin.getNextTarEntry()) != null) {
+				if (entry.isDirectory()) {
+					continue;
+				}
+				File curfile = new File(out, entry.getName());
+				File parent = curfile.getParentFile();
+				if (!parent.exists()) {
+					parent.mkdirs();
+				}
+				IOUtils.copy(fin, new FileOutputStream(curfile));
+			}
+		}
+	}
+	
 	private File searchJre(File tmp) {
-		if (tmp.getName().equals("jre") && tmp.isDirectory()
+		if (tmp.isDirectory()
 				&& (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
 			return tmp;
 		}
