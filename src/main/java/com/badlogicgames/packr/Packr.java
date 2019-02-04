@@ -38,6 +38,9 @@ import org.zeroturnaround.zip.commons.IOUtils;
  */
 public class Packr {
 
+	public static final String ARCHIVE_POSTFIX_ZIP = ".zip";
+	public static final String ARCHIVE_POSTFIX_TAR_GZ = ".tar.gz";
+	
 	private PackrConfig config;
 
 	@SuppressWarnings("WeakerAccess")
@@ -238,7 +241,11 @@ public class Packr {
 
 			// path to extract JRE from (folder, zip or remote)
 			boolean fetchFromRemote = config.jdk.startsWith("http://") || config.jdk.startsWith("https://");
-			File jdkFile = fetchFromRemote ? new File(jreStoragePath, "jdk.zip") : new File(config.jdk);
+			boolean isZipFile = config.jdk.endsWith(ARCHIVE_POSTFIX_ZIP);
+
+			final String filePostfix = isZipFile ? ARCHIVE_POSTFIX_ZIP : ARCHIVE_POSTFIX_TAR_GZ;
+
+			File jdkFile = fetchFromRemote ? new File(jreStoragePath, "jdk" + filePostfix) : new File(config.jdk);
 
 			// download from remote
 			if (fetchFromRemote) {
@@ -261,13 +268,13 @@ public class Packr {
 			if (jdkFile.isDirectory()) {
 				PackrFileUtils.copyDirectory(jdkFile, tmp);
 			} else {
-				if(config.jdk.endsWith(".zip"))	{
-					System.out.println(".zip file detected.");
+				if(config.jdk.endsWith(ARCHIVE_POSTFIX_ZIP))	{
+					System.out.println(ARCHIVE_POSTFIX_ZIP + " file detected.");
 					ZipUtil.unpack(jdkFile, tmp);
 				} else {
-					if (config.jdk.endsWith(".tar.gz")) {
-						System.out.println(".tar.gz file detected.");
-						decompress(config.jdk, tmp);
+					if (config.jdk.endsWith(ARCHIVE_POSTFIX_TAR_GZ)) {
+						System.out.println(ARCHIVE_POSTFIX_TAR_GZ + " file detected.");
+						decompress(jdkFile.getAbsolutePath(), tmp);
 					} else {
 						throw new IOException("Invalid JRE configuration!");
 					}
