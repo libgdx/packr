@@ -24,6 +24,7 @@ import java.io.*;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * Takes a couple of parameters and a JRE and bundles them into a platform specific
@@ -34,6 +35,20 @@ import java.util.Map;
 public class Packr {
 
 	private PackrConfig config;
+	private Predicate<File> removePlatformLibsFileFilter = f -> false;
+
+	/**
+	 * Install application-side file filter to specify which (additional) files can be
+	 * deleted during the removePlatformLibs phase.
+	 * <p>
+	 * This filter is checked first, before evaluating the "--removelibs" and "--libs" options.
+	 *
+	 * @return true if file should be removed (deleted)
+	 */
+	public Packr setRemovePlatformLibsFileFilter(Predicate<File> filter) {
+		removePlatformLibsFileFilter = filter;
+		return this;
+	}
 
 	@SuppressWarnings("WeakerAccess")
 	public void pack(PackrConfig config) throws IOException {
@@ -55,7 +70,7 @@ public class Packr {
 
 		copyResources(output);
 
-		PackrReduce.removePlatformLibs(output, config);
+		PackrReduce.removePlatformLibs(output, config, removePlatformLibsFileFilter);
 
 		System.out.println("Done!");
 	}

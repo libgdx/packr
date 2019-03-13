@@ -23,6 +23,7 @@ import org.zeroturnaround.zip.commons.FileUtils;
 import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Functions to reduce package size for both classpath JARs, and the bundled JRE.
@@ -183,12 +184,58 @@ class PackrReduce {
 		return json;
 	}
 
-	static void removePlatformLibs(PackrOutput output, PackrConfig config) throws IOException {
+	static void removePlatformLibs(PackrOutput output,
+								   PackrConfig config,
+								   Predicate<File> removePlatformLibsFileFilter) throws IOException {
 		if (config.removePlatformLibs == null || config.removePlatformLibs.isEmpty()) {
 			return;
 		}
 
+		boolean extractLibs = config.platformLibsOutDir != null;
+		File libsOutputDir = null;
+		if (extractLibs) {
+			libsOutputDir = new File(output.executableFolder, config.platformLibsOutDir.getPath());
+			PackrFileUtils.mkdirs(libsOutputDir);
+		}
+
 		System.out.println("Removing foreign platform libs ...");
+
+		Set<String> extensions = new HashSet<>();
+		String libExtension;
+
+		switch (config.platform) {
+			case Windows32:
+			case Windows64:
+				extensions.add(".dylib");
+				extensions.add(".dylib.git");
+				extensions.add(".dylib.sha1");
+				extensions.add(".so");
+				extensions.add(".so.git");
+				extensions.add(".so.sha1");
+				libExtension = ".dll";
+				break;
+			case Linux32:
+			case Linux64:
+				extensions.add(".dll");
+				extensions.add(".dll.git");
+				extensions.add(".dll.sha1");
+				extensions.add(".dylib");
+				extensions.add(".dylib.git");
+				extensions.add(".dylib.sha1");
+				libExtension = ".so";
+				break;
+			case MacOS:
+				extensions.add(".dll");
+				extensions.add(".dll.git");
+				extensions.add(".dll.sha1");
+				extensions.add(".so");
+				extensions.add(".so.git");
+				extensions.add(".so.sha1");
+				libExtension = ".dylib";
+				break;
+			default:
+				throw new IllegalStateException();
+		}
 
 		// let's remove any shared libs not used on the platform, e.g. libGDX/LWJGL natives
 		for (String classpath : config.removePlatformLibs) {
@@ -209,33 +256,36 @@ class PackrReduce {
 				jarDir = jar; // run in-place for directories
 			}
 
-			Set<String> extensions = new HashSet<>();
-
-			switch (config.platform) {
-				case Windows32:
-				case Windows64:
-					extensions.add(".dylib");
-					extensions.add(".so");
-					break;
-				case Linux32:
-				case Linux64:
-					extensions.add(".dylib");
-					extensions.add(".dll");
-					break;
-				case MacOS:
-					extensions.add(".dll");
-					extensions.add(".so");
-					break;
-			}
-
 			File[] files = jarDir.listFiles();
 			if (files != null) {
 				for (File file : files) {
-					for (String extension : extensions) {
-						if (file.getName().endsWith(extension)) {
-							if (config.verbose) {
-								System.out.println("  # Removing '" + file.getPath() + "'");
+					boolean removed = false;
+					if (removePlatformLibsFileFilter.test(file)) {
+						if (config.verbose) {
+							System.out.println("  # Removing '" + file.getPath() + "' (filtered)");
+						}
+						PackrFileUtils.delete(file);
+						removed = true;
+					}
+					if (!removed) {
+						for (String extension : extensions) {
+							if (file.getName().endsWith(extension)) {
+								if (config.verbose) {
+									System.out.println("  # Removing '" + file.getPath() + "'");
+								}
+								PackrFileUtils.delete(file);
+								removed = true;
+								break;
 							}
+						}
+					}
+					if (!removed && extractLibs) {
+						if (file.getName().endsWith(libExtension)) {
+							if (config.verbose) {
+								System.out.println("  # Extracting '" + file.getPath() + "'");
+							}
+							File target = new File(libsOutputDir, file.getName());
+							PackrFileUtils.copyFile(file, target);
 							PackrFileUtils.delete(file);
 						}
 					}

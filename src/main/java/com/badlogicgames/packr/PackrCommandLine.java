@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * Packr command line interface.
- *
+ * <p>
  * Use 'java -jar packr[-X.Y-SNAPSHOT].jar --help' to show this command line help.
  */
 public interface PackrCommandLine {
@@ -72,6 +72,9 @@ public interface PackrCommandLine {
 
 	@Option(description = "output directory", longName = "output", defaultToNull = true)
 	File outDir();
+
+	@Option(description = "platform libs output directory", longName = "libs", defaultToNull = true)
+	File platformLibsOutDir();
 
 	@Option(description = "file containing icon resources (needs to fit platform, OS X only)", longName = "icon", defaultToNull = true)
 	File iconResource();

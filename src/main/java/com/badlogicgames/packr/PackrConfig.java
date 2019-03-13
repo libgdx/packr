@@ -68,6 +68,7 @@ public class PackrConfig {
 	public File cacheJre;
 	public List<File> resources;
 	public File outDir;
+	public File platformLibsOutDir;
 	public File iconResource;
 	public String bundleIdentifier;
 
@@ -137,6 +138,10 @@ public class PackrConfig {
 			outDir = commandLine.outDir();
 		}
 
+		if (commandLine.platformLibsOutDir() != null) {
+			platformLibsOutDir = commandLine.platformLibsOutDir();
+		}
+
 		if (commandLine.iconResource() != null) {
 			iconResource = commandLine.iconResource();
 		}
@@ -190,6 +195,9 @@ public class PackrConfig {
 		}
 		if (json.get("output") != null) {
 			outDir = new File(json.get("output").asString());
+		}
+		if (json.get("libs") != null) {
+			platformLibsOutDir = new File(json.get("libs").asString());
 		}
 		if (json.get("icon") != null) {
 			iconResource = new File(json.get("icon").asString());
