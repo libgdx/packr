@@ -41,15 +41,15 @@ int main(int argc, char** argv) {
 bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM) {
 
 #if defined(__LP64__)
-    /* old JDKs */
+    /* Java 8 */
     void* handle = dlopen("jre/lib/amd64/server/libjvm.so", RTLD_LAZY);
 #else
-    /* old JDKs */
+    /* Java 8 */
     void* handle = dlopen("jre/lib/i386/server/libjvm.so", RTLD_LAZY);
 #endif
     if (handle == NULL) {
-        /* new JDKs */
-        handle = dlopen("lib/server/libjvm.so", RTLD_LAZY);
+        /* Java 9+ */
+        handle = dlopen("jre/lib/server/libjvm.so", RTLD_LAZY);
     }
     if (handle == NULL) {
         cerr << dlerror() << endl;
