@@ -1,3 +1,10 @@
+# Changes 2020 April 10
+1. Converted packr to use Gradle
+1. Include DrOpt source for easier building
+1. Include sajson.h for easier building
+   * <https://github.com/chadaustin/sajson/tree/791799ad90f7179f132ea2f53b90ef98f1d399a2>
+   * From inspecting the old fips config at <https://github.com/code-disaster/fips-sajson>
+
 # packr
 
 __Public Service Announcement: With packr v2.0, command line interfaces to both packr.jar and the native executable have changed, as well as the format of minimize profiles! If you upgrade from a previous version, please read this documentation again to make sure you've updated your configuration(s) accordingly.__

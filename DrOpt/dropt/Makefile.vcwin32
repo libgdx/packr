@@ -1,0 +1,142 @@
+# dropt Makefile for Microsoft nmake
+#
+# Written by James D. Lin and assigned to the public domain.
+#
+# The latest version of this file can be downloaded from:
+# <http://www.taenarum.com/software/dropt/>
+
+.SILENT:
+.SUFFIXES:
+
+!IFNDEF SRC_ROOT
+SRC_ROOT = $(MAKEDIR)
+!ENDIF
+
+!IFNDEF BUILD_ROOT
+BUILD_ROOT = $(SRC_ROOT)\build
+!ENDIF
+
+# nmake doesn't support the special .PHONY target.  Create our own
+# pseudo-target as a substitute.  Note that usage is backwards from .PHONY;
+# use $(PHONY) as a dependency of pseudo-targets.
+#
+# (Assumes that there will never be an actual file named ".phony".)
+#
+PHONY = .phony
+
+MKDIR_DEST = if not exist "$(@D:"=)\$(NULL)" md "$(@D:"=)"
+
+CC = cl.exe
+LINK = link.exe
+LINKLIB = lib.exe
+
+# /wd4100 disables a warning about unused function parameters.
+CFLAGS = /EHsc /nologo /GF /Gy /GS /W4 /wd4100 /DSTRICT /DWIN32_LEAN_AND_MEAN /I$(SRC_ROOT)\include
+LINK_FLAGS = /NOLOGO /NXCOMPAT
+LINKLIB_FLAGS = /NOLOGO
+
+!IF "$(DYNAMIC_CRT)" != ""
+CC_CRT_FLAG = /MD
+!ELSE
+CC_CRT_FLAG = /MT
+!ENDIF
+
+DEBUG_SUFFIX =
+!IF "$(DEBUG)" != ""
+DEBUG_SUFFIX = -debug
+CFLAGS = $(CFLAGS) /Od /DDEBUG /RTC1 /Zi $(CC_CRT_FLAG)d /DDROPT_DEBUG_STRING_BUFFERS
+LINK_FLAGS = $(LINK_FLAGS) /DEBUG
+!ELSE
+CFLAGS = $(CFLAGS) /Ox /DNDEBUG $(CC_CRT_FLAG)
+LINK_FLAGS = $(LINK_FLAGS) /RELEASE /OPT:REF
+!ENDIF
+
+NO_STRING_SUFFIX =
+!IF "$(DROPT_NO_STRING_BUFFERS)" != ""
+NO_STRING_SUFFIX = -nostring
+CFLAGS = $(CFLAGS) /DDROPT_NO_STRING_BUFFERS
+!ENDIF
+
+UNICODE_SUFFIX =
+!IF "$(_UNICODE)" != ""
+UNICODE_SUFFIX = -w
+CFLAGS = $(CFLAGS) /D_UNICODE
+!ENDIF
+
+OUT_DIR = $(BUILD_ROOT)\lib$(DEBUG_SUFFIX)$(NO_STRING_SUFFIX)$(UNICODE_SUFFIX)
+OBJ_DIR = $(BUILD_ROOT)\tmp$(DEBUG_SUFFIX)$(NO_STRING_SUFFIX)$(UNICODE_SUFFIX)
+
+GLOBAL_DEP = "$(SRC_ROOT)\include\dropt.h" "$(SRC_ROOT)\include\dropt_string.h"
+GLOBALXX_DEP = $(GLOBAL_DEP) "$(SRC_ROOT)\include\droptxx.hpp"
+LIB_OBJ_FILES = "$(OBJ_DIR)\dropt.obj" "$(OBJ_DIR)\dropt_handlers.obj" "$(OBJ_DIR)\dropt_string.obj"
+OBJ_FILES = $(LIB_OBJ_FILES) "$(OBJ_DIR)\test_dropt.obj"
+OBJXX_FILES =  "$(OBJ_DIR)\droptxx.obj"
+
+DROPT_LIB = "$(OUT_DIR)\dropt.lib"
+DROPTXX_LIB = "$(OUT_DIR)\droptxx.lib"
+EXAMPLE_EXE = "$(OBJ_DIR)\dropt_example.exe"
+EXAMPLEXX_EXE = "$(OBJ_DIR)\droptxx_example.exe"
+TEST_EXE = "$(OBJ_DIR)\test_dropt.exe"
+
+
+# Targets --------------------------------------------------------------
+
+default: $(PHONY) lib libxx
+all: $(PHONY) default example examplexx test
+lib: $(PHONY) $(DROPT_LIB)
+libxx: $(PHONY) $(DROPTXX_LIB)
+
+
+example examplexx: $(PHONY)
+
+!IF "$(DROPT_NO_STRING_BUFFERS)" != ""
+example examplexx: skip_example
+!ELSEIF "$(_UNICODE)" != ""
+example examplexx: skip_example
+!ELSE
+example: $(EXAMPLE_EXE)
+examplexx: $(EXAMPLEXX_EXE)
+!ENDIF
+
+skip_example: $(PHONY)
+    @echo.(Skipping dropt_example and droptxx_example because either DROPT_NO_STRING_BUFFERS or _UNICODE was specified.)
+
+
+test: $(PHONY) $(TEST_EXE)
+    @echo.Running tests...
+    $(TEST_EXE) $(TEST_DROPT_ARGS)
+    @echo.Tests passed.
+
+
+$(DROPT_LIB): $(LIB_OBJ_FILES)
+$(DROPTXX_LIB): $(DROPT_LIB) "$(OBJ_DIR)\droptxx.obj"
+
+$(DROPT_LIB) $(DROPTXX_LIB):
+    $(MKDIR_DEST)
+    $(LINKLIB) /OUT:$@ $(LINKLIB_FLAGS) $**
+
+$(EXAMPLE_EXE) $(TEST_EXE): "$(OBJ_DIR)\$(@B:"=).obj" $(DROPT_LIB)
+    $(MKDIR_DEST)
+    $(LINK) /SUBSYSTEM:CONSOLE /OUT:$@ $(LINK_FLAGS) $**
+
+$(EXAMPLEXX_EXE): "$(OBJ_DIR)\$(@B:"=).obj" $(DROPTXX_LIB)
+    $(MKDIR_DEST)
+    $(LINK) /SUBSYSTEM:CONSOLE /OUT:$@ $(LINK_FLAGS) $**
+
+$(OBJ_FILES): "$(SRC_ROOT)\src\$(@B:"=).c" $(GLOBAL_DEP)
+$(OBJXX_FILES): "$(SRC_ROOT)\src\$(@B:"=).cpp" $(GLOBALXX_DEP)
+
+"$(OBJ_DIR)\dropt_example.obj": "$(SRC_ROOT)\$(@B:"=).c" $(GLOBAL_DEP)
+"$(OBJ_DIR)\droptxx_example.obj": "$(SRC_ROOT)\$(@B:"=).cpp" $(GLOBALXX_DEP)
+
+$(OBJ_FILES) $(OBJXX_FILES) "$(OBJ_DIR)\dropt_example.obj" "$(OBJ_DIR)\droptxx_example.obj":
+    $(MKDIR_DEST)
+    $(CC) /c /Fo"$(OBJ_DIR)\\" /Fd"$(OBJ_DIR)\\" $(CFLAGS) %s
+
+
+# Special targets ------------------------------------------------------
+
+.phony:
+
+clean: $(PHONY)
+    -if exist "$(BUILD_ROOT)\$(NULL)" rd /s /q "$(BUILD_ROOT)"

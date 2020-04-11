@@ -1,0 +1,35 @@
+# dropt Makefile for GNU make using clang
+#
+# Written by James D. Lin and assigned to the public domain.
+#
+# The latest version of this file can be downloaded from:
+# <http://www.taenarum.com/software/dropt/>
+
+CC := clang
+CXX := clang++
+AR := ar
+
+CFLAGS := -Wall
+ARFLAGS := rcs
+
+DEBUG_SUFFIX :=
+NO_STRING_SUFFIX :=
+
+ifdef DEBUG
+DEBUG_SUFFIX := -debug
+CFLAGS += -O0 -DDDROPT_DEBUG_STRING_BUFFERS
+else
+CFLAGS += -O3 -DNDEBUG
+endif
+
+ifdef DROPT_NO_STRING_BUFFERS
+NO_STRING_SUFFIX := -nostring
+CFLAGS += -DDROPT_NO_STRING_BUFFERS
+endif
+
+ifdef _UNICODE
+UNICODE_SUFFIX := -w
+CFLAGS += -D_UNICODE
+endif
+
+include gmake.mk
