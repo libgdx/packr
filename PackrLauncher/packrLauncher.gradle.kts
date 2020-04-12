@@ -148,8 +148,8 @@ application {
          binaryCompileTask.compilerArgs.add("-fmessage-length=0")
          binaryCompileTask.compilerArgs.add("-Wwrite-strings")
          binaryCompileTask.compilerArgs.add("-x")
+         binaryCompileTask.compilerArgs.add("c")
          binaryCompileTask.compilerArgs.add("-std=c11")
-         //         compileTask.compilerArgs = ["-x", "c", "-std=c11"]
 
          // compiler linux
          if (targetPlatform.targetMachine.architecture.name == MachineArchitecture.X86) {
@@ -175,8 +175,10 @@ application {
          binaryCompileTask.compilerArgs.add("-Wwrite-strings")
 
          binaryCompileTask.includes(file("$javaHomePathString/include/darwin"))
-         binaryCompileTask.compilerArgs.add("-std=c++11")
+
          binaryCompileTask.compilerArgs.add("-x")
+         binaryCompileTask.compilerArgs.add("c")
+         binaryCompileTask.compilerArgs.add("-std=c++11")
       }
 
       if (binaryCompileTask.isOptimized) {
