@@ -147,6 +147,9 @@ application {
          binaryCompileTask.compilerArgs.add("-c")
          binaryCompileTask.compilerArgs.add("-fmessage-length=0")
          binaryCompileTask.compilerArgs.add("-Wwrite-strings")
+         binaryCompileTask.compilerArgs.add("-x")
+         binaryCompileTask.compilerArgs.add("-std=c11")
+         //         compileTask.compilerArgs = ["-x", "c", "-std=c11"]
 
          // compiler linux
          if (targetPlatform.targetMachine.architecture.name == MachineArchitecture.X86) {
@@ -163,7 +166,6 @@ application {
 
          // compiler osx
          if (targetPlatform.targetMachine.operatingSystemFamily.isMacOs) {
-            binaryCompileTask.compilerArgs.add("-std=c++11")
             binaryCompileTask.includes(file("/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers"))
          }
       } else if (binaryToolChain is Clang) {
@@ -172,9 +174,9 @@ application {
          binaryCompileTask.compilerArgs.add("-fmessage-length=0")
          binaryCompileTask.compilerArgs.add("-Wwrite-strings")
 
-         binaryCompileTask.includes(file("$javaHomePathString/include"))
          binaryCompileTask.includes(file("$javaHomePathString/include/darwin"))
          binaryCompileTask.compilerArgs.add("-std=c++11")
+         binaryCompileTask.compilerArgs.add("-x")
       }
 
       if (binaryCompileTask.isOptimized) {
