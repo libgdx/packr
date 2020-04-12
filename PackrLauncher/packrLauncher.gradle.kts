@@ -175,8 +175,6 @@ application {
 
          binaryCompileTask.includes(file("$javaHomePathString/include/darwin"))
 
-         binaryCompileTask.compilerArgs.add("-x")
-         binaryCompileTask.compilerArgs.add("c")
          binaryCompileTask.compilerArgs.add("-std=c++11")
 
          binaryLinkTask.linkerArgs.add("-ldl")

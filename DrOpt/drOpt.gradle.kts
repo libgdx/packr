@@ -43,6 +43,7 @@ tasks.withType(CppCompile::class).configureEach {
    source.from(fileTree(file("dropt/src")) {
       include("**/*.c")
       exclude("**/*.cpp")
+      exclude("test_dropt.c")
    })
 }
 
