@@ -146,9 +146,9 @@ publishing {
       }
    }
    publications {
-      create<MavenPublication>(project.name) {
+      register<MavenPublication>(project.name) {
          from(components["java"])
-
+         artifactId = project.name.toLowerCase()
          pom {
             name.set("Packr from libGdx (Nimbly Games)")
             description.set("Forked version of libGdx Packr")
