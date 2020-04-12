@@ -178,6 +178,9 @@ application {
          binaryCompileTask.compilerArgs.add("-std=c++11")
 
          binaryLinkTask.linkerArgs.add("-ldl")
+
+         binaryLinkTask.linkerArgs.add("-framework")
+         binaryLinkTask.linkerArgs.add("CoreFoundation")
       }
 
       if (binaryCompileTask.isOptimized) {
