@@ -62,10 +62,22 @@ dependencies {
    runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")
    runtimeOnly("org.apache.logging.log4j:log4j-core:$log4jVersion")
 
+   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86-64:2.2.0-SNAPSHOT"){
+      // Gradle won't download extension free files without this
+      artifact {
+         this.name="packrLauncher-linux-x86-64"
+         this.type=""
+      }
+   }
+   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86:2.2.0-SNAPSHOT"){
+      // Gradle won't download extension free files without this
+      artifact {
+         this.name="packrLauncher-linux-x86"
+         this.type=""
+      }
+   }
    // karlfixme enable other platforms
-   //   add(packrLauncherExecutables.name, "com.nimblygames.packr:PackrLauncher_release_linux_x86_64:2.2.0-SNAPSHOT")
-   //   add(packrLauncherExecutables.name, "com.nimblygames.packr:PackrLauncher_release_linux_x86:2.2.0-SNAPSHOT")
-   //   add(packrLauncherExecutables.name, "com.nimblygames.packr:PackrLauncher_release_macos:2.2.0-SNAPSHOT")
+   //   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-macos:2.2.0-SNAPSHOT")
    add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86-64:2.2.0-SNAPSHOT")
    add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86:2.2.0-SNAPSHOT")
 }
