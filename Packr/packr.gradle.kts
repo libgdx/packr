@@ -62,25 +62,25 @@ dependencies {
    runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")
    runtimeOnly("org.apache.logging.log4j:log4j-core:$log4jVersion")
 
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86-64:2.2.0-SNAPSHOT"){
+   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86-64:2.2.0-SNAPSHOT") {
       // Gradle won't download extension free files without this
       artifact {
-         this.name="packrLauncher-linux-x86-64"
-         this.type=""
+         this.name = "packrLauncher-linux-x86-64"
+         this.type = ""
       }
    }
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86:2.2.0-SNAPSHOT"){
+   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86:2.2.0-SNAPSHOT") {
       // Gradle won't download extension free files without this
       artifact {
-         this.name="packrLauncher-linux-x86"
-         this.type=""
+         this.name = "packrLauncher-linux-x86"
+         this.type = ""
       }
    }
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-macos:2.2.0-SNAPSHOT"){
+   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-macos:2.2.0-SNAPSHOT") {
       // Gradle won't download extension free files without this
       artifact {
-         this.name="packrLauncher-macos"
-         this.type=""
+         this.name = "packrLauncher-macos"
+         this.type = ""
       }
    }
    add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86-64:2.2.0-SNAPSHOT")
@@ -97,6 +97,28 @@ application {
 val syncPackrLaunchers = tasks.register<Sync>("syncPackrLaunchers") {
    from(packrLauncherExecutables)
    into(File(buildDir, "packrLauncher"))
+   rename { existingFilename ->
+      when {
+         existingFilename.contains("linux") && existingFilename.contains("x86-64") -> {
+            "packr-linux-x64"
+         }
+         existingFilename.contains("linux") && existingFilename.contains("x86") -> {
+            "packr-linux"
+         }
+         existingFilename.contains("mac") -> {
+            "packr-mac"
+         }
+         existingFilename.contains("windows") && existingFilename.contains("x86-64") -> {
+            "packr-windows-x64"
+         }
+         existingFilename.contains("windows") && existingFilename.contains("x86") -> {
+            "packr-windows"
+         }
+         else -> {
+            existingFilename
+         }
+      }
+   }
 }
 
 tasks.named<Jar>(JavaPlugin.JAR_TASK_NAME) {
