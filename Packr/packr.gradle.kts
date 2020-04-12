@@ -76,8 +76,13 @@ dependencies {
          this.type=""
       }
    }
-   // karlfixme enable other platforms
-   //   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-macos:2.2.0-SNAPSHOT")
+   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-macos:2.2.0-SNAPSHOT"){
+      // Gradle won't download extension free files without this
+      artifact {
+         this.name="packrLauncher-macos"
+         this.type=""
+      }
+   }
    add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86-64:2.2.0-SNAPSHOT")
    add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86:2.2.0-SNAPSHOT")
 }

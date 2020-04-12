@@ -78,7 +78,7 @@ application {
          machines.windows.x86_64,
          machines.linux.x86,
          machines.linux.x86_64,
-         machines.macOS.x86,
+//         machines.macOS.x86,
          machines.macOS.x86_64))
 
    toolChains.forEach { toolChain ->
@@ -179,8 +179,10 @@ application {
 
          binaryLinkTask.linkerArgs.add("-ldl")
 
-         binaryLinkTask.linkerArgs.add("-framework")
-         binaryLinkTask.linkerArgs.add("CoreFoundation")
+         if (targetPlatform.targetMachine.operatingSystemFamily.isMacOs) {
+            binaryLinkTask.linkerArgs.add("-framework")
+            binaryLinkTask.linkerArgs.add("CoreFoundation")
+         }
       }
 
       if (binaryCompileTask.isOptimized) {
