@@ -18,6 +18,7 @@
 @file:Suppress("UnstableApiUsage")
 
 import org.gradle.internal.jvm.Jvm
+import java.nio.file.Path
 
 group = rootProject.group
 version = "2.2.0-SNAPSHOT"
@@ -40,17 +41,26 @@ repositories {
 val javaHomePathString: String = Jvm.current().javaHome.absolutePath
 
 /**
+ * Where to output executable files
+ */
+val distributionDirectoryPath = buildDir.toPath().resolve("distribute")
+
+
+/**
+ * The combined platform MacOS executable file path
+ */
+val macOsLipoOutputFilePath: Path = distributionDirectoryPath.resolve("packrLauncher-macos")
+
+/**
  * Combines the x86 and x86-64 executables into a combined platform executable
  */
 val macOsLipo = tasks.register<Exec>("macOsLipo") {
-   val outputName = project.name
-   workingDir = File(buildDir, "distribute")
-   val outputLibFile = File(workingDir, outputName)
-   outputs.file(outputLibFile)
+   workingDir = distributionDirectoryPath.toFile()
+   outputs.file(macOsLipoOutputFilePath.toFile())
    executable = "lipo"
    args("-create")
    args("-output")
-   args(outputName)
+   args(macOsLipoOutputFilePath.fileName.toString())
 }
 
 tasks.withType(CppCompile::class).configureEach {
@@ -88,53 +98,27 @@ application {
 
       val binaryLinkTask: LinkExecutable = linkTask.get()
 
-      val osName = when {
-         targetMachine.operatingSystemFamily.isWindows -> {
-            OperatingSystemFamily.WINDOWS
-         }
-         targetMachine.operatingSystemFamily.isMacOs -> {
-            OperatingSystemFamily.MACOS
-         }
-         targetMachine.operatingSystemFamily.isLinux -> {
-            OperatingSystemFamily.LINUX
-         }
-         else -> {
-            throw RuntimeException("Unknown operating system family ${targetMachine.operatingSystemFamily}")
+      val isMacOs = targetMachine.operatingSystemFamily.name == OperatingSystemFamily.MACOS
+      // Create a single special publication from lipo on MacOS since that allows combining multliple platforms into a single binary
+      if (binaryCompileTask.isOptimized && (!isMacOs || targetMachine.architecture.name == MachineArchitecture.X86_64)) {
+         logger.info("binaryLinkTask.linkedFile = ${binaryLinkTask.linkedFile.get()}")
+
+         val publicationName = "packrLauncher-${targetMachine.operatingSystemFamily.name}${if (!isMacOs) "-${targetMachine.architecture.name}" else ""}"
+         publishing.publications.register<MavenPublication>(publicationName) {
+            val artifactFile = if (isMacOs) macOsLipoOutputFilePath.toFile() as Any else binaryLinkTask.linkedFile
+            artifact(artifactFile) {
+               if (isMacOs) {
+                  builtBy(macOsLipo)
+               } else {
+                  builtBy(binaryLinkTask)
+               }
+
+               groupId = project.group as String
+               version = project.version as String
+               artifactId = publicationName
+            }
          }
       }
-
-      val artifactAndConfigurationName = when (osName) {
-         OperatingSystemFamily.WINDOWS -> {
-            "${project.name}-$osName-${targetMachine.architecture}.exe"
-         }
-         OperatingSystemFamily.MACOS -> {
-            "${project.name}-$osName"
-         }
-         OperatingSystemFamily.LINUX -> {
-            "${project.name}-$osName-${targetMachine.architecture}"
-         }
-         else -> throw kotlin.RuntimeException("Unhandled osName=$osName")
-      }
-
-      //      if (binaryCompileTask.isOptimized && configurations.findByName(artifactAndConfigurationName) == null) {
-      //         // this breaks the configuration phase, might need to add a post configuration step
-      //         val zipBinaryTask = tasks.register<Zip>("${artifactAndConfigurationName}Zip") {
-      //            from(binaryLinkTask.outputs)
-      //         }
-      //         configurations.register(artifactAndConfigurationName)
-      //         val binaryArtifact = artifacts.add(artifactAndConfigurationName, zipBinaryTask)
-      //         project.publishing {
-      //            publications {
-      //               create<MavenPublication>(artifactAndConfigurationName) {
-      //                  groupId = project.group as String
-      //                  version = project.version as String
-      //                  artifactId = artifactAndConfigurationName
-      //
-      //                  artifact(binaryArtifact)
-      //               }
-      //            }
-      //         }
-      //      }
 
       if (binaryToolChain is VisualCpp) {
          binaryCompileTask.includes(file("$javaHomePathString/include/win32"))
@@ -197,19 +181,14 @@ application {
          if (targetMachine.operatingSystemFamily.isMacOs) {
             macOsLipo.configure {
                dependsOn(binaryLinkTask)
-
-               binaryLinkTask.outputs.files.files.stream().filter { file ->
-                  file.name.endsWith(".dylib")
-               }.findFirst().ifPresent { binaryFile ->
-                  inputs.file(binaryFile)
+               inputs.file(binaryLinkTask.linkedFile)
                   args("-arch")
                   if (targetMachine.architecture.name == MachineArchitecture.X86) {
                      args("i386")
                   } else if (targetMachine.architecture.name == MachineArchitecture.X86_64) {
                      args("x86_64")
                   }
-                  args("$binaryFile")
-               }
+               args(binaryLinkTask.linkedFile.get().asFile.absolutePath)
             }
          }
       }

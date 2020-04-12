@@ -66,8 +66,8 @@ dependencies {
    //   add(packrLauncherExecutables.name, "com.nimblygames.packr:PackrLauncher_release_linux_x86_64:2.2.0-SNAPSHOT")
    //   add(packrLauncherExecutables.name, "com.nimblygames.packr:PackrLauncher_release_linux_x86:2.2.0-SNAPSHOT")
    //   add(packrLauncherExecutables.name, "com.nimblygames.packr:PackrLauncher_release_macos:2.2.0-SNAPSHOT")
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:PackrLauncher_release_windows_x86_64:2.2.0-SNAPSHOT")
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:PackrLauncher_release_windows_x86:2.2.0-SNAPSHOT")
+   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86-64:2.2.0-SNAPSHOT")
+   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86:2.2.0-SNAPSHOT")
 }
 
 application {
