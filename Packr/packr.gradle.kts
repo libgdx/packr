@@ -15,12 +15,32 @@
  *
  */
 
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+/*
+ * Copyright 2020 Nimbly Games, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 group = rootProject.group
 version = "2.2.0-SNAPSHOT"
 
 plugins {
    `maven-publish`
    application
+   id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
 repositories {
@@ -109,10 +129,10 @@ val syncPackrLaunchers = tasks.register<Sync>("syncPackrLaunchers") {
             "packr-mac"
          }
          existingFilename.contains("windows") && existingFilename.contains("x86-64") -> {
-            "packr-windows-x64"
+            "packr-windows-x64.exe"
          }
          existingFilename.contains("windows") && existingFilename.contains("x86") -> {
-            "packr-windows"
+            "packr-windows.exe"
          }
          else -> {
             existingFilename
@@ -124,11 +144,25 @@ val syncPackrLaunchers = tasks.register<Sync>("syncPackrLaunchers") {
 tasks.named<Jar>(JavaPlugin.JAR_TASK_NAME) {
    dependsOn(syncPackrLaunchers)
 
+   @Suppress("UnstableApiUsage") manifest {
+      attributes["Main-Class"] = application.mainClassName
+   }
+
    from(File(buildDir, "packrLauncher"))
 }
 
 tasks.withType(Test::class).configureEach {
    useJUnitPlatform()
+}
+
+tasks.withType(ShadowJar::class).configureEach {
+   dependsOn(syncPackrLaunchers)
+
+   @Suppress("UnstableApiUsage") manifest {
+      attributes["Main-Class"] = application.mainClassName
+   }
+
+   from(File(buildDir, "packrLauncher"))
 }
 
 publishing {
@@ -146,6 +180,14 @@ publishing {
       }
    }
    publications {
+      register<MavenPublication>("${project.name}-all") {
+         artifact(tasks.named<ShadowJar>("shadowJar").get()) {
+            classifier = ""
+         }
+         groupId = project.group as String
+         artifactId = project.name.toLowerCase() + "-all"
+         version = project.version as String
+      }
       register<MavenPublication>(project.name) {
          from(components["java"])
          artifactId = project.name.toLowerCase()
