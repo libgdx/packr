@@ -141,6 +141,9 @@ application {
          } else if (targetPlatform.targetMachine.architecture.name == MachineArchitecture.X86_64) {
             binaryLinkTask.linkerArgs.add("/MACHINE:X86_64")
          }
+
+         binaryLinkTask.linkerArgs.add("/SUBSYSTEM:WINDOWS")
+
          binaryLinkTask.linkerArgs.add("User32.lib")
       } else if (binaryToolChain is Gcc) {
          binaryCompileTask.compilerArgs.add("-fPIC")
