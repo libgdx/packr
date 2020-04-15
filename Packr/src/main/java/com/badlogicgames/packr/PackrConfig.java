@@ -50,11 +50,11 @@ import java.util.List;
    public String bundleIdentifier;
    public boolean verbose;
 
-   public PackrConfig() {
-
+   @SuppressWarnings("unused") public PackrConfig() {
+      super();
    }
 
-   public PackrConfig(Platform platform, String jdk, String executable, List<String> classpath, String mainClass, File outDir) throws IOException {
+   @SuppressWarnings("unused") public PackrConfig(Platform platform, String jdk, String executable, List<String> classpath, String mainClass, File outDir) {
 
       this.platform = platform;
       this.jdk = jdk;

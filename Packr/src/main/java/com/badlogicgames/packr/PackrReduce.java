@@ -93,17 +93,7 @@ class PackrReduce {
 						System.out.println("  # Repacking '" + file.getPath() + "' ...");
 					}
 
-					long beforeLen = file.length();
-					PackrFileUtils.delete(file);
-
-					ZipUtil.pack(fileNoExt, file);
-					FileUtils.deleteDirectory(fileNoExt);
-
-					long afterLen = file.length();
-
-					if (config.verbose) {
-						System.out.println("  # " + beforeLen / 1024 + " kb -> " + afterLen / 1024 + " kb");
-					}
+					createZipFileFromDirectory(config, file, fileNoExt);
 				}
 			}
 
@@ -120,6 +110,20 @@ class PackrReduce {
 					removeFileWildcard(output, removeFile.asString(), config);
 				}
 			}
+		}
+	}
+
+	private static void createZipFileFromDirectory(PackrConfig config, File zipFileOutput, File directoryToZipAndThenDelete) throws IOException {
+		long beforeLen = zipFileOutput.length();
+		PackrFileUtils.delete(zipFileOutput);
+
+		ZipUtil.pack(directoryToZipAndThenDelete, zipFileOutput);
+		FileUtils.deleteDirectory(directoryToZipAndThenDelete);
+
+		long afterLen = zipFileOutput.length();
+
+		if (config.verbose) {
+			System.out.println("  # " + beforeLen / 1024 + " kb -> " + afterLen / 1024 + " kb");
 		}
 	}
 
@@ -299,16 +303,7 @@ class PackrReduce {
 					System.out.println("  # Repacking '" + jar.getName() + "' ...");
 				}
 
-				long beforeLen = jar.length();
-				PackrFileUtils.delete(jar);
-
-				ZipUtil.pack(jarDir, jar);
-				FileUtils.deleteDirectory(jarDir);
-
-				long afterLen = jar.length();
-				if (config.verbose) {
-					System.out.println("  # " + beforeLen / 1024 + " kb -> " + afterLen / 1024 + " kb");
-				}
+				createZipFileFromDirectory(config, jar, jarDir);
 			}
 		}
 	}

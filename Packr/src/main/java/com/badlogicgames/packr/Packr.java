@@ -73,9 +73,11 @@ public class Packr {
     * <p>
     * This filter is checked first, before evaluating the "--removelibs" and "--libs" options.
     *
+    * @param filter file filter for removing libraries
+    *
     * @return true if file should be removed (deleted)
     */
-   public Packr setRemovePlatformLibsFileFilter(Predicate<File> filter) {
+   @SuppressWarnings("unused") public Packr setRemovePlatformLibsFileFilter(Predicate<File> filter) {
       removePlatformLibsFileFilter = filter;
       return this;
    }
@@ -360,7 +362,7 @@ public class Packr {
       return IOUtils.toByteArray(Packr.class.getResourceAsStream(resource));
    }
 
-   private String readResourceAsString(String resource, Map<String, String> values) throws IOException {
+   private String readResourceAsString(@SuppressWarnings("SameParameterValue") String resource, Map<String, String> values) throws IOException {
       String txt = IOUtils.toString(Packr.class.getResourceAsStream(resource), "UTF-8");
       return replace(txt, values);
    }
