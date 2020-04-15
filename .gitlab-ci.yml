@@ -1,28 +1,27 @@
 stages:
-  - publish-executables
+  - publish_launcher
   - publish
 
 publisWindowsExecutable:
-  stage: publish-executable
+  stage: publish_launcher
   tags:
     - windows
   script:
     - ./gradlew -i --no-build-cache clean PackrLauncher:publish
 
 publishLinuxExecutable:
-  stage: publish-executable
+  stage: publish_launcher
   tags:
     - ubuntu
   script:
     - ./gradlew -i --no-build-cache clean PackrLauncher:publish
 
 publishOsxExecutable:
-  stage: publish-executable
+  stage: publish_launcher
   tags:
     - osx
   script:
     - ./gradlew -i --no-build-cache clean PackrLauncher:publish
-
 
 publishWindows:
   stage: publish
