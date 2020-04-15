@@ -21,7 +21,7 @@ import org.gradle.internal.jvm.Jvm
 import java.nio.file.Path
 
 group = rootProject.group
-version = "2.2.0-SNAPSHOT"
+version = "2.2.0"
 
 plugins {
    `cpp-application`
@@ -43,7 +43,7 @@ val javaHomePathString: String = Jvm.current().javaHome.absolutePath
 /**
  * Where to output executable files
  */
-val distributionDirectoryPath = buildDir.toPath().resolve("distribute")
+val distributionDirectoryPath: Path = buildDir.toPath().resolve("distribute")
 
 
 /**
@@ -74,11 +74,8 @@ dependencies {
 }
 
 application {
-   targetMachines.set(listOf(machines.windows.x86,
-         machines.windows.x86_64,
-         machines.linux.x86,
-         machines.linux.x86_64,
-//         machines.macOS.x86,
+   targetMachines.set(listOf(machines.windows.x86, machines.windows.x86_64, machines.linux.x86, machines.linux.x86_64,
+         //         machines.macOS.x86,
          machines.macOS.x86_64))
 
    toolChains.forEach { toolChain ->
@@ -193,12 +190,12 @@ application {
             macOsLipo.configure {
                dependsOn(binaryLinkTask)
                inputs.file(binaryLinkTask.linkedFile)
-                  args("-arch")
-                  if (targetMachine.architecture.name == MachineArchitecture.X86) {
-                     args("i386")
-                  } else if (targetMachine.architecture.name == MachineArchitecture.X86_64) {
-                     args("x86_64")
-                  }
+               args("-arch")
+               if (targetMachine.architecture.name == MachineArchitecture.X86) {
+                  args("i386")
+               } else if (targetMachine.architecture.name == MachineArchitecture.X86_64) {
+                  args("x86_64")
+               }
                args(binaryLinkTask.linkedFile.get().asFile.absolutePath)
             }
          }
@@ -247,6 +244,15 @@ publishing {
                }
             }
          }
+      }
+   }
+}
+
+afterEvaluate {
+   tasks.withType(PublishToMavenRepository::class).configureEach {
+      if (name.startsWith("publishMain")) {
+         logger.info("Disabling CPP plugin publishing task ${this.name}")
+         enabled = false
       }
    }
 }
