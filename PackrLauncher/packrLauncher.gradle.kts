@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Nimbly Games, LLC
+ * Copyright 2020 See AUTHORS file
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ plugins {
    `microsoft-visual-cpp-compiler`
    `visual-studio`
    `maven-publish`
+   signing
 }
 
 repositories {
@@ -245,6 +246,17 @@ publishing {
             }
          }
       }
+   }
+}
+
+signing.useGpgCmd()
+
+if (project.version.toString().contains("SNAPSHOT")) {
+   logger.info("Skipping signing ")
+} else {
+   publishing.publications.configureEach {
+      logger.info("Should sign publication ${this.name}")
+      signing.sign(this)
    }
 }
 
