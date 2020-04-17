@@ -46,13 +46,21 @@ plugins {
 
 repositories {
    jcenter()
-   for (publishRepositoryIndex in 0..10) {
-      if (project.hasProperty("maven.publish.repository.url.$publishRepositoryIndex")) {
+   mavenCentral()
+   maven {
+      url = uri("https://oss.sonatype.org/content/repositories/snapshots")
+   }
+   for (repositoryIndex in 0..10) {
+      if (project.hasProperty("maven.repository.url.$repositoryIndex") && project.findProperty("maven.repository.isdownload.$repositoryIndex")
+            .toString()
+            .toBoolean()) {
          maven {
-            url = uri(project.findProperty("maven.publish.repository.url.$publishRepositoryIndex") as String)
-            credentials {
-               username = project.findProperty("maven.publish.repository.username.$publishRepositoryIndex") as String
-               password = project.findProperty("maven.publish.repository.password.$publishRepositoryIndex") as String
+            url = uri(project.findProperty("maven.repository.url.$repositoryIndex") as String)
+            if (project.hasProperty("maven.repository.username.$repositoryIndex")) {
+               credentials {
+                  username = project.findProperty("maven.repository.username.$repositoryIndex") as String
+                  password = project.findProperty("maven.repository.password.$repositoryIndex") as String
+               }
             }
          }
       }
@@ -166,15 +174,24 @@ tasks.withType(ShadowJar::class).configureEach {
    from(File(buildDir, "packrLauncher"))
 }
 
+/**
+ * Is the packer version a snapshot or release?
+ */
+val isSnapshot = project.version.toString().contains("SNAPSHOT")
+
 publishing {
    repositories {
-      for (publishRepositoryIndex in 0..10) {
-         if (project.hasProperty("maven.publish.repository.url.$publishRepositoryIndex")) {
+      for (repositoryIndex in 0..10) {
+         // @formatter:off
+         if (project.hasProperty("maven.repository.url.$repositoryIndex")
+             && ((project.findProperty("maven.repository.ispublishsnapshot.$repositoryIndex").toString().toBoolean() && isSnapshot)
+                 || (project.findProperty("maven.repository.ispublishrelease.$repositoryIndex").toString().toBoolean() && !isSnapshot))) {
+            // @formatter:on
             maven {
-               url = uri(project.findProperty("maven.publish.repository.url.$publishRepositoryIndex") as String)
+               url = uri(project.findProperty("maven.repository.url.$repositoryIndex") as String)
                credentials {
-                  username = project.findProperty("maven.publish.repository.username.$publishRepositoryIndex") as String
-                  password = project.findProperty("maven.publish.repository.password.$publishRepositoryIndex") as String
+                  username = project.findProperty("maven.repository.username.$repositoryIndex") as String
+                  password = project.findProperty("maven.repository.password.$repositoryIndex") as String
                }
             }
          }
@@ -193,8 +210,8 @@ publishing {
          from(components["java"])
          artifactId = project.name.toLowerCase()
          pom {
-            name.set("Packr from libGdx (Nimbly Games)")
-            description.set("Forked version of libGdx Packr")
+            name.set("Packr from libGdx")
+            description.set("Forked version of libGdx Packr built and modified by Nimbly Games")
             url.set("https://nimblygames.com/")
             licenses {
                license {
@@ -221,7 +238,7 @@ publishing {
 
 signing.useGpgCmd()
 
-if (project.version.toString().contains("SNAPSHOT")) {
+if (isSnapshot) {
    logger.info("Skipping signing ")
 } else {
    publishing.publications.configureEach {
