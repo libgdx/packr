@@ -208,7 +208,7 @@ publishing {
           * Create a different artifact ID for the all package instead of using a classifier so that it doesn't get the same dependencies as the non uber jar version
           */
          artifact(tasks.named<ShadowJar>("shadowJar").get()) {
-            classifier = "all"
+            classifier = ""
          }
          artifact(tasks.named("javadocJar").get())
          artifact(tasks.named("sourcesJar").get())
