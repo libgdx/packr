@@ -23,12 +23,12 @@ publishOsxExecutable:
   script:
     - ./gradlew -i --no-build-cache clean PackrLauncher:publish
 
-publishWindows:
-  stage: publish
-  tags:
-    - windows
-  script:
-    - ./gradlew -i --no-build-cache clean build publish
+#publishWindows:
+#  stage: publish
+#  tags:
+#    - windows
+#  script:
+#    - ./gradlew -i --no-build-cache clean build publish
 
 publishLinux:
   stage: publish
@@ -37,12 +37,12 @@ publishLinux:
   script:
     - ./gradlew -i --no-build-cache clean build publish
 
-publishOsx:
-  stage: publish
-  tags:
-    - osx
-  script:
-    - ./gradlew -i --no-build-cache clean build publish
+#publishOsx:
+#  stage: publish
+#  tags:
+#    - osx
+#  script:
+#    - ./gradlew -i --no-build-cache clean build publish
 
 after_script:
   - echo "End CI"

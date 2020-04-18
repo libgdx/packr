@@ -120,6 +120,11 @@ application {
    mainClassName = "com.badlogicgames.packr.Packr"
 }
 
+java {
+   withJavadocJar()
+   withSourcesJar()
+}
+
 /**
  * Sync the Packr launcher dependencies to the build directory for including into the Jar
  */
@@ -199,12 +204,42 @@ publishing {
    }
    publications {
       register<MavenPublication>("${project.name}-all") {
+         /*
+          * Create a different artifact ID for the all package instead of using a classifier so that it doesn't get the same dependencies as the non uber jar version
+          */
          artifact(tasks.named<ShadowJar>("shadowJar").get()) {
-            classifier = ""
+            classifier = "all"
          }
+         artifact(tasks.named("javadocJar").get())
+         artifact(tasks.named("sourcesJar").get())
+
          groupId = project.group as String
          artifactId = project.name.toLowerCase() + "-all"
          version = project.version as String
+         pom {
+            name.set("Packr from libGdx")
+            description.set("Forked version of libGdx Packr built and modified by Nimbly Games. This is the shadow (uber) jar version that can be executed with java -jar")
+            url.set("https://nimblygames.com/")
+            licenses {
+               license {
+                  name.set("The Apache License, Version 2.0")
+                  url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+               }
+            }
+            developers {
+               developer {
+                  id.set("KarlSabo")
+                  name.set("Karl Sabo")
+                  email.set("karl@nimblygames.com")
+               }
+            }
+            scm {
+               connection.set("scm:git:https://github.com/karlsabo/packr")
+               developerConnection.set("scm:git:https://github.com/karlsabo/packr")
+               url.set("https://github.com/karlsabo/packr")
+            }
+         }
+
       }
       register<MavenPublication>(project.name) {
          from(components["java"])
