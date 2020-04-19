@@ -27,6 +27,9 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: 8
+    - name: Setup C++ environment
+      uses: kurocha/setup-cpp@v1
+
 
     # Runs a single command using the runners shell
     - name: Run a one-line script
