@@ -28,10 +28,10 @@ plugins {
 }
 
 repositories {
-   jcenter()
    mavenCentral()
+   jcenter()
    maven {
-      url = uri("https://oss.sonatype.org/content/repositories/snapshots")
+      url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
    }
    for (repositoryIndex in 0..10) {
       if (project.hasProperty("maven.repository.url.$repositoryIndex") && project.findProperty("maven.repository.isdownload.$repositoryIndex")
@@ -104,8 +104,8 @@ application {
 }
 
 java {
-   withJavadocJar()
-   withSourcesJar()
+   @Suppress("UnstableApiUsage") withJavadocJar()
+   @Suppress("UnstableApiUsage") withSourcesJar()
 }
 
 /**
