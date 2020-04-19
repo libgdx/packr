@@ -93,19 +93,24 @@ application {
       val binaryCompileTask = compileTask.get()
 
       binaryCompileTask.includes(file("$javaHomePathString/include"))
+      if (targetMachine.operatingSystemFamily.isLinux) {
+         binaryCompileTask.includes(file("$javaHomePathString/include/linux"))
+      } else if (targetMachine.operatingSystemFamily.isMacOs) {
+         binaryCompileTask.includes(file("$javaHomePathString/include/darwin"))
+      }
 
       val binaryLinkTask: LinkExecutable = linkTask.get()
 
-      val isMacOs = targetMachine.operatingSystemFamily.name == OperatingSystemFamily.MACOS
       // Create a single special publication from lipo on MacOS since that allows combining multliple platforms into a single binary
-      if (binaryCompileTask.isOptimized && (!isMacOs || targetMachine.architecture.name == MachineArchitecture.X86_64)) {
+      if (binaryCompileTask.isOptimized && (!targetMachine.operatingSystemFamily.isMacOs || targetMachine.architecture.name == MachineArchitecture.X86_64)) {
          logger.info("binaryLinkTask.linkedFile = ${binaryLinkTask.linkedFile.get()}")
 
-         val publicationName = "packrLauncher-${targetMachine.operatingSystemFamily.name}${if (!isMacOs) "-${targetMachine.architecture.name}" else ""}"
+         val publicationName =
+               "packrLauncher-${targetMachine.operatingSystemFamily.name}${if (!targetMachine.operatingSystemFamily.isMacOs) "-${targetMachine.architecture.name}" else ""}"
          publishing.publications.register<MavenPublication>(publicationName) {
-            val artifactFile = if (isMacOs) macOsLipoOutputFilePath.toFile() as Any else binaryLinkTask.linkedFile
+            val artifactFile = if (targetMachine.operatingSystemFamily.isMacOs) macOsLipoOutputFilePath.toFile() as Any else binaryLinkTask.linkedFile
             artifact(artifactFile) {
-               if (isMacOs) {
+               if (targetMachine.operatingSystemFamily.isMacOs) {
                   builtBy(macOsLipo)
                } else {
                   builtBy(binaryLinkTask)
@@ -157,11 +162,6 @@ application {
             binaryCompileTask.compilerArgs.add("-m64")
          }
 
-         if (targetPlatform.targetMachine.operatingSystemFamily.isLinux) {
-            binaryCompileTask.includes(file("/usr/lib/jvm/java-8-openjdk-amd64/include/"))
-            binaryCompileTask.includes(file("/usr/lib/jvm/java-8-openjdk-amd64/include/linux/"))
-         }
-
          // compiler osx
          if (targetPlatform.targetMachine.operatingSystemFamily.isMacOs) {
             binaryCompileTask.includes(file("/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers"))
@@ -173,8 +173,6 @@ application {
          binaryCompileTask.compilerArgs.add("-c")
          binaryCompileTask.compilerArgs.add("-fmessage-length=0")
          binaryCompileTask.compilerArgs.add("-Wwrite-strings")
-
-         binaryCompileTask.includes(file("$javaHomePathString/include/darwin"))
 
          binaryCompileTask.compilerArgs.add("-std=c++11")
 
