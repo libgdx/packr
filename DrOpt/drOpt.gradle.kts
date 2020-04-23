@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Nimbly Games, LLC
+ * Copyright 2020 See AUTHORS file
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,12 +52,7 @@ library {
 
    publicHeaders.from(file("dropt/include"))
 
-   targetMachines.set(listOf(machines.windows.x86,
-         machines.windows.x86_64,
-         machines.linux.x86,
-         machines.linux.x86_64,
-         machines.macOS.x86,
-         machines.macOS.x86_64))
+   targetMachines.set(listOf(machines.windows.x86_64, machines.linux.x86_64, machines.macOS.x86_64))
 
    toolChains.forEach { toolChain ->
       if (toolChain is VisualCpp) {
@@ -72,21 +67,6 @@ library {
       val binaryCompileTask = compileTask.get()
 
       binaryCompileTask.includes(file("$javaHomePathString/include"))
-
-      val osName = when {
-         targetMachine.operatingSystemFamily.isWindows -> {
-            OperatingSystemFamily.WINDOWS
-         }
-         targetMachine.operatingSystemFamily.isMacOs -> {
-            OperatingSystemFamily.MACOS
-         }
-         targetMachine.operatingSystemFamily.isLinux -> {
-            OperatingSystemFamily.LINUX
-         }
-         else -> {
-            throw RuntimeException("Unknown operating system family ${targetMachine.operatingSystemFamily}")
-         }
-      }
 
       if (binaryToolChain is VisualCpp) {
          binaryCompileTask.includes(file("$javaHomePathString/include/win32"))

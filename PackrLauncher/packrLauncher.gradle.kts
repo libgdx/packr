@@ -53,7 +53,7 @@ val distributionDirectoryPath: Path = buildDir.toPath().resolve("distribute")
 val macOsLipoOutputFilePath: Path = distributionDirectoryPath.resolve("packrLauncher-macos")
 
 /**
- * Combines the x86 and x86-64 executables into a combined platform executable
+ * Combines the executables into a combined platform executable. Currently only 64 bit architecture is built, so it doesn't do anything.
  */
 val macOsLipo = tasks.register<Exec>("macOsLipo") {
    workingDir = distributionDirectoryPath.toFile()
@@ -75,9 +75,7 @@ dependencies {
 }
 
 application {
-   targetMachines.set(listOf(machines.windows.x86, machines.windows.x86_64, machines.linux.x86, machines.linux.x86_64,
-         //         machines.macOS.x86,
-         machines.macOS.x86_64))
+   targetMachines.set(listOf(machines.windows.x86_64, machines.linux.x86_64, machines.macOS.x86_64))
 
    toolChains.forEach { toolChain ->
       if (toolChain is VisualCpp) {
