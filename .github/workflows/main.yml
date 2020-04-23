@@ -16,7 +16,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [macos-latest, ubuntu-latest, windows-latest]
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
