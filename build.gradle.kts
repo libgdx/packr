@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Nimbly Games, LLC
+ * Copyright 2020 See AUTHORS file
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 
 
 group = "com.nimblygames.packr"
-version = "2.2.0"
+version = "2.3.0-SNAPSHOT"
 
 plugins {
    base
