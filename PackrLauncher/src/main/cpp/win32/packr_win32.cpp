@@ -114,6 +114,9 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, Create
 	HINSTANCE hinstLib = LoadLibrary(jvmDLLPath);
 	if (hinstLib == nullptr) {
 		DWORD errorCode = GetLastError();
+		if(verbose){
+		    cout << "Last error code " << errorCode << endl;
+		}
 		if (errorCode == 126) {
 			
 			// "The specified module could not be found."

@@ -35,7 +35,7 @@ publishLinux:
   tags:
     - ubuntu
   script:
-    - ./gradlew -i --no-build-cache clean build publish
+    - ./gradlew -i --no-build-cache --refresh-dependencies clean build publish
 
 #publishOsx:
 #  stage: publish
