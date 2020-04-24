@@ -21,7 +21,7 @@ import org.gradle.internal.jvm.Jvm
 import java.nio.file.Path
 
 group = rootProject.group
-version = "2.2.0"
+version = "2.3.0-SNAPSHOT"
 
 plugins {
    `cpp-application`
