@@ -81,13 +81,6 @@ dependencies {
          this.type = ""
       }
    }
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86:2.3.0-SNAPSHOT") {
-      // Gradle won't download extension free files without this
-      artifact {
-         this.name = "packrLauncher-linux-x86"
-         this.type = ""
-      }
-   }
    add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-macos:2.3.0-SNAPSHOT") {
       // Gradle won't download extension free files without this
       artifact {
