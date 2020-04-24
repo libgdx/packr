@@ -119,10 +119,10 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, Create
 			// "The specified module could not be found."
 			// load msvcr100.dll from the bundled JRE, then try again
 			if (verbose) {
-				cout << "Failed to load jvm.dll. Trying to load msvcr100.dll first ..." << endl;
+				cout << "Failed to load jvm.dll. Trying to load msvcr120.dll first ..." << endl;
 			}
 
-			HINSTANCE hinstVCR = LoadLibrary(TEXT("jre\\bin\\msvcr100.dll"));
+			HINSTANCE hinstVCR = LoadLibrary(TEXT("jre\\bin\\msvcr120.dll"));
 			if (hinstVCR != nullptr) {
 				hinstLib = LoadLibrary(jvmDLLPath);
 			}
