@@ -85,6 +85,7 @@ library {
          binaryCompileTask.compilerArgs.add("/W4")
          binaryCompileTask.compilerArgs.add("/wd4100")
          binaryCompileTask.compilerArgs.add("/DSTRICT")
+         binaryCompileTask.compilerArgs.add("/MT")
          binaryCompileTask.compilerArgs.add("/TC")
       } else if (binaryToolChain is Gcc) {
          binaryCompileTask.compilerArgs.add("-fPIC")
