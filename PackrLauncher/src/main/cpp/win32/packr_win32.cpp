@@ -117,7 +117,7 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, Create
 		if (errorCode == 126) {
 			
 			// "The specified module could not be found."
-			// load msvcr100.dll from the bundled JRE, then try again
+			// load msvcr120.dll from the bundled JRE, then try again
 			if (verbose) {
 				cout << "Failed to load jvm.dll. Trying to load msvcr120.dll first ..." << endl;
 			}
