@@ -96,7 +96,6 @@ dependencies {
       }
    }
    add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86-64:2.3.0-SNAPSHOT")
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86:2.3.0-SNAPSHOT")
 }
 
 application {
