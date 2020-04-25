@@ -21,9 +21,11 @@ import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_UNIX
 import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS
 import org.apache.tools.ant.taskdefs.condition.Os.isFamily
 import org.gradle.internal.jvm.Jvm
+import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.CopyOnWriteArrayList
 
 group = rootProject.group
 version = rootProject.version
@@ -137,30 +139,53 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
    }
 
    doLast {
+      val jdkArchivesToRunPackrOn = CopyOnWriteArrayList<Path>()
       Files.walk(jdkArchiveDirectory).use { pathStream ->
          pathStream.forEach { path ->
             if (Files.isSameFile(jdkArchiveDirectory, path)) return@forEach
-            logger.info("Running packr against JDK $path")
-            val fileNameNoExtension = path.fileName.toString().substring(0, path.fileName.toString().lastIndexOf('.'))
-            val packrOutputDirectory = outputDirectoryPath.resolve(fileNameNoExtension)
-            val osFamily = when {
-               fileNameNoExtension.contains("linux") -> FAMILY_UNIX
-               fileNameNoExtension.contains("mac") -> FAMILY_MAC
-               fileNameNoExtension.contains("windows") -> FAMILY_WINDOWS
-               else -> throw GradleException("Not sure how to test JDK=$path found in Gradle property (jdk.archive.directory)=$jdkArchiveProperty")
-            }
-            createPackrContent(path, osFamily, packrOutputDirectory)
-            // karlfixme if current OS matches osFamily execute it
-            if (isFamily(osFamily)) {
-               logger.info("Executing packr in ${packrOutputDirectory.toAbsolutePath()}")
-               exec {
-                  workingDir = packrOutputDirectory.toFile()
-                  // karlfixme clear PATH and LD_LIBRARY_PATH to see if packr loads the correct msvcr*.dll on Windows
+            jdkArchivesToRunPackrOn.add(path)
+         }
+      }
+      jdkArchivesToRunPackrOn.parallelStream().forEach { path ->
+         if (Files.isSameFile(jdkArchiveDirectory, path)) return@forEach
+         if (!path.fileName.toString().toLowerCase().endsWith(".zip") && !path.fileName.toString().toLowerCase().endsWith(".gz")) {
+            return@forEach
+         }
 
-                  // run packr exe
-                  executable = workingDir.toPath().resolve("PackrAllTestApp").toAbsolutePath().toString()
-               }
-               // karlfixme check output file from test app to make sure it contains the correct content
+         logger.info("Running packr against JDK $path")
+         val fileNameNoExtension = path.fileName.toString().substring(0, path.fileName.toString().lastIndexOf('.'))
+         val packrOutputDirectory = outputDirectoryPath.resolve(fileNameNoExtension)
+         val osFamily = when {
+            fileNameNoExtension.contains("linux") -> FAMILY_UNIX
+            fileNameNoExtension.contains("mac") -> FAMILY_MAC
+            fileNameNoExtension.contains("windows") -> FAMILY_WINDOWS
+            else -> throw GradleException("Not sure how to test JDK=$path found in Gradle property (jdk.archive.directory)=$jdkArchiveProperty")
+         }
+         createPackrContent(path, osFamily, packrOutputDirectory)
+
+         // Execute each generated packr bundle that is compatible with the current OS
+         if (isFamily(osFamily)) {
+            logger.info("Executing packr in ${packrOutputDirectory.toAbsolutePath()}")
+            val standardOutputCapture = ByteArrayOutputStream()
+            exec {
+               workingDir = packrOutputDirectory.toFile()
+               environment("PATH", "")
+               environment("LD_LIBRARY_PATH", "")
+               environment("DYLD_LIBRARY_PATH", "")
+
+               // run packr exe
+               executable = workingDir.toPath().resolve("PackrAllTestApp").toAbsolutePath().toString()
+
+               standardOutput = standardOutputCapture
+            }
+            val outputAsString = standardOutputCapture.toByteArray().toString(Charsets.UTF_8)
+            logger.info("Captured standard output:\n$outputAsString")
+
+            if (!outputAsString.contains("Hello world!")) {
+               throw GradleException("Packr bundle in $packrOutputDirectory didn't execute properly, output did not contain hello world")
+            }
+            if (!outputAsString.contains("Loaded resource line: My resource!")) {
+               throw GradleException("Packr bundle in $packrOutputDirectory didn't execute properly, output did not contain My resource!")
             }
          }
       }
@@ -227,8 +252,9 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       configurations[JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME].resolve().forEach {
          args(it.absolutePath)
       }
+      args("--resources")
+      args(projectDir.toPath().resolve("application-resources").toAbsolutePath().toString())
 
-      // karlfixme add and test "other resources"
       args("--minimizejre")
       args("soft")
       args("--mainclass")
@@ -272,6 +298,3 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       }
    }
 }
-
-
-// karlfixme have check depend on running the packr exe
