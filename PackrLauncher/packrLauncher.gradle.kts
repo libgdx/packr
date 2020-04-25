@@ -64,6 +64,11 @@ val macOsLipo = tasks.register<Exec>("macOsLipo") {
    args(macOsLipoOutputFilePath.fileName.toString())
 }
 
+/**
+ * Configuration for holding the release executables that are built
+ */
+val currentOsExecutableZip = tasks.register<Zip>("currentOsExecutableZip") {}
+
 tasks.withType(CppCompile::class).configureEach {
    source.from(fileTree(file("src/main/cpp")) {
       include("**/*.c")
@@ -117,6 +122,14 @@ application {
                groupId = project.group as String
                version = project.version as String
                artifactId = publicationName
+            }
+         }
+
+         currentOsExecutableZip.configure {
+            dependsOn(binaryLinkTask)
+
+            from(binaryLinkTask.linkedFile) {
+               rename(".*", publicationName)
             }
          }
       }
@@ -198,6 +211,10 @@ application {
          }
       }
    }
+}
+
+artifacts {
+   add(configurations.register("currentOsExecutables").name, currentOsExecutableZip)
 }
 
 /**

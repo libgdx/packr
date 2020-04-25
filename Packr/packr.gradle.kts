@@ -16,6 +16,9 @@
  */
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 
 group = rootProject.group
 version = rootProject.version
@@ -58,7 +61,12 @@ java {
 /**
  * The configuration for depending on the Packr Launcher executables
  */
-val packrLauncherExecutables = configurations.register("PackrLauncherExecutables")
+val packrLauncherMavenRepositoryExecutables = configurations.register("PackrLauncherExecutables")
+
+/**
+ * Configuration for getting the latest build executables from PackrLauncher project
+ */
+val packrLauncherExecutablesForCurrentOs = configurations.register("currentOsPackrLauncherExecutables")
 dependencies {
    //
    implementation("org.zeroturnaround:zt-zip:1.10")
@@ -74,21 +82,23 @@ dependencies {
    runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")
    runtimeOnly("org.apache.logging.log4j:log4j-core:$log4jVersion")
 
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86-64:$version") {
+   add(packrLauncherMavenRepositoryExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86-64:$version") {
       // Gradle won't download extension free files without this
       artifact {
          this.name = "packrLauncher-linux-x86-64"
          this.type = ""
       }
    }
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-macos:$version") {
+   add(packrLauncherMavenRepositoryExecutables.name, "com.nimblygames.packr:packrLauncher-macos:$version") {
       // Gradle won't download extension free files without this
       artifact {
          this.name = "packrLauncher-macos"
          this.type = ""
       }
    }
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86-64:$version")
+   add(packrLauncherMavenRepositoryExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86-64:$version")
+
+   add(packrLauncherExecutablesForCurrentOs.name, project(":PackrLauncher", "currentOsExecutables"))
 }
 
 application {
@@ -104,8 +114,10 @@ java {
  * Sync the Packr launcher dependencies to the build directory for including into the Jar
  */
 val syncPackrLaunchers = tasks.register<Sync>("syncPackrLaunchers") {
-   from(packrLauncherExecutables)
-   into(File(buildDir, "packrLauncher"))
+   dependsOn(packrLauncherMavenRepositoryExecutables)
+
+   from(packrLauncherMavenRepositoryExecutables)
+   into(File(buildDir, "packrLauncherMavenRepository"))
    rename { existingFilename ->
       when {
          existingFilename.contains("linux") && existingFilename.contains("x86-64") -> {
@@ -130,14 +142,83 @@ val syncPackrLaunchers = tasks.register<Sync>("syncPackrLaunchers") {
    }
 }
 
-tasks.named<Jar>(JavaPlugin.JAR_TASK_NAME) {
+/**
+ * Sync the latest built binaries from the PackrLauncher project
+ */
+val syncCurrentOsPackrLaunchers = tasks.register<Sync>("syncCurrentOsPackrLaunchers") {
+   dependsOn(packrLauncherExecutablesForCurrentOs)
+
+   from(zipTree(packrLauncherExecutablesForCurrentOs.get().singleFile))
+   into(File(buildDir, "packrLauncherCurrentOS"))
+   rename { existingFilename ->
+      when {
+         existingFilename.contains("linux") && existingFilename.contains("x86-64") -> {
+            "packr-linux-x64"
+         }
+         existingFilename.contains("linux") && existingFilename.contains("x86") -> {
+            "packr-linux"
+         }
+         existingFilename.contains("mac") -> {
+            "packr-mac"
+         }
+         existingFilename.contains("windows") && existingFilename.contains("x86-64") -> {
+            "packr-windows-x64.exe"
+         }
+         existingFilename.contains("windows") && existingFilename.contains("x86") -> {
+            "packr-windows.exe"
+         }
+         else -> {
+            existingFilename
+         }
+      }
+   }
+}
+
+/**
+ * Directory with the latest packr launcher executables
+ */
+val packrLauncherDirectory: Path = buildDir.toPath().resolve("packrLauncher")
+
+/**
+ * Creates a consolidated directory containing the latest locally build executables and filling in any missing ones with those downloaded from the Maven repository
+ */
+val createPackrLauncherConsolidatedDirectory = tasks.register("createPackrLauncherConsolidatedDirectory") {
+   dependsOn(syncCurrentOsPackrLaunchers)
    dependsOn(syncPackrLaunchers)
+
+   inputs.dir(syncCurrentOsPackrLaunchers.get().destinationDir)
+   inputs.dir(syncPackrLaunchers.get().destinationDir)
+   outputs.dir(packrLauncherDirectory.toFile())
+
+   doLast {
+      Files.createDirectories(packrLauncherDirectory)
+
+      // Executables from Maven repository
+      Files.walk(syncPackrLaunchers.get().destinationDir.toPath()).use { pathStream ->
+         pathStream.forEach {
+            if (Files.isSameFile(syncPackrLaunchers.get().destinationDir.toPath(), it)) return@forEach
+            Files.copy(it, packrLauncherDirectory.resolve(it.fileName), StandardCopyOption.REPLACE_EXISTING)
+         }
+      }
+
+      // Executables built by PackrLauncher project on the current system
+      Files.walk(syncCurrentOsPackrLaunchers.get().destinationDir.toPath()).use { pathStream ->
+         pathStream.forEach {
+            if (Files.isSameFile(syncCurrentOsPackrLaunchers.get().destinationDir.toPath(), it)) return@forEach
+            Files.copy(it, packrLauncherDirectory.resolve(it.fileName), StandardCopyOption.REPLACE_EXISTING)
+         }
+      }
+   }
+}
+
+tasks.named<Jar>(JavaPlugin.JAR_TASK_NAME) {
+   dependsOn(createPackrLauncherConsolidatedDirectory)
 
    @Suppress("UnstableApiUsage") manifest {
       attributes["Main-Class"] = application.mainClassName
    }
 
-   from(File(buildDir, "packrLauncher"))
+   from(packrLauncherDirectory.toFile())
 }
 
 tasks.withType(Test::class).configureEach {
@@ -145,13 +226,13 @@ tasks.withType(Test::class).configureEach {
 }
 
 tasks.withType(ShadowJar::class).configureEach {
-   dependsOn(syncPackrLaunchers)
+   dependsOn(createPackrLauncherConsolidatedDirectory)
 
    @Suppress("UnstableApiUsage") manifest {
       attributes["Main-Class"] = application.mainClassName
    }
 
-   from(File(buildDir, "packrLauncher"))
+   from(packrLauncherDirectory.toFile())
 }
 
 /**

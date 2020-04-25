@@ -108,7 +108,6 @@ int main(int argc, char** argv) {
 }
 
 bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM) {
-
 	LPCTSTR jvmDLLPath = TEXT("jre\\bin\\server\\jvm.dll");
 
 	HINSTANCE hinstLib = LoadLibrary(jvmDLLPath);
