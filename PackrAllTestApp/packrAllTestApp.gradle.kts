@@ -140,7 +140,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
 
    doLast {
       val jdkArchivesToRunPackrOn = CopyOnWriteArrayList<Path>()
-      Files.walk(jdkArchiveDirectory).use { pathStream ->
+      Files.walk(jdkArchiveDirectory, 1).use { pathStream ->
          pathStream.forEach { path ->
             if (Files.isSameFile(jdkArchiveDirectory, path)) return@forEach
             jdkArchivesToRunPackrOn.add(path)
@@ -217,6 +217,7 @@ val javaHomePath: String = Jvm.current().jre?.homeDir?.absolutePath ?: Jvm.curre
  *  @param destination The directory to write the files in
  *
  */
+// karlfixme take the platform as a parameter
 fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
    exec {
       executable = "$javaHomePath/bin/java"
