@@ -155,6 +155,16 @@ tasks.withType(ShadowJar::class).configureEach {
 }
 
 /**
+ * Configuration for exporting the packr-all jar to other projects in Gradle
+ */
+val packrAllConfiguration = configurations.register("packrAll")
+artifacts {
+   add(packrAllConfiguration.name, tasks.named<ShadowJar>("shadowJar").get()) {
+      classifier = ""
+   }
+}
+
+/**
  * Is the packer version a snapshot or release?
  */
 val isSnapshot = project.version.toString().contains("SNAPSHOT")
