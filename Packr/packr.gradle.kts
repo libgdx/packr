@@ -18,7 +18,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 group = rootProject.group
-version = "2.3.0-SNAPSHOT"
+version = rootProject.version
 
 plugins {
    `maven-publish`
@@ -74,21 +74,21 @@ dependencies {
    runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")
    runtimeOnly("org.apache.logging.log4j:log4j-core:$log4jVersion")
 
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86-64:2.3.0-SNAPSHOT") {
+   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86-64:$version") {
       // Gradle won't download extension free files without this
       artifact {
          this.name = "packrLauncher-linux-x86-64"
          this.type = ""
       }
    }
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-macos:2.3.0-SNAPSHOT") {
+   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-macos:$version") {
       // Gradle won't download extension free files without this
       artifact {
          this.name = "packrLauncher-macos"
          this.type = ""
       }
    }
-   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86-64:2.3.0-SNAPSHOT")
+   add(packrLauncherExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86-64:$version")
 }
 
 application {
