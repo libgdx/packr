@@ -23,6 +23,7 @@ import org.apache.tools.ant.taskdefs.condition.Os.isFamily
 import org.gradle.internal.jvm.Jvm
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 
 group = rootProject.group
 version = rootProject.version
@@ -136,33 +137,34 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
    }
 
    doLast {
-      val macContentPath = outputDirectoryPath.resolve("mac-content")
-      Files.createDirectories(macContentPath)
-      createMacContent(macContentPath)
+      Files.walk(jdkArchiveDirectory).use { pathStream ->
+         pathStream.forEach { path ->
+            if (Files.isSameFile(jdkArchiveDirectory, path)) return@forEach
+            logger.info("Running packr against JDK $path")
+            val fileNameNoExtension = path.fileName.toString().substring(0, path.fileName.toString().lastIndexOf('.'))
+            val packrOutputDirectory = outputDirectoryPath.resolve(fileNameNoExtension)
+            val osFamily = when {
+               fileNameNoExtension.contains("linux") -> FAMILY_UNIX
+               fileNameNoExtension.contains("mac") -> FAMILY_MAC
+               fileNameNoExtension.contains("windows") -> FAMILY_WINDOWS
+               else -> throw GradleException("Not sure how to test JDK=$path found in Gradle property (jdk.archive.directory)=$jdkArchiveProperty")
+            }
+            createPackrContent(path, osFamily, packrOutputDirectory)
+            // karlfixme if current OS matches osFamily execute it
+            if (isFamily(osFamily)) {
+               logger.info("Executing packr in ${packrOutputDirectory.toAbsolutePath()}")
+               exec {
+                  workingDir = packrOutputDirectory.toFile()
+                  // karlfixme clear PATH and LD_LIBRARY_PATH to see if packr loads the correct msvcr*.dll on Windows
 
-      val linuxContentPath = outputDirectoryPath.resolve("linux-content")
-      Files.createDirectories(linuxContentPath)
-      createLinuxContent(linuxContentPath)
-
-      val windowsContentPath = outputDirectoryPath.resolve("windows-content")
-      Files.createDirectories(windowsContentPath)
-      createWindowsContent(windowsContentPath)
+                  // run packr exe
+                  executable = workingDir.toPath().resolve("PackrAllTestApp").toAbsolutePath().toString()
+               }
+               // karlfixme check output file from test app to make sure it contains the correct content
+            }
+         }
+      }
    }
-}
-
-// karlfixme Run the executable specific to the currently running OS
-tasks.register<Exec>("runTestApplication") {
-   dependsOn(createTestDirectory)
-
-   group = "Run Configuration"
-   description = "Tests if all the gathered content for packr application will work"
-
-   workingDir = createTestDirectory.get().outputs.files.singleFile
-
-   // run packr exe
-   executable = workingDir.toPath().resolve("PackrAllTestApp").toAbsolutePath().toString()
-
-   // karlfixme scan an output file for correctness
 }
 
 tasks.named("check") {
@@ -170,37 +172,14 @@ tasks.named("check") {
 }
 
 /**
- * Creates or copies all the application files for macOs.
- * @param destination the directory to create the files in
+ * Gradle property specifying where the JDK archives directory is
  */
-fun createMacContent(destination: Path) {
-   createOsContent(FAMILY_MAC, destination)
-}
+val jdkArchiveProperty = findProperty("jdk.archive.directory") as String?
 
 /**
- * Creates or copies all the application files for Linux.
- * @param destination the directory to create the files in
+ * Path to a directory containing any number of JDK archives to test.
  */
-fun createLinuxContent(destination: Path) {
-   createOsContent(FAMILY_UNIX, destination)
-}
-
-/**
- * Creates or copies all the application files for Windows.
- * @param destination the directory to create the files in
- */
-fun createWindowsContent(destination: Path) {
-   createOsContent(FAMILY_WINDOWS, destination)
-}
-
-/**
- * Creates and copies all the application files for the specified operating system [osFamily], and places them in [destination].
- * @param osFamily the OS to create the application content files for
- * @param destination the directory to place all generated [osFamily] files in
- */
-fun createOsContent(osFamily: String, destination: Path) {
-   createPackrContent(osFamily, destination)
-}
+val jdkArchiveDirectory = Paths.get(jdkArchiveProperty ?: "")
 
 /**
  * The path to JAVA_HOME
@@ -213,7 +192,7 @@ val javaHomePath: String = Jvm.current().jre?.homeDir?.absolutePath ?: Jvm.curre
  *  @param destination The directory to write the files in
  *
  */
-fun createPackrContent(osFamily: String, destination: Path) {
+fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
    exec {
       executable = "$javaHomePath/bin/java"
 
@@ -224,25 +203,18 @@ fun createPackrContent(osFamily: String, destination: Path) {
          FAMILY_MAC -> {
             args("--platform")
             args("mac")
-
-            args("--jdk")
-            args(file("jdk8Archives/OpenJDK8U-jdk_x64_mac_hotspot_8u252b09.zip"))
          }
          FAMILY_UNIX -> {
             args("--platform")
             args("linux64")
-
-            args("--jdk")
-            args(file("jdk8Archives/OpenJDK8U-jdk_x64_linux_hotspot_8u252b09.zip"))
          }
          FAMILY_WINDOWS -> {
             args("--platform")
             args("windows64")
-
-            args("--jdk")
-            args(file("jdk8Archives/OpenJDK8U-jdk_x64_windows_hotspot_8u252b09.zip"))
          }
       }
+      args("--jdk")
+      args(jdkPath.toFile())
       args("--executable")
       args("PackrAllTestApp")
       args("--classpath")
