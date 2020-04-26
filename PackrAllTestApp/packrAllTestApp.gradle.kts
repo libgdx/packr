@@ -358,14 +358,6 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
             executable = "chmod"
             args("+x")
 
-            val javaRelativePathString = "jre/bin/java"
-            args(destination.resolve(javaRelativePathString).toAbsolutePath().toString())
-         }
-
-         exec {
-            executable = "chmod"
-            args("+x")
-
             args(destination.resolve("PackrAllTestApp").toAbsolutePath().toString())
          }
       }
