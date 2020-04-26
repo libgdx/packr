@@ -229,7 +229,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
          }
 
          logger.info("Running packr against JDK $path")
-         val fileNameNoExtension = path.fileName.toString().substring(0, path.fileName.toString().lastIndexOf('.'))
+         val fileNameNoExtension = path.fileName.toString().substring(0, path.fileName.toString().indexOf('.'))
          val packrOutputDirectory = outputDirectoryPath.resolve(fileNameNoExtension)
          val osFamily = when {
             fileNameNoExtension.contains("linux") -> FAMILY_UNIX
