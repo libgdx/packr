@@ -67,7 +67,8 @@ public class ArchiveUtils {
          }
          InputStream decompressedJdkInputStream = jdkInputStream;
          if (compressorType != null) {
-            decompressedJdkInputStream = CompressorStreamFactory.getSingleton().createCompressorInputStream(compressorType, jdkInputStream);
+            decompressedJdkInputStream =
+                  new BufferedInputStream(CompressorStreamFactory.getSingleton().createCompressorInputStream(compressorType, jdkInputStream));
          }
 
          final ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(decompressedJdkInputStream);
