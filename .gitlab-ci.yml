@@ -1,5 +1,6 @@
 stages:
   - publish_launcher
+  - build
   - publish
 
 publisWindowsExecutable:
@@ -23,12 +24,19 @@ publishOsxExecutable:
   script:
     - ./gradlew -i --no-build-cache clean PackrLauncher:publish
 
-#publishWindows:
-#  stage: publish
-#  tags:
-#    - windows
-#  script:
-#    - ./gradlew -i --no-build-cache clean build publish
+buildWindows:
+  stage: build
+  tags:
+    - windows
+  script:
+    - gradlew -i --no-build-cache --refresh-dependencies clean build
+
+buildMac:
+  stage: build
+  tags:
+    - osx
+  script:
+    - ./gradlew -i --no-build-cache --refresh-dependencies clean build
 
 publishLinux:
   stage: publish
@@ -36,13 +44,6 @@ publishLinux:
     - ubuntu
   script:
     - ./gradlew -i --no-build-cache --refresh-dependencies clean build publish
-
-#publishOsx:
-#  stage: publish
-#  tags:
-#    - osx
-#  script:
-#    - ./gradlew -i --no-build-cache clean build publish
 
 after_script:
   - echo "End CI"
