@@ -392,7 +392,7 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
  * Downloads the resource [url] into [file], overwriting if it already exists
  */
 fun downloadHttpUrlToFile(url: URL, file: Path) {
-   logger.info("Downloading  $url to $file")
+   logger.info("Downloading $url to $file")
    val connection = url.openConnection() as HttpURLConnection
    connection.useCaches = false
    connection.doOutput = false
