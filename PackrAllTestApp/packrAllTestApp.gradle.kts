@@ -130,6 +130,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
    outputs.dir(outputDirectoryPath.toFile())
 
    inputs.files(configurations[JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME])
+   inputs.dir(syncPackrAllJar.get().destinationDir)
    inputs.dir(jarTask.get().destinationDirectory)
 
    doFirst {
