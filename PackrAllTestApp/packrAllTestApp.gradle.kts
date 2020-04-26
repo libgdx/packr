@@ -15,6 +15,8 @@
  *
  */
 
+import com.google.common.hash.Hashing
+import com.google.common.io.BaseEncoding
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_MAC
 import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_UNIX
@@ -22,10 +24,14 @@ import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS
 import org.apache.tools.ant.taskdefs.condition.Os.isFamily
 import org.gradle.internal.jvm.Jvm
 import java.io.ByteArrayOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.util.concurrent.CopyOnWriteArrayList
+import com.google.common.io.Files as GuavaFiles
 
 group = rootProject.group
 version = rootProject.version
@@ -54,6 +60,12 @@ repositories {
             }
          }
       }
+   }
+}
+
+buildscript {
+   dependencies {
+      classpath("com.google.guava:guava:29.0-jre")
    }
 }
 
@@ -119,12 +131,74 @@ tasks.withType(Test::class).configureEach {
 }
 
 /**
+ * Holds the information needed to download and verify a JDK
+ */
+data class JdkDownloadInformation(
+      /**
+       * The URL for downloading the JDK
+       */
+      val jdkUrlArchive: URL,
+      /**
+       * The SHA 256 of the download
+       */
+      val jdkArchiveSha256: String
+)
+
+/**
+ * This task downloads JDKs from the web if needed.
+ */
+val downloadJdkArchives = tasks.register("downloadJdkArchives") {
+   outputs.dir(jdkArchiveDirectory.toFile())
+
+   @Suppress("SpellCheckingInspection") val jdksToDownloadInformation = listOf(
+         // Linux x86-64
+         JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09/OpenJDK8U-jdk_x64_linux_hotspot_8u252b09.tar.gz").toURL(),
+               "2b59b5282ff32bce7abba8ad6b9fde34c15a98f949ad8ae43e789bbd78fc8862"),
+         // macOS x86-64
+         JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jdk_x64_mac_hotspot_8u252b09.tar.gz").toURL(),
+               "2caed3ec07d108bda613f9b4614b22a8bdd196ccf2a432a126161cd4077f07a5"),
+         // Windows x86-64
+         JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jdk_x64_windows_hotspot_8u252b09.zip").toURL(),
+               "4e2c92ba17481321eaeb1769e85eec99a774102eb80b700a201b54b130ab2768"))
+
+   jdksToDownloadInformation.forEach { (jdkUrlArchive, jdkArchiveSha256) ->
+      inputs.property(jdkUrlArchive.toString(), jdkArchiveSha256)
+   }
+
+   doLast {
+      jdksToDownloadInformation.forEach { (jdkUrlArchive, jdkArchiveSha256) ->
+         val jdkDownloadFilename = jdkUrlArchive.path.substring(jdkUrlArchive.path.lastIndexOf('/') + 1)
+         if (Paths.get(jdkDownloadFilename).isAbsolute) {
+            throw GradleException("Failed to parse filename from JDK download url $jdkUrlArchive")
+         }
+         val jdkDownloadLocation = jdkArchiveDirectory.resolve(jdkDownloadFilename)
+         logger.info("Checking JDK file $jdkDownloadLocation")
+
+         if (Files.exists(jdkDownloadLocation)) {
+            logger.info("jdkDownloadLocation $jdkDownloadLocation already exists, checking SHA 256")
+            val jdkDownloadSha256Hex = getFileSha256HexEncoded(jdkDownloadLocation)
+            if (jdkArchiveSha256.toLowerCase() == jdkDownloadSha256Hex.toLowerCase()) {
+               logger.info("SHA256 for $jdkDownloadLocation matches")
+            } else {
+               logger.info("SHA256 for $jdkDownloadLocation of $jdkDownloadSha256Hex does not match source $jdkArchiveSha256")
+               downloadAndVerifySha256(jdkUrlArchive, jdkDownloadLocation, jdkArchiveSha256)
+            }
+         } else {
+            logger.info("jdkDownloadLocation $jdkDownloadLocation does not exist")
+            downloadAndVerifySha256(jdkUrlArchive, jdkDownloadLocation, jdkArchiveSha256)
+         }
+      }
+   }
+}
+
+/**
  * Creates build/testApp directory with all the content that will be distributed/published to distribution platforms such as Steam.
  */
 val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirectory") {
    dependsOn(configurations[JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME])
    dependsOn(jarTask)
    dependsOn(syncPackrAllJar)
+   dependsOn(downloadJdkArchives)
 
    val outputDirectoryPath = buildDir.toPath().resolve("testApp")
    outputs.dir(outputDirectoryPath.toFile())
@@ -149,7 +223,8 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
       }
       jdkArchivesToRunPackrOn.parallelStream().forEach { path ->
          if (Files.isSameFile(jdkArchiveDirectory, path)) return@forEach
-         if (!path.fileName.toString().toLowerCase().endsWith(".zip") && !path.fileName.toString().toLowerCase().endsWith(".gz")) {
+         val pathnameLowerCase = path.fileName.toString().toLowerCase()
+         if (!pathnameLowerCase.endsWith(".zip") && !pathnameLowerCase.endsWith(".gz") && !pathnameLowerCase.contains("jdk")) {
             return@forEach
          }
 
@@ -172,7 +247,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
                workingDir = packrOutputDirectory.toFile()
                environment("PATH", "")
                environment("LD_LIBRARY_PATH", "")
-               environment("DYLD_LIBRARY_PATH", "")
+               @Suppress("SpellCheckingInspection") environment("DYLD_LIBRARY_PATH", "")
 
                // run packr exe
                executable = workingDir.toPath().resolve("PackrAllTestApp").toAbsolutePath().toString()
@@ -205,7 +280,11 @@ val jdkArchiveProperty = findProperty("jdk.archive.directory") as String?
 /**
  * Path to a directory containing any number of JDK archives to test.
  */
-val jdkArchiveDirectory = Paths.get(jdkArchiveProperty ?: "")
+val jdkArchiveDirectory: Path = if (jdkArchiveProperty == null) {
+   Paths.get(System.getProperty("java.io.tmpdir")).resolve(System.getProperty("user.name")).resolve("jdk-archives")
+} else {
+   Paths.get(jdkArchiveProperty)
+}
 
 /**
  * The path to JAVA_HOME
@@ -298,5 +377,40 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
             args(destination.resolve("PackrAllTestApp.app").toAbsolutePath().toString())
          }
       }
+   }
+}
+
+/**
+ * Creates a hex encoded (base16) version of the SHA 256 for the [file]
+ */
+@Suppress("UnstableApiUsage") fun getFileSha256HexEncoded(file: Path): String {
+   val sha256 = GuavaFiles.asByteSource(file.toFile()).hash(Hashing.sha256())
+   return BaseEncoding.base16().encode(sha256.asBytes())
+}
+
+/**
+ * Downloads the resource [url] into [file], overwriting if it already exists
+ */
+fun downloadHttpUrlToFile(url: URL, file: Path) {
+   logger.info("Downloading  $url to $file")
+   val connection = url.openConnection() as HttpURLConnection
+   connection.useCaches = false
+   connection.doOutput = false
+   connection.doInput = true
+   connection.requestMethod = "GET"
+   connection.connect()
+   connection.inputStream.use {
+      Files.copy(it, file, REPLACE_EXISTING)
+   }
+}
+
+/**
+ * Downloads the content at [url] into [file] and throws an exception if the downloaded SHA 256 does not match [fileSha256Hex]
+ */
+fun downloadAndVerifySha256(url: URL, file: Path, fileSha256Hex: String) {
+   downloadHttpUrlToFile(url, file)
+   val downloadedSha256Hex = getFileSha256HexEncoded(file)
+   if (fileSha256Hex.toLowerCase() != downloadedSha256Hex.toLowerCase()) {
+      throw GradleException("Downloaded $url but its SHA 256 is invalid")
    }
 }
