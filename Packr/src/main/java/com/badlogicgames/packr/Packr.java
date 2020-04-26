@@ -20,7 +20,6 @@ package com.badlogicgames.packr;
 import com.lexicalscope.jewel.cli.ArgumentValidationException;
 import com.lexicalscope.jewel.cli.CliFactory;
 import com.lexicalscope.jewel.cli.ValidationFailure;
-import com.sun.xml.internal.bind.v2.runtime.reflect.Lister.Pack;
 import org.zeroturnaround.zip.ZipUtil;
 import org.zeroturnaround.zip.commons.IOUtils;
 
@@ -88,7 +87,7 @@ public class Packr {
     * @throws IOException if an IO error occurs
     */
    private static byte[] readResource(String resource) throws IOException {
-      try (InputStream inputStream = Pack.class.getResourceAsStream(resource)) {
+      try (InputStream inputStream = Packr.class.getResourceAsStream(resource)) {
          if (inputStream == null) {
             throw new IllegalArgumentException("Couldn't find resource " + resource + " relative to class " + Packr.class.getName());
          }
