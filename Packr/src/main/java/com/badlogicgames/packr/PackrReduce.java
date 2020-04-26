@@ -20,18 +20,22 @@ package com.badlogicgames.packr;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import org.zeroturnaround.zip.ZipUtil;
-import org.zeroturnaround.zip.commons.FileUtils;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.compressors.CompressorException;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
+
+import static com.badlogicgames.packr.ArchiveUtils.ArchiveType.ZIP;
 
 /**
  * Functions to reduce package size for both classpath JARs, and the bundled JRE.
@@ -45,8 +49,10 @@ class PackrReduce {
     * @param config the options for minimizing the JRE
     *
     * @throws IOException if an IO error occurs
+    * @throws ArchiveException if an archive error occurs
+    * @throws CompressorException if a compression error occurs
     */
-   static void minimizeJre(File output, PackrConfig config) throws IOException {
+   static void minimizeJre(File output, PackrConfig config) throws IOException, CompressorException, ArchiveException {
       if (config.minimizeJre == null) {
          return;
       }
@@ -79,7 +85,7 @@ class PackrReduce {
                if (config.verbose) {
                   System.out.println("  # Unpacking '" + file.getPath() + "' ...");
                }
-               ZipUtil.unpack(file, fileNoExt);
+               ArchiveUtils.extractArchive(file.toPath(), fileNoExt.toPath());
             }
 
             JsonArray removeArray = reduce.asObject().get("paths").asArray();
@@ -87,7 +93,7 @@ class PackrReduce {
                File removeFile = new File(fileNoExt, remove.asString());
                if (removeFile.exists()) {
                   if (removeFile.isDirectory()) {
-                     FileUtils.deleteDirectory(removeFile);
+                     PackrFileUtils.deleteDirectory(removeFile);
                   } else {
                      Files.deleteIfExists(removeFile.toPath());
                   }
@@ -132,13 +138,15 @@ class PackrReduce {
     * @param directoryToZipAndThenDelete the contents to put into the created Zip file
     *
     * @throws IOException if an IO error occurs
+    * @throws ArchiveException if an archive error occurs
     */
-   private static void createZipFileFromDirectory(PackrConfig config, File zipFileOutput, File directoryToZipAndThenDelete) throws IOException {
+   private static void createZipFileFromDirectory(PackrConfig config, File zipFileOutput, File directoryToZipAndThenDelete)
+         throws IOException, ArchiveException {
       long beforeLen = zipFileOutput.length();
       Files.deleteIfExists(zipFileOutput.toPath());
 
-      ZipUtil.pack(directoryToZipAndThenDelete, zipFileOutput);
-      FileUtils.deleteDirectory(directoryToZipAndThenDelete);
+      ArchiveUtils.createArchive(ZIP, directoryToZipAndThenDelete.toPath(), zipFileOutput.toPath());
+      PackrFileUtils.deleteDirectory(directoryToZipAndThenDelete);
 
       long afterLen = zipFileOutput.length();
 
@@ -213,7 +221,7 @@ class PackrReduce {
       }
 
       if (file.isDirectory()) {
-         FileUtils.deleteDirectory(file);
+         PackrFileUtils.deleteDirectory(file);
       } else {
          Files.deleteIfExists(file.toPath());
       }
@@ -232,7 +240,7 @@ class PackrReduce {
       JsonObject json = null;
 
       if (new File(config.minimizeJre).exists()) {
-         json = JsonObject.readFrom(FileUtils.readFileToString(new File(config.minimizeJre)));
+         json = JsonObject.readFrom(new String(Files.readAllBytes(Paths.get(config.minimizeJre)), StandardCharsets.UTF_8));
       } else {
          InputStream in = Packr.class.getResourceAsStream("/minimize/" + config.minimizeJre);
          if (in != null) {
@@ -255,8 +263,11 @@ class PackrReduce {
     * @param removePlatformLibsFileFilter addition files to remove if they match
     *
     * @throws IOException if an IO error occurs
+    * @throws ArchiveException if an archive error occurs
+    * @throws CompressorException if a compression error occurs
     */
-   static void removePlatformLibs(PackrOutput output, PackrConfig config, Predicate<File> removePlatformLibsFileFilter) throws IOException {
+   static void removePlatformLibs(PackrOutput output, PackrConfig config, Predicate<File> removePlatformLibsFileFilter)
+         throws IOException, CompressorException, ArchiveException {
       if (config.removePlatformLibs == null || config.removePlatformLibs.isEmpty()) {
          return;
       }
@@ -321,7 +332,7 @@ class PackrReduce {
          }
 
          if (!jar.isDirectory()) {
-            ZipUtil.unpack(jar, jarDir);
+            ArchiveUtils.extractArchive(jar.toPath(), jarDir.toPath());
          } else {
             jarDir = jar; // run in-place for directories
          }

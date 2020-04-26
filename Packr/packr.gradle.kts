@@ -69,7 +69,7 @@ val packrLauncherMavenRepositoryExecutables = configurations.register("PackrLaun
 val packrLauncherExecutablesForCurrentOs = configurations.register("currentOsPackrLauncherExecutables")
 dependencies {
    //
-   implementation("org.zeroturnaround:zt-zip:1.10")
+   implementation("org.apache.commons:commons-compress:1.20")
    implementation("com.lexicalscope.jewelcli:jewelcli:0.8.9")
    implementation("com.eclipsesource.minimal-json:minimal-json:0.9.1")
 
@@ -82,6 +82,7 @@ dependencies {
    runtimeOnly("org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion")
    runtimeOnly("org.apache.logging.log4j:log4j-core:$log4jVersion")
 
+   // Packr launcher executables
    add(packrLauncherMavenRepositoryExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86-64:$version") {
       // Gradle won't download extension free files without this
       artifact {
@@ -97,7 +98,6 @@ dependencies {
       }
    }
    add(packrLauncherMavenRepositoryExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86-64:$version")
-
    add(packrLauncherExecutablesForCurrentOs.name, project(":PackrLauncher", "currentOsExecutables"))
 }
 

@@ -20,8 +20,9 @@ package com.badlogicgames.packr;
 import com.lexicalscope.jewel.cli.ArgumentValidationException;
 import com.lexicalscope.jewel.cli.CliFactory;
 import com.lexicalscope.jewel.cli.ValidationFailure;
-import org.zeroturnaround.zip.ZipUtil;
-import org.zeroturnaround.zip.commons.IOUtils;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -37,6 +38,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
+
+import static com.badlogicgames.packr.ArchiveUtils.extractArchive;
 
 /**
  * Takes a couple of parameters and a JRE and bundles them into a platform specific distributable (zip on Windows and Linux, app bundle on Mac OS X).
@@ -65,13 +68,13 @@ public class Packr {
 
          new Packr().pack(new PackrConfig(commandLine));
 
-      } catch (ArgumentValidationException e) {
-         for (ValidationFailure failure : e.getValidationFailures()) {
+      } catch (ArgumentValidationException argumentException) {
+         for (ValidationFailure failure : argumentException.getValidationFailures()) {
             System.err.println(failure.getMessage());
          }
          System.exit(-1);
-      } catch (IOException e) {
-         e.printStackTrace();
+      } catch (IOException | CompressorException | ArchiveException exception) {
+         exception.printStackTrace();
          System.exit(-1);
       }
    }
@@ -82,7 +85,7 @@ public class Packr {
     * @param resource the resource to load from the classpath relative to {@link Packr#getClass()}. Use a leading "/" to not load relative to the Packr
     *       package "com/badlogicgames/packr"
     *
-    * @return the byte array containing the contents of the resouce
+    * @return the byte array containing the contents of the resource
     *
     * @throws IOException if an IO error occurs
     */
@@ -145,8 +148,10 @@ public class Packr {
     * @param config the configuration information for creating an executable and asset bundle
     *
     * @throws IOException if an IO error occurs
+    * @throws CompressorException if a compression error occurs
+    * @throws ArchiveException if an archive error occurs
     */
-   @SuppressWarnings("WeakerAccess") public void pack(PackrConfig config) throws IOException {
+   @SuppressWarnings("WeakerAccess") public void pack(PackrConfig config) throws IOException, CompressorException, ArchiveException {
 
       config.validate();
       this.config = config;
@@ -300,10 +305,10 @@ public class Packr {
       builder.append("{\n");
       builder.append("  \"classPath\": [");
 
-      String delim = "\n";
+      String delimiter = "\n";
       for (String f : config.classpath) {
-         builder.append(delim).append("    \"").append(new File(f).getName()).append("\"");
-         delim = ",\n";
+         builder.append(delimiter).append("    \"").append(new File(f).getName()).append("\"");
+         delimiter = ",\n";
       }
       builder.append("\n  ],\n");
 
@@ -337,8 +342,10 @@ public class Packr {
     * @param config the packr config for locating the JDK
     *
     * @throws IOException if an IO error occurs
+    * @throws CompressorException if a compression error occurs
+    * @throws ArchiveException if an archive error occurs
     */
-   private void copyAndMinimizeJRE(PackrOutput output, PackrConfig config) throws IOException {
+   private void copyAndMinimizeJRE(PackrOutput output, PackrConfig config) throws IOException, CompressorException, ArchiveException {
       boolean extractToCache = config.cacheJre != null;
       boolean skipExtractToCache = false;
 
@@ -384,7 +391,7 @@ public class Packr {
          if (jdkFile.isDirectory()) {
             PackrFileUtils.copyDirectory(jdkFile, tmp);
          } else {
-            ZipUtil.unpack(jdkFile, tmp);
+            extractArchive(jdkFile.toPath(), tmp.toPath());
          }
 
          // copy the JRE sub folder
