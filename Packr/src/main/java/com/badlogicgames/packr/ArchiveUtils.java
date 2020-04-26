@@ -48,7 +48,9 @@ public class ArchiveUtils {
    }
 
    /**
-    * Extracts and archive into {@code extractToDirectory}.
+    * Extracts an archive into {@code extractToDirectory}.
+    * <p>
+    * <b>NOTE:</b> Symbolic links are not handled.
     *
     * @param archivePath the archive to extract
     * @param extractToDirectory the directory to extract into
