@@ -254,11 +254,9 @@ Try `./myapp -c --help` for a list of available options. They are also listed [h
 
 If you want to modify the Java code only, it's sufficient to invoke Maven.
 
-```
-mvn clean package
-```
+    $ ./gradlew clean assemble
 
-This will create a `packr-VERSION.jar` file in `target` which you can invoke as described in the Usage section above.
+This will create a `packr-VERSION.jar` file in `Packr/build/libs` diectory, you may invoke as described in the Usage section above.
 
 If you want to compile the native executables, please follow [these instructions](https://github.com/libgdx/packr/blob/master/src/main/native/README.md). Each of the build scripts will create executable files for the specific platform and copy them to src/main/resources.
 
