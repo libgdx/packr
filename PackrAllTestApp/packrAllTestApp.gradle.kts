@@ -15,6 +15,7 @@
  *
  */
 
+import java.util.Objects
 import com.google.common.hash.Hashing
 import com.google.common.io.BaseEncoding
 import org.apache.tools.ant.taskdefs.condition.Os
@@ -240,7 +241,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
          createPackrContent(path, osFamily, packrOutputDirectory)
 
          // Execute each generated packr bundle that is compatible with the current OS
-         if (isFamily(osFamily)) {
+         if (isFamily(osFamily) && !(isFamily(FAMILY_MAC) && Objects.equals(osFamily, FAMILY_UNIX))) {
             logger.info("Executing packr in ${packrOutputDirectory.toAbsolutePath()}")
             val standardOutputCapture = ByteArrayOutputStream()
             exec {
@@ -250,7 +251,11 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
                @Suppress("SpellCheckingInspection") environment("DYLD_LIBRARY_PATH", "")
 
                // run packr exe
-               executable = workingDir.toPath().resolve("PackrAllTestApp").toAbsolutePath().toString()
+               if(isFamily(FAMILY_MAC)){
+                  executable = workingDir.toPath().resolve("Contents").resolve("MacOS").resolve("PackrAllTestApp").toAbsolutePath().toString()
+               }else {
+                  executable = workingDir.toPath().resolve("PackrAllTestApp").toAbsolutePath().toString()
+               }
 
                standardOutput = standardOutputCapture
             }
