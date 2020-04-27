@@ -80,6 +80,11 @@ dependencies {
 }
 
 application {
+   /*
+    * Linux x86 is no longer built because it's impossible to find a survey that shows anyone running x86 Linux.
+    * MacOS x86 is no longer built because it requires and older version of Xcode and Apple makes it too difficult to install on newer versions of Mac
+    * Windows x86 is no longer built because the Adopt OpenJDK has crash failures.
+    */
    targetMachines.set(listOf(machines.windows.x86_64, machines.linux.x86_64, machines.macOS.x86_64))
 
    toolChains.forEach { toolChain ->
@@ -104,12 +109,12 @@ application {
 
       val binaryLinkTask: LinkExecutable = linkTask.get()
 
-      // Create a single special publication from lipo on MacOS since that allows combining multliple platforms into a single binary
-      if (binaryCompileTask.isOptimized && (!targetMachine.operatingSystemFamily.isMacOs || targetMachine.architecture.name == MachineArchitecture.X86_64)) {
+      // Create a single special publication from lipo on MacOS since that allows combining multiple architectures into a single binary
+      val publicationName =
+            "packrLauncher-${targetMachine.operatingSystemFamily.name}${if (!targetMachine.operatingSystemFamily.isMacOs) "-${targetMachine.architecture.name}" else ""}"
+      if (binaryCompileTask.isOptimized && publishing.publications.findByName(publicationName) == null) {
          logger.info("binaryLinkTask.linkedFile = ${binaryLinkTask.linkedFile.get()}")
 
-         val publicationName =
-               "packrLauncher-${targetMachine.operatingSystemFamily.name}${if (!targetMachine.operatingSystemFamily.isMacOs) "-${targetMachine.architecture.name}" else ""}"
          publishing.publications.register<MavenPublication>(publicationName) {
             val artifactFile = if (targetMachine.operatingSystemFamily.isMacOs) macOsLipoOutputFilePath.toFile() as Any else binaryLinkTask.linkedFile
             artifact(artifactFile) {
@@ -125,12 +130,34 @@ application {
             }
          }
 
+         // Add the executable to the current OS produced configuration
          currentOsExecutableZip.configure {
             dependsOn(binaryLinkTask)
-
-            from(binaryLinkTask.linkedFile) {
-               rename(".*", publicationName)
+            if (targetMachine.operatingSystemFamily.isMacOs) {
+               dependsOn(macOsLipo)
+               from(macOsLipoOutputFilePath) {
+                  rename(".*", publicationName)
+               }
+            } else {
+               from(binaryLinkTask.linkedFile) {
+                  rename(".*", publicationName)
+               }
             }
+         }
+      }
+
+      // Add another target to lipo
+      if (binaryCompileTask.isOptimized && targetMachine.operatingSystemFamily.isMacOs) {
+         macOsLipo.configure {
+            dependsOn(binaryLinkTask)
+            inputs.file(binaryLinkTask.linkedFile)
+            args("-arch")
+            when (targetMachine.architecture.name) {
+               MachineArchitecture.X86 -> args("i386")
+               MachineArchitecture.X86_64 -> args("x86_64")
+               else -> throw GradleException("Don't know the lipo -arch flag for architecture ${targetMachine.architecture.name}")
+            }
+            args(binaryLinkTask.linkedFile.get().asFile.absolutePath)
          }
       }
 
@@ -194,22 +221,6 @@ application {
             binaryLinkTask.linkerArgs.add("CoreFoundation")
          }
       }
-
-      if (binaryCompileTask.isOptimized) {
-         if (targetMachine.operatingSystemFamily.isMacOs) {
-            macOsLipo.configure {
-               dependsOn(binaryLinkTask)
-               inputs.file(binaryLinkTask.linkedFile)
-               args("-arch")
-               if (targetMachine.architecture.name == MachineArchitecture.X86) {
-                  args("i386")
-               } else if (targetMachine.architecture.name == MachineArchitecture.X86_64) {
-                  args("x86_64")
-               }
-               args(binaryLinkTask.linkedFile.get().asFile.absolutePath)
-            }
-         }
-      }
    }
 }
 
@@ -226,10 +237,11 @@ publishing {
    repositories {
       for (repositoryIndex in 0..10) {
          // @formatter:off
+         @Suppress("SpellCheckingInspection")
          if (project.hasProperty("maven.repository.url.$repositoryIndex")
              && ((project.findProperty("maven.repository.ispublishsnapshot.$repositoryIndex").toString().toBoolean() && isSnapshot)
                  || (project.findProperty("maven.repository.ispublishrelease.$repositoryIndex").toString().toBoolean() && !isSnapshot))) {
-            // @formatter:on
+                 // @formatter:on
             maven {
                url = uri(project.findProperty("maven.repository.url.$repositoryIndex") as String)
                credentials {
