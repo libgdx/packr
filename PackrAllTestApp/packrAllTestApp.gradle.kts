@@ -353,20 +353,12 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
    }
 
    if (isFamily(FAMILY_UNIX)) {
-      if (osFamily == FAMILY_UNIX || osFamily == FAMILY_MAC) {
+      if (osFamily == FAMILY_UNIX && osFamily != FAMILY_MAC) {
          exec {
             executable = "chmod"
             args("+x")
 
             args(destination.resolve("PackrAllTestApp").toAbsolutePath().toString())
-         }
-      }
-      if (osFamily == FAMILY_MAC) {
-         exec {
-            executable = "chmod"
-            args("+x")
-
-            args(destination.resolve("PackrAllTestApp.app").toAbsolutePath().toString())
          }
       }
    }
