@@ -253,9 +253,7 @@ import java.util.List;
    }
 
    public enum Platform {
-      Windows32("windows32"),
       Windows64("windows64"),
-      Linux32("linux32"),
       Linux64("linux64"),
       MacOS("mac");
 

@@ -254,16 +254,9 @@ public class Packr {
       String extension = "";
 
       switch (config.platform) {
-         case Windows32:
-            exe = readResource("/packr-windows.exe");
-            extension = ".exe";
-            break;
          case Windows64:
             exe = readResource("/packr-windows-x64.exe");
             extension = ".exe";
-            break;
-         case Linux32:
-            exe = readResource("/packr-linux");
             break;
          case Linux64:
             exe = readResource("/packr-linux-x64");
