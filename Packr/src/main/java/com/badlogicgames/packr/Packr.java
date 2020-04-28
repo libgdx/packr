@@ -317,10 +317,8 @@ public class Packr {
    }
 
    private File searchJre(File tmp) {
-      if ((tmp.getName().equals("jre") && tmp.isDirectory()
-              && (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists()))
-           || (tmp.isDirectory()
-              && (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists()))) {
+      if (tmp.getName().equals("jre") && tmp.isDirectory()
+              && (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
          return tmp;
       }
 
@@ -329,6 +327,27 @@ public class Packr {
          for (File child : childs) {
             if (child.isDirectory()) {
                File found = searchJre(child);
+               if (found != null) {
+                  return found;
+               }
+            }
+         }
+      }
+
+      return searchJre9(tmp);
+   }
+
+   private File searchJre9(File tmp) {
+      if (tmp.isDirectory()
+              && (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
+         return tmp;
+      }
+
+      File[] childs = tmp.listFiles();
+      if (childs != null) {
+         for (File child : childs) {
+            if (child.isDirectory()) {
+               File found = searchJre9(child);
                if (found != null) {
                   return found;
                }
