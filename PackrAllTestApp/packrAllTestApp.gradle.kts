@@ -15,7 +15,6 @@
  *
  */
 
-import java.util.Objects
 import com.google.common.hash.Hashing
 import com.google.common.io.BaseEncoding
 import org.apache.tools.ant.taskdefs.condition.Os
@@ -31,6 +30,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import com.google.common.io.Files as GuavaFiles
 
@@ -256,6 +256,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
                }else {
                   executable = workingDir.toPath().resolve("PackrAllTestApp").toAbsolutePath().toString()
                }
+               args("--verbose")
 
                standardOutput = standardOutputCapture
             }

@@ -30,133 +30,156 @@ const char __CLASS_PATH_DELIM = ';';
 
 extern "C"
 {
-	__declspec(dllexport) DWORD NvOptimusEnablement = 1;
-	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+__declspec(dllexport) DWORD NvOptimusEnablement = 1;
+__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
 static void waitAtExit(void) {
-	cout << "Press ENTER key to exit.";
-	cin.get();
+    cout << "Press ENTER key to exit.";
+    cin.get();
 }
 
-static bool attachToConsole(int argc, char** argv) {
+static bool attachToConsole(int argc, char **argv) {
 
-	bool attach = false;
+    bool attach = false;
 
-	// pre-parse command line here to have a console in case of command line parse errors
-	for (int arg = 0; arg < argc && !attach; arg++) {
-		attach = (argv[arg] != nullptr && stricmp(argv[arg], "--console") == 0);
-	}
+    // pre-parse command line here to have a console in case of command line parse errors
+    for (int arg = 0; arg < argc && !attach; arg++) {
+        attach = (argv[arg] != nullptr && stricmp(argv[arg], "--console") == 0);
+    }
 
-	if (attach) {
+    if (attach) {
 
-		FreeConsole();
-		AllocConsole();
+        FreeConsole();
+        AllocConsole();
 
-		freopen("CONIN$", "r", stdin);
-		freopen("CONOUT$", "w", stdout);
-		freopen("CONOUT$", "w", stderr);
+        freopen("CONIN$", "r", stdin);
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
 
-		atexit(waitAtExit);
-	}
+        atexit(waitAtExit);
+    }
 
-	return attach;
+    return attach;
 }
 
-static void printLastError(const char* reason) {
+static void printLastError(const char *reason) {
 
-	LPTSTR buffer;
-	DWORD errorCode = GetLastError();
+    LPTSTR buffer;
+    DWORD errorCode = GetLastError();
 
-	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-				  nullptr, errorCode, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), (LPTSTR) &buffer, 0, nullptr);
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                  nullptr, errorCode, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), (LPTSTR) &buffer, 0, nullptr);
 
-	cerr << "Error code [" << errorCode << "] when trying to " << reason << ": " << buffer;
+    cerr << "Error code [" << errorCode << "] when trying to " << reason << ": " << buffer;
 
-	LocalFree(buffer);
+    LocalFree(buffer);
 }
 
 int CALLBACK WinMain(
-	HINSTANCE hInstance,
-	HINSTANCE hPrevInstance,
-	LPSTR lpCmdLine,
-	int nCmdShow) {
+        HINSTANCE hInstance,
+        HINSTANCE hPrevInstance,
+        LPSTR lpCmdLine,
+        int nCmdShow) {
 
-	int argc = __argc;
-	char** argv = __argv;
+    int argc = __argc;
+    char **argv = __argv;
 
-	attachToConsole(argc, argv);
+    attachToConsole(argc, argv);
 
-	if (!setCmdLineArguments(argc, argv)) {
-		return EXIT_FAILURE;
-	}
+    if (!setCmdLineArguments(argc, argv)) {
+        return EXIT_FAILURE;
+    }
 
-	launchJavaVM(defaultLaunchVMDelegate);
+    launchJavaVM(defaultLaunchVMDelegate);
 
-	return 0;
+    return 0;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
 
-	if (!setCmdLineArguments(argc, argv)) {
-		return EXIT_FAILURE;
-	}
+    if (!setCmdLineArguments(argc, argv)) {
+        return EXIT_FAILURE;
+    }
 
-	launchJavaVM(defaultLaunchVMDelegate);
+    launchJavaVM(defaultLaunchVMDelegate);
 
-	return 0;
+    return 0;
 }
 
-bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM) {
-	LPCTSTR jvmDLLPath = TEXT("jre\\bin\\server\\jvm.dll");
+bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, CreateJavaVM *createJavaVM) {
+    LPCTSTR jvmDLLPath = TEXT("jre\\bin\\server\\jvm.dll");
+    HINSTANCE hinstLib = LoadLibrary(jvmDLLPath);
+    if (hinstLib == nullptr) {
+        DWORD errorCode = GetLastError();
+        if (verbose) {
+            cout << "Last error code " << errorCode << endl;
+        }
+        if (errorCode == 126) {
+            // "The specified module could not be found."
+            // load msvcr*.dll from the bundled JRE, then try again
+            if (verbose) {
+                cout << "Failed to load jvm.dll. Trying to load msvcr*.dll first ..." << endl;
+            }
 
-	HINSTANCE hinstLib = LoadLibrary(jvmDLLPath);
-	if (hinstLib == nullptr) {
-		DWORD errorCode = GetLastError();
-		if(verbose){
-		    cout << "Last error code " << errorCode << endl;
-		}
-		if (errorCode == 126) {
-			
-			// "The specified module could not be found."
-			// load msvcr120.dll from the bundled JRE, then try again
-			if (verbose) {
-				cout << "Failed to load jvm.dll. Trying to load msvcr120.dll first ..." << endl;
-			}
+            WIN32_FIND_DATAA FindFileData;
+            HANDLE hFind = nullptr;
+            char msvcrPath[MAX_PATH];
 
-			HINSTANCE hinstVCR = LoadLibrary(TEXT("jre\\bin\\msvcr120.dll"));
-			if (hinstVCR != nullptr) {
-				hinstLib = LoadLibrary(jvmDLLPath);
-			}
-		}
-	}
+            hFind = FindFirstFileA("jre\\bin\\msvcr*.dll", &FindFileData);
+            if (hFind == INVALID_HANDLE_VALUE) {
+                if (verbose) {
+                    cout << "Couldn't find msvcr*.dll file." << "FindFirstFile failed " << GetLastError() << "."
+                         << endl;
+                }
+            } else {
+                FindClose(hFind);
+                if (verbose) {
+                    cout << "Found msvcr*.dll file " << FindFileData.cFileName << endl;
+                }
+                strcpy(msvcrPath, "jre\\bin\\");
+                strcat(msvcrPath, FindFileData.cFileName);
+                HINSTANCE hinstVCR = LoadLibraryA(msvcrPath);
+                if (hinstVCR != nullptr) {
+                    hinstLib = LoadLibrary(jvmDLLPath);
+                    if (verbose) {
+                        cout << "Loaded library " << msvcrPath << endl;
+                    }
+                } else {
+                    if (verbose) {
+                        cout << "Failed to load library " << FindFileData.cFileName << endl;
+                    }
+                }
+            }
+        }
+    }
 
-	if (hinstLib == nullptr) {
-		printLastError("load jvm.dll");
-		return false;
-	}
+    if (hinstLib == nullptr) {
+        printLastError("load jvm.dll");
+        return false;
+    }
 
-	*getDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs) GetProcAddress(hinstLib, "JNI_GetDefaultJavaVMInitArgs");
-	if (*getDefaultJavaVMInitArgs == nullptr) {
-		printLastError("obtain JNI_GetDefaultJavaVMInitArgs address");
-		return false;
-	}
+    *getDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs) GetProcAddress(hinstLib, "JNI_GetDefaultJavaVMInitArgs");
+    if (*getDefaultJavaVMInitArgs == nullptr) {
+        printLastError("obtain JNI_GetDefaultJavaVMInitArgs address");
+        return false;
+    }
 
-	*createJavaVM = (CreateJavaVM) GetProcAddress(hinstLib, "JNI_CreateJavaVM");
-	if (*createJavaVM == nullptr) {
-		printLastError("obtain JNI_CreateJavaVM address");
-		return false;
-	}
+    *createJavaVM = (CreateJavaVM) GetProcAddress(hinstLib, "JNI_CreateJavaVM");
+    if (*createJavaVM == nullptr) {
+        printLastError("obtain JNI_CreateJavaVM address");
+        return false;
+    }
 
-	return true;
+    return true;
 }
 
-const char* getExecutablePath(const char* argv0) {
-	return argv0;
+const char *getExecutablePath(const char *argv0) {
+    return argv0;
 }
 
-bool changeWorkingDir(const char* directory) {
-	return _chdir(directory) == 0;
+bool changeWorkingDir(const char *directory) {
+    return _chdir(directory) == 0;
 }
 
 #endif

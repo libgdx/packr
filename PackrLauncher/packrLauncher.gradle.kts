@@ -174,6 +174,7 @@ application {
          binaryCompileTask.compilerArgs.add("/EHs")
          binaryCompileTask.compilerArgs.add("/MT")
          binaryCompileTask.compilerArgs.add("/nologo")
+         binaryCompileTask.compilerArgs.add("/std:c++17")
 
          binaryLinkTask.linkerArgs.add("/nologo")
 
