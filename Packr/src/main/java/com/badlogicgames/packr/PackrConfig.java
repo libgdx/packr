@@ -20,10 +20,11 @@ package com.badlogicgames.packr;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import org.zeroturnaround.zip.commons.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +33,7 @@ import java.util.List;
  * <p>
  * Command line parameters can be used to override (single-argument parameters) or extend (multi-argument parameters) JSON settings.
  */
-@SuppressWarnings("WeakerAccess") public class PackrConfig {
+@SuppressWarnings({"WeakerAccess", "JavaDoc"}) public class PackrConfig {
 
    public Platform platform;
    public String jdk;
@@ -128,7 +129,7 @@ import java.util.List;
 
    private void readConfigJson(File configJson) throws IOException {
 
-      JsonObject json = JsonObject.readFrom(FileUtils.readFileToString(configJson));
+      JsonObject json = JsonObject.readFrom(new String(Files.readAllBytes(configJson.toPath()), StandardCharsets.UTF_8));
 
       if (json.get("platform") != null) {
          platform = Platform.byDesc(json.get("platform").asString());
@@ -252,9 +253,7 @@ import java.util.List;
    }
 
    public enum Platform {
-      Windows32("windows32"),
       Windows64("windows64"),
-      Linux32("linux32"),
       Linux64("linux64"),
       MacOS("mac");
 

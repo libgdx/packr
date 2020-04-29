@@ -1,24 +1,10 @@
-# Changes 2020 April 10
-1. Converted packr to use Gradle
-1. Include DrOpt source for easier building
-1. Include sajson.h for easier building
-   * <https://github.com/chadaustin/sajson/tree/791799ad90f7179f132ea2f53b90ef98f1d399a2>
-   * From inspecting the old fips config at <https://github.com/code-disaster/fips-sajson>
-
-# packr
-
-__Public Service Announcement: With packr v2.0, command line interfaces to both packr.jar and the native executable have changed, as well as the format of minimize profiles! If you upgrade from a previous version, please read this documentation again to make sure you've updated your configuration(s) accordingly.__
-
-## About
-
+# About
 Packages your JAR, assets and a JVM for distribution on Windows, Linux and Mac OS X, adding a native executable file to make it appear like a native app. Packr is most suitable for GUI applications, such as games made with [libGDX](http://libgdx.badlogicgames.com/).
 
-## Download
+# Download
+The latest build is available for [download here](https://github.com/karlsabo/packr/releases).
 
-The latest build is available for [download here](https://libgdx.badlogicgames.com/ci/packr/packr.jar).
-
-## Usage
-
+# Usage
 You point packr at your JAR file(s) containing your code and assets, some configuration parameters, and a URL or local file location to a JDK build for your target platform.
 
 Invoking packr from the command line may look like this:
@@ -26,7 +12,7 @@ Invoking packr from the command line may look like this:
 ```bash
 java -jar packr.jar \
      --platform mac \
-     --jdk openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip \
+     --jdk OpenJDK8U-jdk_x64_mac_hotspot_8u252b09.tar.gz \
      --executable myapp \
      --classpath myapp.jar \
      --removelibs myapp.jar \
@@ -37,10 +23,12 @@ java -jar packr.jar \
      --output out-mac
 ```
 
+See [PackrAllTestApp/packrAllTestApp.gradle.kts](https://github.com/karlsabo/packr/blob/master/PackrAllTestApp/packrAllTestApp.gradle.kts) for a concrete example of a Gradle script which bundles an application.
+
 | Parameter | Meaning |
 | --- | --- |
-| platform | one of "windows32", "windows64", "linux32", "linux64", "mac" |
-| jdk | directory, ZIP file, or URL to ZIP file of an OpenJDK or Oracle JDK build containing a JRE. Prebuild OpenJDK packages can be found at https://github.com/alexkasko/openjdk-unofficial-builds. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script|
+| platform | one of "windows64",  "linux64", "mac" |
+| jdk | Directory, Zip file, tar.gz file, or URL to an archive file of an OpenJDK 8 or Oracle JDK 8 build containing a JRE. Adopt OpenJDK 8 is tested against <https://adoptopenjdk.net/releases.html>. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script|
 | executable | name of the native executable, without extension such as ".exe" |
 | classpath | file locations of the JAR files to package |
 | removelibs (optional) | file locations of JAR files to remove native libraries which do not match the target platform. See below for details. |
@@ -60,7 +48,7 @@ Alternatively, you can put all the command line arguments into a JSON file which
 ```json
 {
     "platform": "mac",
-    "jdk": "/Users/badlogic/Downloads/openjdk-1.7.0-u45-unofficial-icedtea-2.4.3-macosx-x86_64-image.zip",
+    "jdk": "/Users/badlogic/Downloads/OpenJDK8U-jdk_x64_mac_hotspot_8u252b09.tar.gz",
     "executable": "myapp",
     "classpath": [
         "myapp.jar"
@@ -84,7 +72,7 @@ Alternatively, you can put all the command line arguments into a JSON file which
 You can then invoke the tool like this:
 
 ```bash
-java -jar packr.jar my-packr-config.json
+java -jar packr-all.jar my-packr-config.json
 ```
 
 It is possible to combine a JSON configuration and the command line. For single options, the command line parameter overrides the equivalent JSON option. For multi-options (e.g. `classpath` or `vmargs`), the options are merged.
@@ -92,25 +80,18 @@ It is possible to combine a JSON configuration and the command line. For single 
 This is an example which overrides the output folder and adds another VM argument. Note that the config file name is delimited by `--` because the option prior to it, `--vmargs`, allows multiple arguments:
 
 ```bash
-java -jar packr.jar --output target/out-mac --vmargs Xms256m -- my-packr-config.json
+java -jar packr-all.jar --output target/out-mac --vmargs Xms256m -- my-packr-config.json
 ```
 
-Finally, you can use packr from within your Java code. Just add the JAR file to your project, either manually, or via the following Maven dependency:
+Finally, you can use packr from within your Java code. Just add the JAR file to your project, either manually, or via the following Gradle dependency:
 
-```xml
-<repositories>
-  <repository>
-    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    <snapshots>
-      <enabled>true</enabled>
-    </snapshots>
-  </repository>
-</repositories>
-<dependency>
-   <groupId>com.badlogicgames.packr</groupId>
-   <artifactId>packr</artifactId>
-   <version>2.1</version>
-</dependency>
+```Kotlin
+repositories {
+   mavenCentral()
+}
+dependencies {
+   imlementation("com.nimblygames.packr:packr:2.3.0")
+}
 ```
 
 To invoke packr, you need to create an instance of `PackrConfig` and pass it to `Packr.pack()`:
@@ -130,9 +111,9 @@ config.outDir = new java.io.File("out-mac");
 new Packr().pack(config);
 ```
 
-## Minimization
+# Minimization
 
-### JRE
+## JRE
 
 A standard OpenJDK JRE weighs about 90 mb unpacked. Packr helps you cut down on that size, thus also reducing the download size of your app.
 
@@ -179,12 +160,9 @@ This configuration will unpack `rt.jar`, remove all the listed packages and clas
 
 Then, rhino.jar (about 1.1MB) and, in case of a Windows JRE, all executable files in `jre/bin/` and the folder `jre/bin/client/` will be removed.
 
-Packr comes with two such configurations out of the box, [`soft`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/soft) and [`hard`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/hard). The `hard` profile removes a few more files, and repacks some additional JAR files.
+Packr comes with two such configurations out of the box, [`soft`](https://github.com/karlsabo/packr/blob/master/Packr/src/main/resources/minimize/soft) and [`hard`](https://github.com/karlsabo/packr/blob/master/Packr/src/main/resources/minimize/hard). The `hard` profile removes a few more files, and repacks some additional JAR files.
 
-There's also a new, *experimental* configuration, [`oraclejre8`](https://github.com/libgdx/packr/blob/master/src/main/resources/minimize/oraclejre8), which reduces size of an Oracle 8 JRE following Oracle's redistribution rules described [here](http://www.oracle.com/technetwork/java/javase/jre-8-readme-2095710.html). It also repacks JAR files, reducing (unpacked) JRE size from about 180 mb to 70 mb. **This version is pretty much untested, so please use with care!**
-
-### The "removelibs" option
-
+## The "removelibs" option
 Minimization aside, packr can remove all dynamic libraries which do not match the target platform from your project JAR file(s):
 
 | platform | files removed |
@@ -195,16 +173,14 @@ Minimization aside, packr can remove all dynamic libraries which do not match th
 
 This step is optional. If you don't need it, just remove the configuration parameter to speed up packr.
 
-## Caching
-
+# Caching
 Extracting and minimizing a JRE can take quite some time. If the `cachejre` option is used, the result of these operations is cached in the given folder, and can be reused in subsequent runs of packr.
 
 As of now, packr doesn't do any elaborate checks to validate the content of this cache folder. So if you update the JDK, or change the minimize profile, you need to empty or remove this folder manually to force a change.
 
-## Output
-
+# Output
+##Windows
 When packing for Windows, the following folder structure will be generated
-
 ```
 outdir/
    executable.exe
@@ -213,8 +189,7 @@ outdir/
    jre/
 ```
 
-Linux
-
+##Linux
 ```
 outdir/
    executable
@@ -223,8 +198,7 @@ outdir/
    jre/
 ```
 
-Mac OS X
-
+##Mac OS X
 ```
 outdir/
    Contents/
@@ -240,39 +214,46 @@ outdir/
 
 You can further modify the Info.plist to your liking, e.g. add icons, a bundle identifier etc. If your `output` folder has the `.app` extension it will be treated as an application bundle by Mac OS X.
 
-## Executable command line interface
-
+# Executable command line interface
 By default, the native executables forward any command line parameters to your Java application's main() function. So, with the configurations above, `./myapp -x y.z` is passed as `com.my.app.MainClass.main(new String[] {"-x", "y.z" })`.
 
 The executables themselves expose an own interface, which has to be enabled explicitly by passing `-c` or `--cli` as the **very first** parameter. In this case, the special delimiter parameter `--` is used to separate the native CLI from parameters to be passed to Java. In this case, the example above would be equal to `./myapp -c [arguments] -- -x y.z`.
 
-Try `./myapp -c --help` for a list of available options. They are also listed [here](https://github.com/libgdx/packr/blob/master/src/main/native/README.md#command-line-interface).
+Try `./myapp -c --help` for a list of available options.
 
 > Note: On Windows, the executable does not show any output by default. Here you can use `myapp.exe -c --console [arguments]` to spawn a console window, making terminal output visible.
 
-## Building from source code
+# Building from source code
+If you want to modify the code invoke Gradle.
 
-If you want to modify the Java code only, it's sufficient to invoke Maven.
+    $ ./gradlew clean assemble
 
-```
-mvn clean package
-```
+This will create a `packr-VERSION-all.jar` file in `Packr/build/libs` directory, you may invoke as described in the Usage section above.
 
-This will create a `packr-VERSION.jar` file in `target` which you can invoke as described in the Usage section above.
+## Gradle project structure
+The Gradle build is set up as a multi-project build. In order to fully build the multi-project you must have a compatible JRE (Java 8) and C/C++ build tools that the Gradle build can find.
+ 
+### DrOpt Gradle sub-project
+This is a downloaded and unzipped <https://github.com/jamesderlin/dropt/releases> version 1.1.1 source code with a Gradle script used to build it for consumption by the PackrLauncher Gradle project. The DrOpt source required a few modifications to get it compiling, namely some explicit casting in the C code.
 
-If you want to compile the native executables, please follow [these instructions](https://github.com/libgdx/packr/blob/master/src/main/native/README.md). Each of the build scripts will create executable files for the specific platform and copy them to src/main/resources.
+### Packr Gradle sub-project
+This is the Java code for creating application bundles that can use the native launcher executables. This project also builds the packr-all uber/shadow jar that works as an executable jar.
+
+### PackrLauncher Gradle sub-project
+This contains the platform native code for loading the JVM and starting the packr bundled application.
+
+### PackrAllTestApp Gradle sub-project
+This is an example Hello world style application that bundles itself using packr and is used as a high level test suite to help reduce breaking changes.
 
 ## Limitations
+* Only JDK 8 is supported (older JDKs probably work)
+* Icons aren't set yet on Windows and Linux, you need to do that manually.
+* Minimum platform requirement on MacOS is OS X 10.10 (Honestly only 10.15 macOS Catalina is tested).
+* JRE minimization is very conservative. Depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr.
+* On MacOS, the JVM is spawned in its own thread by default, which is a requirement of AWT. This does not work with code based on LWJGL3/GLFW, which needs the JVM be spawned on the main thread. You can enforce the latter with adding the `-XstartOnFirstThread` VM argument to your MacOS packr config.
 
-  * Icons aren't set yet on Windows and Linux, you need to do that manually.
-  * Minimum platform requirement on MacOS is OS X 10.7.
-  * JRE minimization is very conservative. Depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr.
-  * On MacOS, the JVM is spawned in its own thread by default, which is a requirement of AWT. This does not work with code based on LWJGL3/GLFW, which needs the JVM be spawned on the main thread. You can enforce the latter with adding the `-XstartOnFirstThread` VM argument to your MacOS packr config.
-
-## License & Contributions
-
+# License & Contributions
 The code is licensed under the [Apache 2 license](http://www.apache.org/licenses/LICENSE-2.0.html). By contributing to this repository, you automatically agree that your contribution can be distributed under the Apache 2 license by the author of this project. You will not be able to revoke this right once your contribution has been merged into this repository.
 
-## Security
-
+# Security
 Distributing a bundled JVM has security implications, just like bundling any other runtimes like Mono, Air, etc. Make sure you understand the implications before deciding to use this tool. Here's a [discussion on the topic](http://www.reddit.com/r/gamedev/comments/24orpg/packr_package_your_libgdxjavascalajvm_appgame_for/ch99zk2).
