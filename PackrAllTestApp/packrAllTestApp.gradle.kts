@@ -219,16 +219,15 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
       Files.walk(jdkArchiveDirectory, 1).use { pathStream ->
          pathStream.forEach { path ->
             if (Files.isSameFile(jdkArchiveDirectory, path)) return@forEach
+            val pathnameLowerCase = path.fileName.toString().toLowerCase()
+            if (!(pathnameLowerCase.endsWith(".zip") || pathnameLowerCase.endsWith(".gz")) || !pathnameLowerCase.contains("jdk")) {
+               logger.info("Skipping path=$path in jdkArchiveDirectory")
+               return@forEach
+            }
             jdkArchivesToRunPackrOn.add(path)
          }
       }
       jdkArchivesToRunPackrOn.parallelStream().forEach { path ->
-         if (Files.isSameFile(jdkArchiveDirectory, path)) return@forEach
-         val pathnameLowerCase = path.fileName.toString().toLowerCase()
-         if (!pathnameLowerCase.endsWith(".zip") && !pathnameLowerCase.endsWith(".gz") && !pathnameLowerCase.contains("jdk")) {
-            return@forEach
-         }
-
          logger.info("Running packr against JDK $path")
          val fileNameNoExtension = path.fileName.toString().substring(0, path.fileName.toString().indexOf('.'))
          val packrOutputDirectory = outputDirectoryPath.resolve(fileNameNoExtension)
