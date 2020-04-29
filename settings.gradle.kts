@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Nimbly Games, LLC
+ * Copyright 2020 See AUTHORS file
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,3 +23,5 @@ include("PackrLauncher")
 project(":PackrLauncher").buildFileName = "packrLauncher.gradle.kts"
 include("DrOpt")
 project(":DrOpt").buildFileName = "drOpt.gradle.kts"
+include("PackrAllTestApp")
+project(":PackrAllTestApp").buildFileName = "packrAllTestApp.gradle.kts"

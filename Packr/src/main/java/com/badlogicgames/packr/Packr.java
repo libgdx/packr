@@ -20,8 +20,9 @@ package com.badlogicgames.packr;
 import com.lexicalscope.jewel.cli.ArgumentValidationException;
 import com.lexicalscope.jewel.cli.CliFactory;
 import com.lexicalscope.jewel.cli.ValidationFailure;
-import org.zeroturnaround.zip.ZipUtil;
-import org.zeroturnaround.zip.commons.IOUtils;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,9 +32,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
+
+import static com.badlogicgames.packr.ArchiveUtils.extractArchive;
 
 /**
  * Takes a couple of parameters and a JRE and bundles them into a platform specific distributable (zip on Windows and Linux, app bundle on Mac OS X).
@@ -45,6 +51,11 @@ public class Packr {
    private PackrConfig config;
    private Predicate<File> removePlatformLibsFileFilter = f -> false;
 
+   /**
+    * The main CLI entrance.
+    *
+    * @param args Should conform to {@link PackrCommandLine}
+    */
    public static void main(String[] args) {
 
       try {
@@ -57,15 +68,64 @@ public class Packr {
 
          new Packr().pack(new PackrConfig(commandLine));
 
-      } catch (ArgumentValidationException e) {
-         for (ValidationFailure failure : e.getValidationFailures()) {
+      } catch (ArgumentValidationException argumentException) {
+         for (ValidationFailure failure : argumentException.getValidationFailures()) {
             System.err.println(failure.getMessage());
          }
          System.exit(-1);
-      } catch (IOException e) {
-         e.printStackTrace();
+      } catch (IOException | CompressorException | ArchiveException exception) {
+         exception.printStackTrace();
          System.exit(-1);
       }
+   }
+
+   /**
+    * Reads a classpath resource and loads it into a byte array.
+    *
+    * @param resource the resource to load from the classpath relative to {@link Packr#getClass()}. Use a leading "/" to not load relative to the Packr
+    *       package "com/badlogicgames/packr"
+    *
+    * @return the byte array containing the contents of the resource
+    *
+    * @throws IOException if an IO error occurs
+    */
+   private static byte[] readResource(String resource) throws IOException {
+      try (InputStream inputStream = Packr.class.getResourceAsStream(resource)) {
+         if (inputStream == null) {
+            throw new IllegalArgumentException("Couldn't find resource " + resource + " relative to class " + Packr.class.getName());
+         }
+         return IOUtils.toByteArray(inputStream);
+      }
+   }
+
+   /**
+    * Loads a resource relative to this package and replaces the keys in {@code value} with their values.
+    *
+    * @param resource the resource to load from the classpath
+    * @param values the values to replace
+    *
+    * @return the resource content loaded and replaces with {@code values}
+    *
+    * @throws IOException if an IO error occurs
+    */
+   private static String readResourceAsString(@SuppressWarnings("SameParameterValue") String resource, Map<String, String> values) throws IOException {
+      return replace(new String(readResource(resource), StandardCharsets.UTF_8), values);
+   }
+
+   /**
+    * Replaces every occurrence of {@code values} key with it's value in the map.
+    *
+    * @param txt the text to replace values in
+    * @param values the mapping of values to replace
+    *
+    * @return a new String with all the keys in {@code values} replaced with their map value
+    */
+   private static String replace(String txt, Map<String, String> values) {
+      for (String key : values.keySet()) {
+         String value = values.get(key);
+         txt = txt.replace(key, value);
+      }
+      return txt;
    }
 
    /**
@@ -82,14 +142,23 @@ public class Packr {
       return this;
    }
 
-   @SuppressWarnings("WeakerAccess") public void pack(PackrConfig config) throws IOException {
+   /**
+    * Process all inputs from {@code config} and create an output bundle in {@link PackrConfig#outDir}.
+    *
+    * @param config the configuration information for creating an executable and asset bundle
+    *
+    * @throws IOException if an IO error occurs
+    * @throws CompressorException if a compression error occurs
+    * @throws ArchiveException if an archive error occurs
+    */
+   @SuppressWarnings("WeakerAccess") public void pack(PackrConfig config) throws IOException, CompressorException, ArchiveException {
 
       config.validate();
       this.config = config;
 
       PackrOutput output = new PackrOutput(config.outDir, config.outDir);
 
-      cleanOrCreateOutputFolder(output);
+      cleanAndCreateOutputFolder(output);
 
       output = buildMacBundle(output);
 
@@ -106,17 +175,32 @@ public class Packr {
       System.out.println("Done!");
    }
 
-   private void cleanOrCreateOutputFolder(PackrOutput output) throws IOException {
+   /**
+    * If the output directory already exists, delete it. Then create the directory.
+    *
+    * @param output Deletes if it exists and then creates {@link PackrOutput#executableFolder}
+    *
+    * @throws IOException if an IO error occurs
+    */
+   private void cleanAndCreateOutputFolder(PackrOutput output) throws IOException {
       File folder = output.executableFolder;
       if (folder.exists()) {
          System.out.println("Cleaning output directory '" + folder.getAbsolutePath() + "' ...");
          PackrFileUtils.deleteDirectory(folder);
       }
-      PackrFileUtils.mkdirs(folder);
+      Files.createDirectories(folder.toPath());
    }
 
+   /**
+    * Create a bundle for the macOS platform.
+    *
+    * @param output the output location for the bundle
+    *
+    * @return the output paths for the bundle
+    *
+    * @throws IOException if an IO error occurs
+    */
    private PackrOutput buildMacBundle(PackrOutput output) throws IOException {
-
       if (config.platform != PackrConfig.Platform.MacOS) {
          return output;
       }
@@ -136,43 +220,43 @@ public class Packr {
 
       File root = output.executableFolder;
 
-      PackrFileUtils.mkdirs(new File(root, "Contents"));
+      Files.createDirectories(root.toPath().resolve("Contents"));
       try (FileWriter info = new FileWriter(new File(root, "Contents/Info.plist"))) {
          String plist = readResourceAsString("/Info.plist", values);
          info.write(plist);
       }
 
       File target = new File(root, "Contents/MacOS");
-      PackrFileUtils.mkdirs(target);
+      Files.createDirectories(target.toPath());
 
       File resources = new File(root, "Contents/Resources");
-      PackrFileUtils.mkdirs(resources);
+      Files.createDirectories(resources.toPath());
 
       if (config.iconResource != null) {
          // copy icon to Contents/Resources/icons.icns
          if (config.iconResource.exists()) {
-            PackrFileUtils.copyFile(config.iconResource, new File(resources, "icons.icns"));
+            Files.copy(config.iconResource.toPath(), resources.toPath().resolve("icons.icns"), StandardCopyOption.COPY_ATTRIBUTES);
          }
       }
 
       return new PackrOutput(target, resources);
    }
 
+   /**
+    * Copy the packr launcher executable and classpath files into the bundle.
+    *
+    * @param output the directory to copy the executable and classpath entries into
+    *
+    * @throws IOException if an IO error occurs
+    */
    private void copyExecutableAndClasspath(PackrOutput output) throws IOException {
       byte[] exe = null;
       String extension = "";
 
       switch (config.platform) {
-         case Windows32:
-            exe = readResource("/packr-windows.exe");
-            extension = ".exe";
-            break;
          case Windows64:
             exe = readResource("/packr-windows-x64.exe");
             extension = ".exe";
-            break;
-         case Linux32:
-            exe = readResource("/packr-linux");
             break;
          case Linux64:
             exe = readResource("/packr-linux-x64");
@@ -183,11 +267,7 @@ public class Packr {
       }
 
       System.out.println("Copying executable ...");
-
-      try (OutputStream writer = new FileOutputStream(new File(output.executableFolder, config.executable + extension))) {
-
-         writer.write(exe);
-      }
+      Files.write(output.executableFolder.toPath().resolve(config.executable + extension), exe);
 
       PackrFileUtils.chmodX(new File(output.executableFolder, config.executable + extension));
 
@@ -197,7 +277,7 @@ public class Packr {
          File cpDst = new File(output.resourcesFolder, new File(file).getName());
 
          if (cpSrc.isFile()) {
-            PackrFileUtils.copyFile(cpSrc, cpDst);
+            Files.copy(cpSrc.toPath(), cpDst.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
          } else if (cpSrc.isDirectory()) {
             PackrFileUtils.copyDirectory(cpSrc, cpDst);
          } else {
@@ -206,16 +286,22 @@ public class Packr {
       }
    }
 
+   /**
+    * Writes a configuration file for the Packr launcher.
+    *
+    * @param output the location to write the configuration file
+    *
+    * @throws IOException if an IO error occurs
+    */
    private void writeConfig(PackrOutput output) throws IOException {
-
       StringBuilder builder = new StringBuilder();
       builder.append("{\n");
       builder.append("  \"classPath\": [");
 
-      String delim = "\n";
+      String delimiter = "\n";
       for (String f : config.classpath) {
-         builder.append(delim).append("    \"").append(new File(f).getName()).append("\"");
-         delim = ",\n";
+         builder.append(delimiter).append("    \"").append(new File(f).getName()).append("\"");
+         delimiter = ",\n";
       }
       builder.append("\n  ],\n");
 
@@ -242,8 +328,17 @@ public class Packr {
       }
    }
 
-   private void copyAndMinimizeJRE(PackrOutput output, PackrConfig config) throws IOException {
-
+   /**
+    * Acquires the JDK specified and unpacks it if it's not a directory into a new temporary directory. The new temporary directory for the JDK is minimized.
+    *
+    * @param output the output for the minimized JDK
+    * @param config the packr config for locating the JDK
+    *
+    * @throws IOException if an IO error occurs
+    * @throws CompressorException if a compression error occurs
+    * @throws ArchiveException if an archive error occurs
+    */
+   private void copyAndMinimizeJRE(PackrOutput output, PackrConfig config) throws IOException, CompressorException, ArchiveException {
       boolean extractToCache = config.cacheJre != null;
       boolean skipExtractToCache = false;
 
@@ -284,12 +379,12 @@ public class Packr {
          if (tmp.exists()) {
             PackrFileUtils.deleteDirectory(tmp);
          }
-         PackrFileUtils.mkdirs(tmp);
+         Files.createDirectories(tmp.toPath());
 
          if (jdkFile.isDirectory()) {
             PackrFileUtils.copyDirectory(jdkFile, tmp);
          } else {
-            ZipUtil.unpack(jdkFile, tmp);
+            extractArchive(jdkFile.toPath(), tmp.toPath());
          }
 
          // copy the JRE sub folder
@@ -302,7 +397,7 @@ public class Packr {
          PackrFileUtils.deleteDirectory(tmp);
 
          if (fetchFromRemote) {
-            PackrFileUtils.delete(jdkFile);
+            Files.deleteIfExists(jdkFile.toPath());
          }
 
          // run minimize
@@ -316,14 +411,22 @@ public class Packr {
       }
    }
 
+   /**
+    * Searches the directory {@code tmp}, if it's name is "jre" and it contains bin/java[.exe] then that it is returned. Otherwise it searches all it's
+    * sub-directories for a matching "jar" directory.
+    *
+    * @param tmp the directory to search for a directory named "jre" that contains "bin/java[.exe]"
+    *
+    * @return tmp or a directory in tmp that is named "jre" and contains "bin/java[.exe]"
+    */
    private File searchJre(File tmp) {
       if (tmp.getName().equals("jre") && tmp.isDirectory() && (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
          return tmp;
       }
 
-      File[] childs = tmp.listFiles();
-      if (childs != null) {
-         for (File child : childs) {
+      File[] children = tmp.listFiles();
+      if (children != null) {
+         for (File child : children) {
             if (child.isDirectory()) {
                File found = searchJre(child);
                if (found != null) {
@@ -336,6 +439,13 @@ public class Packr {
       return null;
    }
 
+   /**
+    * Copies the specified bundle resources into the bundle.
+    *
+    * @param output the resource output folder to copy into
+    *
+    * @throws IOException if an IO error occurs
+    */
    private void copyResources(PackrOutput output) throws IOException {
       if (config.resources != null) {
          System.out.println("Copying resources ...");
@@ -346,33 +456,16 @@ public class Packr {
             }
 
             if (file.isFile()) {
-               PackrFileUtils.copyFile(file, new File(output.resourcesFolder, file.getName()));
+               Files.copy(file.toPath(), output.resourcesFolder.toPath().resolve(file.getName()), StandardCopyOption.COPY_ATTRIBUTES);
             }
 
             if (file.isDirectory()) {
                File target = new File(output.resourcesFolder, file.getName());
-               PackrFileUtils.mkdirs(target);
+               Files.createDirectories(target.toPath());
                PackrFileUtils.copyDirectory(file, target);
             }
          }
       }
-   }
-
-   private byte[] readResource(String resource) throws IOException {
-      return IOUtils.toByteArray(Packr.class.getResourceAsStream(resource));
-   }
-
-   private String readResourceAsString(@SuppressWarnings("SameParameterValue") String resource, Map<String, String> values) throws IOException {
-      String txt = IOUtils.toString(Packr.class.getResourceAsStream(resource), "UTF-8");
-      return replace(txt, values);
-   }
-
-   private String replace(String txt, Map<String, String> values) {
-      for (String key : values.keySet()) {
-         String value = values.get(key);
-         txt = txt.replace(key, value);
-      }
-      return txt;
    }
 
 }
