@@ -256,7 +256,9 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
                }else {
                   executable = workingDir.toPath().resolve("PackrAllTestApp").toAbsolutePath().toString()
                }
+               args("-c")
                args("--verbose")
+               args("--")
 
                standardOutput = standardOutputCapture
             }
