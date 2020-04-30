@@ -160,7 +160,7 @@ val downloadJdkArchives = tasks.register("downloadJdkArchives") {
          JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_linux_hotspot_11.0.7_10.tar.gz").toURL(),
                "ee60304d782c9d5654bf1a6b3f38c683921c1711045e1db94525a51b7024a2ca"),
 
-         // macOS x86-64 Java 9
+         // macOS x86-64 Java 8
          JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jdk_x64_mac_hotspot_8u252b09.tar.gz").toURL(),
                "2caed3ec07d108bda613f9b4614b22a8bdd196ccf2a432a126161cd4077f07a5"),
 
@@ -168,7 +168,7 @@ val downloadJdkArchives = tasks.register("downloadJdkArchives") {
          JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_mac_hotspot_11.0.7_10.tar.gz").toURL(),
                  "0ab1e15e8bd1916423960e91b932d2b17f4c15b02dbdf9fa30e9423280d9e5cc"),
 
-         // Windows x86-64 Java 9
+         // Windows x86-64 Java 8
          JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jdk_x64_windows_hotspot_8u252b09.zip").toURL(),
                "4e2c92ba17481321eaeb1769e85eec99a774102eb80b700a201b54b130ab2768"),
 
