@@ -33,8 +33,12 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -387,8 +391,8 @@ public class Packr {
             extractArchive(jdkFile.toPath(), tmp.toPath());
          }
 
-         // copy the JRE sub folder
-         File jre = searchJre(tmp);
+         // copy the JVM sub folder
+         File jre = findJvmDynamicLibraryBaseDirectory(tmp.toPath());
          if (jre == null) {
             throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
          }
@@ -412,53 +416,47 @@ public class Packr {
    }
 
    /**
-    * Searches the directory {@code tmp}, if it's name is "jre" and it contains bin/java[.exe] then that it is returned. Otherwise it searches all it's
-    * sub-directories for a matching "jar" directory.
+    * Searches the directory {@code tmp} for the JVM shared library (jvm.dll, libjvm.so, or libjvm.dylib) and returns the root directory holding the bin and lib
+    * directories.
     *
-    * @param tmp the directory to search for a directory named "jre" that contains "bin/java[.exe]"
+    * @param directoryToSearch the directory to search for the base directory containing the JVM shared library and bin and lib directories
     *
-    * @return tmp or a directory in tmp that is named "jre" and contains "bin/java[.exe]"
+    * @return tmp the base directory containing the JVM files that Packr Launcher uses to create a JVM for the application
+    *
+    * @throws IOException if an IO error occurs
     */
-   private File searchJre(File tmp) {
-      if (tmp.getName().equals("jre") && tmp.isDirectory()
-              && (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
-         return tmp;
-      }
+   private File findJvmDynamicLibraryBaseDirectory(Path directoryToSearch) throws IOException {
+      final Path[] jvmBaseDirectory = {null};
+      Files.walkFileTree(directoryToSearch, new SimpleFileVisitor<Path>() {
+         @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            final String filename = file.getFileName().toString();
+            if (filename.equalsIgnoreCase("jvm.dll") || filename.startsWith("libjvm")) {
+               getParentLibOrBinDirectoryParent(file);
+               return FileVisitResult.TERMINATE;
+            }
+            return FileVisitResult.CONTINUE;
+         }
 
-      File[] children = tmp.listFiles();
-      if (children != null) {
-         for (File child : children) {
-            if (child.isDirectory()) {
-               File found = searchJre(child);
-               if (found != null) {
-                  return found;
+         /**
+          * Walks backwards searching for a "lib" or "bin" directory that should be in the base directory for a JVM that needs to be used to launch Java
+          * applications with Packr Launcher.
+          * @param jvmSharedLibrary the path to the JVM shared library
+          *
+          * @throws IOException if an IO error occurs
+          */
+         private void getParentLibOrBinDirectoryParent(Path jvmSharedLibrary) throws IOException {
+            Path parentDirectory = jvmSharedLibrary.getParent();
+            while (parentDirectory != null && !Files.isSameFile(directoryToSearch, parentDirectory)) {
+               final String parentDirectoryName = parentDirectory.getFileName().toString();
+               if (parentDirectoryName.equalsIgnoreCase("lib") || parentDirectoryName.equalsIgnoreCase("bin")) {
+                  jvmBaseDirectory[0] = parentDirectory.getParent();
+                  break;
                }
+               parentDirectory = parentDirectory.getParent();
             }
          }
-      }
-
-      return searchJre9(tmp);
-   }
-
-   private File searchJre9(File tmp) {
-      if (tmp.isDirectory()
-              && (new File(tmp, "bin/java").exists() || new File(tmp, "bin/java.exe").exists())) {
-         return tmp;
-      }
-
-      File[] childs = tmp.listFiles();
-      if (childs != null) {
-         for (File child : childs) {
-            if (child.isDirectory()) {
-               File found = searchJre9(child);
-               if (found != null) {
-                  return found;
-               }
-            }
-         }
-      }
-
-      return null;
+      });
+      return jvmBaseDirectory[0] == null ? null : jvmBaseDirectory[0].toFile();
    }
 
    /**
