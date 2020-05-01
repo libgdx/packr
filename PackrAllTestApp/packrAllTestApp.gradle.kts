@@ -160,13 +160,21 @@ val downloadJdkArchives = tasks.register("downloadJdkArchives") {
          JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_linux_hotspot_11.0.7_10.tar.gz").toURL(),
                "ee60304d782c9d5654bf1a6b3f38c683921c1711045e1db94525a51b7024a2ca"),
 
+         // Linux x86-64 Java 14
+         JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7/OpenJDK14U-jdk_x64_linux_hotspot_14.0.1_7.tar.gz").toURL(),
+               "9ddf9b35996fbd784a53fff3e0d59920a7d5acf1a82d4c8d70906957ac146cd1"),
+
          // macOS x86-64 Java 8
          JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jdk_x64_mac_hotspot_8u252b09.tar.gz").toURL(),
                "2caed3ec07d108bda613f9b4614b22a8bdd196ccf2a432a126161cd4077f07a5"),
 
          // macOs x86-64 Java 11
          JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_mac_hotspot_11.0.7_10.tar.gz").toURL(),
-                 "0ab1e15e8bd1916423960e91b932d2b17f4c15b02dbdf9fa30e9423280d9e5cc"),
+               "0ab1e15e8bd1916423960e91b932d2b17f4c15b02dbdf9fa30e9423280d9e5cc"),
+
+         // macOs x86-64 Java 14
+         JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7/OpenJDK14U-jdk_x64_mac_hotspot_14.0.1_7.tar.gz").toURL(),
+               "b11cb192312530bcd84607631203d0c1727e672af12813078e6b525e3cce862d"),
 
          // Windows x86-64 Java 8
          JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jdk_x64_windows_hotspot_8u252b09.zip").toURL(),
@@ -174,7 +182,11 @@ val downloadJdkArchives = tasks.register("downloadJdkArchives") {
 
          // Windows x86-64 Java 11
          JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10.2/OpenJDK11U-jdk_x64_windows_hotspot_11.0.7_10.zip").toURL(),
-                 "61e99ff902e02c83b6c48172968593ee05ae183a39e5ef13a44bd4bf7eb2ce8b"))
+               "61e99ff902e02c83b6c48172968593ee05ae183a39e5ef13a44bd4bf7eb2ce8b"),
+
+         // Windows x86-64 Java 14
+         JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7.1/OpenJDK14U-jdk_x64_windows_hotspot_14.0.1_7.zip").toURL(),
+               "935e9121ddc83e5ac82ff73bd7a4b94f25824c7a66964ef7cb3b57098ae05599"))
 
    jdksToDownloadInformation.forEach { (jdkUrlArchive, jdkArchiveSha256) ->
       inputs.property(jdkUrlArchive.toString(), jdkArchiveSha256)
@@ -264,9 +276,9 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
                @Suppress("SpellCheckingInspection") environment("DYLD_LIBRARY_PATH", "")
 
                // run packr exe
-               if(isFamily(FAMILY_MAC)){
+               if (isFamily(FAMILY_MAC)) {
                   executable = workingDir.toPath().resolve("Contents").resolve("MacOS").resolve("PackrAllTestApp").toAbsolutePath().toString()
-               }else {
+               } else {
                   executable = workingDir.toPath().resolve("PackrAllTestApp").toAbsolutePath().toString()
                }
                args("-c")

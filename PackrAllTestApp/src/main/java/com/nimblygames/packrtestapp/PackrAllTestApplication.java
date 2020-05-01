@@ -34,6 +34,7 @@ public class PackrAllTestApplication {
     */
    public static void main(String[] args) throws IOException {
       System.out.println("Hello world!");
+      System.out.println("Running from java.version=" + System.getProperty("java.version"));
 
       Files.lines(Paths.get("application-resources").resolve("fake-resource.txt"))
             .forEach(resourceLine -> System.out.println("Loaded resource line: " + resourceLine));
