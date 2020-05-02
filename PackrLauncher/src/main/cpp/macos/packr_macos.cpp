@@ -143,15 +143,15 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, Create
         return false;
     }
 
-	*getDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs) dlsym(handle, "JNI_GetDefaultJavaVMInitArgs");
-	*createJavaVM = (CreateJavaVM) dlsym(handle, "JNI_CreateJavaVM");
+    *getDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs) dlsym(handle, "JNI_GetDefaultJavaVMInitArgs");
+    *createJavaVM = (CreateJavaVM) dlsym(handle, "JNI_CreateJavaVM");
 
     if ((*getDefaultJavaVMInitArgs == nullptr) || (*createJavaVM == nullptr)) {
         cerr << dlerror() << endl;
         return false;
     }
 
-	return true;
+    return true;
 }
 
 extern "C" {
@@ -214,7 +214,7 @@ const char* getExecutablePath(const char* argv0) {
 }
 
 bool changeWorkingDir(const char* directory) {
-	return chdir(directory) == 0;
+    return chdir(directory) == 0;
 }
 
 #endif
