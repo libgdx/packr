@@ -269,7 +269,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
          if (isFamily(osFamily) && !(isFamily(FAMILY_MAC) && Objects.equals(osFamily, FAMILY_UNIX))) {
             logger.info("Executing packr in ${packrOutputDirectory.toAbsolutePath()}")
             val standardOutputCapture = ByteArrayOutputStream()
-            exec {
+            val execResult = exec {
                workingDir = packrOutputDirectory.toFile()
                environment("PATH", "")
                environment("LD_LIBRARY_PATH", "")
@@ -286,6 +286,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
                args("--")
 
                standardOutput = standardOutputCapture
+               isIgnoreExitValue = true
             }
             val outputAsString = standardOutputCapture.toByteArray().toString(Charsets.UTF_8)
             logger.info("Captured standard output:\n$outputAsString")
@@ -296,6 +297,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
             if (!outputAsString.contains("Loaded resource line: My resource!")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't execute properly, output did not contain My resource!")
             }
+            execResult.assertNormalExitValue()
          }
       }
    }
