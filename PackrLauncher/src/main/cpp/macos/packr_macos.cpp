@@ -24,6 +24,8 @@
 #include <sys/param.h>
 #include <unistd.h>
 
+#include <ftw.h>
+
 using namespace std;
 
 const char __CLASS_PATH_DELIM = ':';
@@ -110,15 +112,33 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM) {
-    char buf[MAXPATHLEN];
-    string path;
-    if (getcwd(buf, sizeof(buf))) {
-        path.append(buf).append("/");
+char libJliSearchPath[PATH_MAX];
+int searchForLibJli(const char *filename, const struct stat *statptr, int fileflags, struct FTW *pfwt){
+    if(fileflags == FTW_F && strstr(filename, "libjli.dylib")){
+        if(verbose) {
+            cout << "fileSearch found libjli! filename=" << filename << ", lastFileSearch=" << libJliSearchPath << endl;
+        }
+        strcpy(libJliSearchPath, filename);
+        return 1;
     }
-    path.append("jre/lib/jli/libjli.dylib");
-    void* handle = dlopen(path.c_str(), RTLD_LAZY);
-    if (handle == NULL) {
+    return 0;
+}
+
+bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM) {
+    libJliSearchPath[0] = 0;
+    nftw("jre", searchForLibJli, 5, FTW_CHDIR | FTW_DEPTH | FTW_MOUNT);
+
+    string libJliAbsolutePath;
+    char currentWorkingDirectoryPath[MAXPATHLEN];
+    if (getcwd(currentWorkingDirectoryPath, sizeof(currentWorkingDirectoryPath))) {
+        libJliAbsolutePath.append(currentWorkingDirectoryPath).append("/");
+    }
+    libJliAbsolutePath.append(libJliSearchPath);
+    if(verbose) {
+        cout << "Loading libjli=" << libJliAbsolutePath << endl;
+    }
+    void* handle = dlopen(libJliAbsolutePath.c_str(), RTLD_LAZY);
+    if (handle == nullptr) {
         cerr << dlerror() << endl;
         return false;
     }
