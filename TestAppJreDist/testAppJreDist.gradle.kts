@@ -20,13 +20,10 @@ import com.google.common.io.BaseEncoding
 import org.apache.tools.ant.taskdefs.condition.Os
 import java.net.HttpURLConnection
 import java.net.URL
-import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.SimpleFileVisitor
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
-import java.nio.file.attribute.BasicFileAttributes
 import com.google.common.io.Files as GuavaFiles
 
 group = rootProject.group
@@ -92,57 +89,61 @@ val jdkArchiveDirectory: Path = if (jdkArchiveProperty == null) {
 }
 
 /**
- * Holds the information needed to download and verify a JDK
+ * Holds the information needed to download and verify a JVM.
  */
-data class JdkDownloadInformation(
+data class JvmRemoteArchiveInformation(
       /**
-       * The URL for downloading the JDK
+       * The URL for downloading the JVM
        */
-      val jdkUrlArchive: URL,
+      val archiveUrl: URL,
       /**
        * The SHA 256 of the download
        */
-      val jdkArchiveSha256: String
+      val archiveSha256: String
 )
 
 /**
- * List of JDKs to download and use with PackAllTestApp. The URLs are parsed for specific infomation so if that format changes the code will need to be updated.
+ * List of JREs and JDKs to download and use with PackAllTestApp. The URLs are parsed for specific infomation so if that format changes the code will need to be updated.
+ *
+ * JREs are downloaded for Java 8 versions because there's no need for the JDKs
+ *
+ * JDKs are downloaded for Java 11 and 14 so that minimal JREs can be generated using jlink
  */
-@Suppress("SpellCheckingInspection") val jdksToDownloadInformation = listOf(
-      //         // Linux x86-64 Java 8
-      //         JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09/OpenJDK8U-jdk_x64_linux_hotspot_8u252b09.tar.gz").toURL(),
-      //               "2b59b5282ff32bce7abba8ad6b9fde34c15a98f949ad8ae43e789bbd78fc8862"),
-      //
-      //         // Linux x86-64 Java 11
-      //         JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_linux_hotspot_11.0.7_10.tar.gz").toURL(),
-      //               "ee60304d782c9d5654bf1a6b3f38c683921c1711045e1db94525a51b7024a2ca"),
-      //
-      //         // Linux x86-64 Java 14
-      //         JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7/OpenJDK14U-jdk_x64_linux_hotspot_14.0.1_7.tar.gz").toURL(),
-      //               "9ddf9b35996fbd784a53fff3e0d59920a7d5acf1a82d4c8d70906957ac146cd1"),
+@Suppress("SpellCheckingInspection") val jvmRemoteArchiveInformationList = listOf(
+      // Linux x86-64 Java 8
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09/OpenJDK8U-jre_x64_linux_hotspot_8u252b09.tar.gz").toURL(),
+            "a93be303ed62398dba9acb0376fb3caf8f488fcde80dc62d0a8e46256b3adfb1"),
 
-      //         // macOS x86-64 Java 8
-      //         JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jdk_x64_mac_hotspot_8u252b09.tar.gz").toURL(),
-      //               "2caed3ec07d108bda613f9b4614b22a8bdd196ccf2a432a126161cd4077f07a5"),
-      //
-      //         // macOs x86-64 Java 11
-      //         JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_mac_hotspot_11.0.7_10.tar.gz").toURL(),
-      //               "0ab1e15e8bd1916423960e91b932d2b17f4c15b02dbdf9fa30e9423280d9e5cc"),
-      //
+      // Linux x86-64 Java 11
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_linux_hotspot_11.0.7_10.tar.gz").toURL(),
+            "ee60304d782c9d5654bf1a6b3f38c683921c1711045e1db94525a51b7024a2ca"),
+
+      // Linux x86-64 Java 14
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7/OpenJDK14U-jdk_x64_linux_hotspot_14.0.1_7.tar.gz").toURL(),
+            "9ddf9b35996fbd784a53fff3e0d59920a7d5acf1a82d4c8d70906957ac146cd1"),
+
+      // macOS x86-64 Java 8
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jre_x64_mac_hotspot_8u252b09.tar.gz").toURL(),
+            "aba3f24e233f4f82cf8bdee891b4b891d176e7074fb4cea53d1cf7446ed18171"),
+
+      // macOs x86-64 Java 11
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_mac_hotspot_11.0.7_10.tar.gz").toURL(),
+            "0ab1e15e8bd1916423960e91b932d2b17f4c15b02dbdf9fa30e9423280d9e5cc"),
+
       // macOs x86-64 Java 14
-      JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7/OpenJDK14U-jdk_x64_mac_hotspot_14.0.1_7.tar.gz").toURL(),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7/OpenJDK14U-jdk_x64_mac_hotspot_14.0.1_7.tar.gz").toURL(),
             "b11cb192312530bcd84607631203d0c1727e672af12813078e6b525e3cce862d"),
 
       // Windows x86-64 Java 8
-      JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jdk_x64_windows_hotspot_8u252b09.zip").toURL(),
-            "4e2c92ba17481321eaeb1769e85eec99a774102eb80b700a201b54b130ab2768"),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jre_x64_windows_hotspot_8u252b09.zip").toURL(),
+            "582f58290c66d6fb7e437a92a91695d25386e2497f684715e6e1b8702a69a804"),
 
       // Windows x86-64 Java 11
-      JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10.2/OpenJDK11U-jdk_x64_windows_hotspot_11.0.7_10.zip").toURL(),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10.2/OpenJDK11U-jdk_x64_windows_hotspot_11.0.7_10.zip").toURL(),
             "61e99ff902e02c83b6c48172968593ee05ae183a39e5ef13a44bd4bf7eb2ce8b"),
 
       // Windows x86-64 Java 14
-      JdkDownloadInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7.1/OpenJDK14U-jdk_x64_windows_hotspot_14.0.1_7.zip").toURL(),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7.1/OpenJDK14U-jdk_x64_windows_hotspot_14.0.1_7.zip").toURL(),
             "935e9121ddc83e5ac82ff73bd7a4b94f25824c7a66964ef7cb3b57098ae05599"))
 
 /**
@@ -152,10 +153,8 @@ val jlinkProcessedJdkOutputDirectoryPath: Path = buildDir.toPath().resolve("proc
 
 /**
  * Parses the filename to determine the Java version of the JDK.
- *
- * TODO read release file from the archive
  */
-fun getJdkVersion(jdkFilename: String): JavaVersion {
+fun getJvmVersion(jdkFilename: String): JavaVersion {
    val jdkFilenameLowercase = jdkFilename.toLowerCase()
    return when {
       jdkFilenameLowercase.contains("openjdk8u") -> {
@@ -174,7 +173,6 @@ fun getJdkVersion(jdkFilename: String): JavaVersion {
 /**
  * Parses the filename to determine the Java OS of the JDK.
  * @see [Os]
- * TODO read release file from the archive
  */
 fun getJdkOsFamily(jdkFilename: String): String {
    val jdkFilenameLowercase = jdkFilename.toLowerCase()
@@ -201,42 +199,49 @@ fun getJdkOsFamily(jdkFilename: String): String {
  * foreach jdk to download - create artifact from zip/tar.gz task
  */
 /**
- * List of download tasks for all the JDKs
+ * List of download tasks for all the JVMs.
+ *
+ * Download tasks are only created for the current platform.
  */
-val downloadJdkTasks = mutableListOf<TaskProvider<Task>>()
-jdksToDownloadInformation.forEach { (jdkArchiveUrl, jdkArchiveSha256) ->
-   val jdkDownloadFilename = getFilenameFromJdkUrl(jdkArchiveUrl)
-   val downloadTask = tasks.register("download${jdkDownloadFilename.substring(0, jdkDownloadFilename.indexOf('.'))}") {
-      inputs.property(jdkArchiveUrl.toString(), jdkArchiveSha256)
+val downloadJvmTasks = mutableListOf<TaskProvider<Task>>()
+jvmRemoteArchiveInformationList.forEach { (jvmArchiveUrl, jvmArchiveSha256) ->
+   val jvmDownloadFilename = getFilenameFromJdkUrl(jvmArchiveUrl)
 
-      if (Paths.get(jdkDownloadFilename).isAbsolute) {
-         throw GradleException("Failed to parse filename from JDK download url $jdkArchiveUrl")
+   // Skip platforms that aren't the current running platform
+   if ((Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(jvmDownloadFilename) != Os.FAMILY_MAC) || (!Os.isFamily(Os.FAMILY_MAC) && !Os.isFamily(getJdkOsFamily(
+            jvmDownloadFilename)))) {
+      return@forEach
+   }
+
+   val downloadTask = tasks.register("download${jvmDownloadFilename.substring(0, jvmDownloadFilename.indexOf('.'))}") {
+      inputs.property(jvmArchiveUrl.toString(), jvmArchiveSha256)
+
+      if (Paths.get(jvmDownloadFilename).isAbsolute) {
+         throw GradleException("Failed to parse filename from JDK download url $jvmArchiveUrl")
       }
-      val jdkDownloadLocation = jdkArchiveDirectory.resolve(jdkDownloadFilename)
-      outputs.file(jdkDownloadLocation.toFile())
+      val jvmDownloadLocation = jdkArchiveDirectory.resolve(jvmDownloadFilename)
+      outputs.file(jvmDownloadLocation.toFile())
 
       doLast {
-         logger.info("Checking JDK file $jdkDownloadLocation")
-         if (Files.exists(jdkDownloadLocation)) {
-            logger.info("jdkDownloadLocation $jdkDownloadLocation already exists, checking SHA 256")
-            val jdkDownloadSha256Hex = getFileSha256HexEncoded(jdkDownloadLocation)
-            if (jdkArchiveSha256.toLowerCase() == jdkDownloadSha256Hex.toLowerCase()) {
-               logger.info("SHA256 for $jdkDownloadLocation matches")
+         logger.info("Checking JDK file $jvmDownloadLocation")
+         if (Files.exists(jvmDownloadLocation)) {
+            logger.info("jvmDownloadLocation $jvmDownloadLocation already exists, checking SHA 256")
+            val downloadArchiveSha256Hex = getFileSha256HexEncoded(jvmDownloadLocation)
+            if (jvmArchiveSha256.toLowerCase() == downloadArchiveSha256Hex.toLowerCase()) {
+               logger.info("SHA256 for $jvmDownloadLocation matches")
             } else {
-               logger.info("SHA256 for $jdkDownloadLocation of $jdkDownloadSha256Hex does not match source $jdkArchiveSha256")
-               downloadAndVerifySha256(jdkArchiveUrl, jdkDownloadLocation, jdkArchiveSha256)
+               logger.info("SHA256 for $jvmDownloadLocation of $downloadArchiveSha256Hex does not match source $jvmArchiveSha256")
+               downloadAndVerifySha256(jvmArchiveUrl, jvmDownloadLocation, jvmArchiveSha256)
             }
          } else {
-            logger.info("jdkDownloadLocation $jdkDownloadLocation does not exist")
-            downloadAndVerifySha256(jdkArchiveUrl, jdkDownloadLocation, jdkArchiveSha256)
+            logger.info("jvmDownloadLocation $jvmDownloadLocation does not exist")
+            downloadAndVerifySha256(jvmArchiveUrl, jvmDownloadLocation, jvmArchiveSha256)
          }
       }
    }
-   downloadJdkTasks.add(downloadTask)
+   downloadJvmTasks.add(downloadTask)
 }
 
-// karlfixme jlink on works on current platform...
-// foreach JDK to download - create task to extract it
 /**
  * List of tasks that will extract JDKs for the current platform so they can execute jlink
  */
@@ -246,14 +251,16 @@ val extractJdkTasks = mutableListOf<TaskProvider<Copy>>()
  * Directory to extract all current platform JDKs into
  */
 val jdksExtractionPath: Path = buildDir.toPath().resolve("jdks-extracted")
-downloadJdkTasks.forEach { downloadTaskProvider ->
-   val jdkArchiveFilePath = downloadTaskProvider.get().outputs.files.singleFile.toPath()
+downloadJvmTasks.forEach { downloadTaskProvider ->
+   val jvmArchiveFilePath = downloadTaskProvider.get().outputs.files.singleFile.toPath()
+
+   // If the JVM is Java 8 or doesn't match the current platform simply pass on the archive as because jlink cannot create a JRE for it
    // @formatter:off
-   if (getJdkVersion(jdkArchiveFilePath.fileName.toString()) == JavaVersion.VERSION_1_8
-       || (Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(jdkArchiveFilePath.fileName.toString()) != Os.FAMILY_MAC)
-       || (!Os.isFamily(Os.FAMILY_MAC) && !Os.isFamily(getJdkOsFamily(jdkArchiveFilePath.fileName.toString())))) {
+   if (getJvmVersion(jvmArchiveFilePath.fileName.toString()) == JavaVersion.VERSION_1_8
+       || (Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(jvmArchiveFilePath.fileName.toString()) != Os.FAMILY_MAC)
+       || (!Os.isFamily(Os.FAMILY_MAC) && !Os.isFamily(getJdkOsFamily(jvmArchiveFilePath.fileName.toString())))) {
       // @formatter:on
-      artifacts.add(jdksAndCurrentPlatformJlinkedJres.name, jdkArchiveFilePath.toFile()) {
+      artifacts.add(jdksAndCurrentPlatformJlinkedJres.name, jvmArchiveFilePath.toFile()) {
          builtBy(downloadTaskProvider.get())
       }
       return@forEach
@@ -261,37 +268,25 @@ downloadJdkTasks.forEach { downloadTaskProvider ->
 
    val extractTask = tasks.register<Copy>("extract${downloadTaskProvider.name.capitalize()}") {
       dependsOn(downloadTaskProvider)
-      if (jdkArchiveFilePath.fileName.toString().toLowerCase().contains(".tar")) {
-         from(tarTree(jdkArchiveFilePath.toFile()))
+      if (jvmArchiveFilePath.fileName.toString().toLowerCase().contains(".tar")) {
+         from(tarTree(jvmArchiveFilePath.toFile()))
       } else {
-         from(zipTree(jdkArchiveFilePath.toFile()))
+         from(zipTree(jvmArchiveFilePath.toFile()))
       }
 
-      val directoryName = jdkArchiveFilePath.fileName.toString().substring(0, jdkArchiveFilePath.fileName.toString().indexOf('.'))
+      val directoryName = jvmArchiveFilePath.fileName.toString().substring(0, jvmArchiveFilePath.fileName.toString().indexOf('.'))
       destinationDir = jdksExtractionPath.resolve(directoryName).toFile()
    }
    extractJdkTasks.add(extractTask)
-   tasks.named("check").configure { dependsOn(extractTask) }
 }
 
 /**
  * Locates the jlink executable inside a JDK directory
  */
 fun findJlinkExecutable(jdkToJlinkDirectory: Path): Path? {
-   var jlinkExecutablePath: Path? = null
-
-   Files.walkFileTree(jdkToJlinkDirectory, object : SimpleFileVisitor<Path>() {
-      override fun visitFile(file: Path, attrs: BasicFileAttributes?): FileVisitResult {
-         return if (file.fileName.toString().startsWith("jlink")) {
-            jlinkExecutablePath = file
-            FileVisitResult.TERMINATE
-         } else {
-            FileVisitResult.CONTINUE
-         }
-      }
-   })
-
-   return jlinkExecutablePath
+   return Files.walk(jdkToJlinkDirectory).use { pathStream ->
+      pathStream.filter { path -> path.fileName.toString().startsWith("jlink") && Files.isRegularFile(path) }.findFirst().orElse(null)
+   }
 }
 
 /**
@@ -299,15 +294,13 @@ fun findJlinkExecutable(jdkToJlinkDirectory: Path): Path? {
  */
 val jlinkOutputDirectoryPath: Path = buildDir.toPath().resolve("jlink-output")
 
-// foreach jdk to extract - create task to jlink it
 /**
  * List of all tasks that will execute jlink creating a JRE for the current platform.
  */
 val jlinkTasks = mutableListOf<TaskProvider<Task>>()
 extractJdkTasks.forEach { extractJdkTask ->
    val jlinkJdkTask = tasks.register("jlink${extractJdkTask.name.capitalize()}") {
-      // depend on every extraction to find best jlink for current platform
-      extractJdkTasks.forEach { dependsOn(it) }
+      dependsOn(extractJdkTask)
 
       inputs.dir(extractJdkTask.get().destinationDir)
 
@@ -316,11 +309,12 @@ extractJdkTasks.forEach { extractJdkTask ->
       outputs.dir(jlinkPath.toFile())
 
       doFirst {
+         // jlink requires the directory to not exist when it runs
          Files.deleteIfExists(jlinkPath)
       }
 
       doLast {
-         val extractedJdkPath = Files.walk(extractedJkdPath).use { fileStream ->
+         val jdkPath = Files.walk(extractedJkdPath).use { fileStream ->
             fileStream.filter { Files.isDirectory(it) && !Files.isSameFile(extractedJkdPath, it) }
                .findFirst()
                .orElseThrow { throw GradleException("Couldn't find nested extraction directory in $extractedJkdPath") }
@@ -332,7 +326,7 @@ extractJdkTasks.forEach { extractJdkTask ->
          exec {
             executable = jlinkExecutablePath.toAbsolutePath().toString()
             args("--module-path")
-            args(extractedJdkPath.resolve("jmods").toAbsolutePath().toString())
+            args(jdkPath.resolve("jmods").toAbsolutePath().toString())
             args("--output")
             args(jlinkPath.toAbsolutePath().toString())
             args("--add-modules")
@@ -341,13 +335,16 @@ extractJdkTasks.forEach { extractJdkTask ->
       }
    }
    jlinkTasks.add(jlinkJdkTask)
-   tasks.named("check").configure { dependsOn(jlinkJdkTask) }
 }
 
 /**
  * Directory to store the zip files of all the jlink processed JREs for the current platform.
  */
 val jlinkZipOutputDirectoryPath: Path = buildDir.toPath().resolve("jlink-zip-output")
+
+/*
+ * Zip up every jlink created JRE.
+ */
 jlinkTasks.forEach { jlinkTask ->
    val zipJlinkJreTask = tasks.register<Zip>("zip${jlinkTask.name.capitalize()}") {
       dependsOn(jlinkTask)

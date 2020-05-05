@@ -25,3 +25,5 @@ include("DrOpt")
 project(":DrOpt").buildFileName = "drOpt.gradle.kts"
 include("PackrAllTestApp")
 project(":PackrAllTestApp").buildFileName = "packrAllTestApp.gradle.kts"
+include("TestAppJreDist")
+project(":TestAppJreDist").buildFileName = "testAppJreDist.gradle.kts"
