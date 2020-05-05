@@ -124,7 +124,7 @@ data class JvmRemoteArchiveInformation(
 
       // macOS x86-64 Java 8
       JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jre_x64_mac_hotspot_8u252b09.tar.gz").toURL(),
-            "aba3f24e233f4f82cf8bdee891b4b891d176e7074fb4cea53d1cf7446ed18171"),
+            "f8206f0fef194c598de6b206a4773b2e517154913ea0e26c5726091562a034c8"),
 
       // macOs x86-64 Java 11
       JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_mac_hotspot_11.0.7_10.tar.gz").toURL(),
