@@ -285,7 +285,7 @@ downloadJvmTasks.forEach { downloadTaskProvider ->
  */
 fun findJlinkExecutable(jdkToJlinkDirectory: Path): Path? {
    return Files.walk(jdkToJlinkDirectory).use { pathStream ->
-      pathStream.filter { path -> path.fileName.toString().startsWith("jlink") && Files.isRegularFile(path) }.findFirst().orElse(null)
+      pathStream.filter { path -> path.fileName.toString().startsWith("jlink") && path.parent.fileName.toString() == "bin" }.findFirst().orElse(null)
    }
 }
 
