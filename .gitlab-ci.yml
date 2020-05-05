@@ -8,7 +8,7 @@ publisWindowsExecutable:
   tags:
     - windows
   script:
-    - .\gradlew -i --no-build-cache clean PackrLauncher:publish
+    - cmd.exe "/c gradlew -i --no-build-cache clean PackrLauncher:publish"
 
 publishLinuxExecutable:
   stage: publish_launcher
@@ -29,7 +29,7 @@ buildWindows:
   tags:
     - windows
   script:
-    - .\gradlew -i --no-build-cache --refresh-dependencies clean build
+    - cmd.exe "/c gradlew -i --no-build-cache --refresh-dependencies clean build"
 
 buildMac:
   stage: build
