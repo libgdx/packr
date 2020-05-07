@@ -4,13 +4,15 @@ Packages your JAR, assets and a JVM for distribution on Windows, Linux and Mac O
 # Download
 The latest build is available for [download here](https://github.com/karlsabo/packr/releases).
 
+Resources are also published to [Maven Central](https://mvnrepository.com/artifact/com.nimblygames.packr)
+
 # Usage
 You point packr at your JAR file(s) containing your code and assets, some configuration parameters, and a URL or local file location to a JDK build for your target platform.
 
 Invoking packr from the command line may look like this:
 
 ```bash
-java -jar packr.jar \
+java -jar packr-all.jar \
      --platform mac \
      --jdk OpenJDK8U-jdk_x64_mac_hotspot_8u252b09.tar.gz \
      --executable myapp \
@@ -28,7 +30,7 @@ See [PackrAllTestApp/packrAllTestApp.gradle.kts](https://github.com/karlsabo/pac
 | Parameter | Meaning |
 | --- | --- |
 | platform | one of "windows64",  "linux64", "mac" |
-| jdk | Directory, Zip file, tar.gz file, or URL to an archive file of an OpenJDK 8 or Oracle JDK 8 build containing a JRE. Adopt OpenJDK 8 is tested against <https://adoptopenjdk.net/releases.html>. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script|
+| jdk | Directory, Zip file, tar.gz file, or URL to an archive file of an OpenJDK 8 or Oracle JDK 8 build containing a JRE. Adopt OpenJDK 8, 11, and 14 are tested against <https://adoptopenjdk.net/releases.html>. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script|
 | executable | name of the native executable, without extension such as ".exe" |
 | classpath | file locations of the JAR files to package |
 | removelibs (optional) | file locations of JAR files to remove native libraries which do not match the target platform. See below for details. |
@@ -90,7 +92,7 @@ repositories {
    mavenCentral()
 }
 dependencies {
-   imlementation("com.nimblygames.packr:packr:2.3.0")
+   imlementation("com.nimblygames.packr:packr:2.4.0")
 }
 ```
 
@@ -231,7 +233,7 @@ If you want to modify the code invoke Gradle.
 This will create a `packr-VERSION-all.jar` file in `Packr/build/libs` directory, you may invoke as described in the Usage section above.
 
 ## Gradle project structure
-The Gradle build is set up as a multi-project build. In order to fully build the multi-project you must have a compatible JRE (Java 8) and C/C++ build tools that the Gradle build can find.
+The Gradle build is set up as a multi-project build. In order to fully build the multi-project you must have a compatible JRE (Java 8) and [C/C++ build tools that the Gradle build can find](https://docs.gradle.org/current/userguide/building_cpp_projects.html#sec:cpp_supported_tool_chain).
  
 ### DrOpt Gradle sub-project
 This is a downloaded and unzipped <https://github.com/jamesderlin/dropt/releases> version 1.1.1 source code with a Gradle script used to build it for consumption by the PackrLauncher Gradle project. The DrOpt source required a few modifications to get it compiling, namely some explicit casting in the C code.
@@ -245,11 +247,14 @@ This contains the platform native code for loading the JVM and starting the pack
 ### PackrAllTestApp Gradle sub-project
 This is an example Hello world style application that bundles itself using packr and is used as a high level test suite to help reduce breaking changes.
 
+## TestAppJreDist
+This project downloads JDKS 8, 11, and 14 and runs jlink on the 11 and 14 versions to create minimal JREs for use by PackrAllTestApp.
+
 ## Limitations
-* Only JDK 8 is supported (older JDKs probably work)
+* Only Adopt OpenJDKs 8, 11, and 14 are tested (other JDKs probably work)
 * Icons aren't set yet on Windows and Linux, you need to do that manually.
 * Minimum platform requirement on MacOS is OS X 10.10 (Honestly only 10.15 macOS Catalina is tested).
-* JRE minimization is very conservative. Depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr.
+* JRE minimization is very conservative. Depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr. If you're using Java 11+ you should create a JRE using [jlink](https://docs.oracle.com/en/java/javase/11/tools/jlink.html).
 * On MacOS, the JVM is spawned in its own thread by default, which is a requirement of AWT. This does not work with code based on LWJGL3/GLFW, which needs the JVM be spawned on the main thread. You can enforce the latter with adding the `-XstartOnFirstThread` VM argument to your MacOS packr config.
 
 # License & Contributions

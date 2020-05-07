@@ -1,3 +1,8 @@
+# Release 2.4.0
+1. Added support for Java 11 and 14
+   * Including jlink created JREs
+   * Note: Packr cannot take a module and load it into the classpath of the created JVM, a Jar is still needed. It should be possible to create a jlink JRE from your custom module and have that work with packr but it's untested.
+
 # Release 2.3.0
 1. Converted packr to use Gradle
 1. Include DrOpt source for easier building
