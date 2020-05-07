@@ -247,7 +247,7 @@ This contains the platform native code for loading the JVM and starting the pack
 ### PackrAllTestApp Gradle sub-project
 This is an example Hello world style application that bundles itself using packr and is used as a high level test suite to help reduce breaking changes.
 
-## TestAppJreDist
+### TestAppJreDist Gradle sub-project
 This project downloads JDKS 8, 11, and 14 and runs jlink on the 11 and 14 versions to create minimal JREs for use by PackrAllTestApp.
 
 ## Limitations
