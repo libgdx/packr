@@ -92,7 +92,7 @@ repositories {
    mavenCentral()
 }
 dependencies {
-   imlementation("com.nimblygames.packr:packr:2.4.0")
+   imlementation("com.nimblygames.packr:packr:2.4.2")
 }
 ```
 
