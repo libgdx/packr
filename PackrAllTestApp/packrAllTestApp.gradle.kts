@@ -188,6 +188,9 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
             if (!outputAsString.contains("Loaded resource line: My resource!")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't execute properly, output did not contain My resource!")
             }
+            if (fileNameNoExtension.toLowerCase().contains("jdk14") && !outputAsString.contains("Using The Z Garbage Collector")) {
+               throw GradleException("Packr bundle in $packrOutputDirectory didn't execute using the Z garbage collector")
+            }
             execResult.assertNormalExitValue()
          }
       }
@@ -273,6 +276,14 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       args("Dsun.java2d.noddraw=true")
       args("--vmargs")
       args("XstartOnFirstThread")
+      if (jdkPath.fileName.toString().toLowerCase().contains("jdk14")) {
+         args("--vmargs")
+         args("XX:+UnlockExperimentalVMOptions")
+         args("--vmargs")
+         args("XX:+UseZGC")
+         args("--vmargs")
+         args("Xlog:gc")
+      }
       args("--output")
       args(destination.toAbsolutePath().toString())
    }
