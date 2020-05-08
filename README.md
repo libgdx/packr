@@ -1,6 +1,8 @@
 # About
 Packages your JAR, assets and a JVM for distribution on Windows, Linux and Mac OS X, adding a native executable file to make it appear like a native app. Packr is most suitable for GUI applications, such as games made with [libGDX](http://libgdx.badlogicgames.com/).
 
+On the topic of games, Packr version 2.4.2 supports Java 14 and the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) has been verified to work. Because who doesn't want GC pause times guaranteed to not exceed 10ms with work in progress for sub 1ms GC pauses.
+
 # Download
 The latest build is available for [download here](https://github.com/karlsabo/packr/releases).
 
@@ -9,7 +11,7 @@ Resources are also published to [Maven Central](https://mvnrepository.com/artifa
 # Usage
 You point packr at your JAR file(s) containing your code and assets, some configuration parameters, and a URL or local file location to a JDK build for your target platform.
 
-Invoking packr from the command line may look like this:
+Invoking packr from the command line may look like the following. For a more complete example look at the [PackrAllTestApp/packrAllTestApp.gradle.kts](./PackrAllTestApp/packrAllTestApp.gradle.kts):
 
 ```bash
 java -jar packr-all.jar \
@@ -25,12 +27,10 @@ java -jar packr-all.jar \
      --output out-mac
 ```
 
-See [PackrAllTestApp/packrAllTestApp.gradle.kts](https://github.com/karlsabo/packr/blob/master/PackrAllTestApp/packrAllTestApp.gradle.kts) for a concrete example of a Gradle script which bundles an application.
-
 | Parameter | Meaning |
 | --- | --- |
 | platform | one of "windows64",  "linux64", "mac" |
-| jdk | Directory, Zip file, tar.gz file, or URL to an archive file of an OpenJDK 8 or Oracle JDK 8 build containing a JRE. Adopt OpenJDK 8, 11, and 14 are tested against <https://adoptopenjdk.net/releases.html>. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script|
+| jdk | Directory, zip file, tar.gz file, or URL to an archive file of an OpenJDK 8 or Oracle JDK 8 build containing a JRE. Adopt OpenJDK 8, 11, and 14 are tested against <https://adoptopenjdk.net/releases.html>. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script|
 | executable | name of the native executable, without extension such as ".exe" |
 | classpath | file locations of the JAR files to package |
 | removelibs (optional) | file locations of JAR files to remove native libraries which do not match the target platform. See below for details. |
@@ -114,10 +114,10 @@ new Packr().pack(config);
 ```
 
 # Minimization
+Unless you're stuck with using Java 8, it's best to create a minimized JRE using [jlink](https://docs.oracle.com/en/java/javase/11/tools/jlink.html). See [TestAppJreDist/testAppJreDist.gradle.kts](./TestAppJreDist/testAppJreDist.gradle.kts) for an example Gradle build script which generates JREs from downloaded JDKs.
 
 ## JRE
-
-A standard OpenJDK JRE weighs about 90 mb unpacked. Packr helps you cut down on that size, thus also reducing the download size of your app.
+A standard OpenJDK 8 JRE is about 91MiB unpacked. Packr helps you cut down on that size, thus also reducing the download size of your app.
 
 To minimize the JRE that is bundled with your app, you have to specify a minimization configuration file via the `minimizejre` flag you supply to Packr. A minimization configuration is a JSON file containing paths to files and directories within the JRE to be removed.
 
@@ -162,7 +162,7 @@ This configuration will unpack `rt.jar`, remove all the listed packages and clas
 
 Then, rhino.jar (about 1.1MB) and, in case of a Windows JRE, all executable files in `jre/bin/` and the folder `jre/bin/client/` will be removed.
 
-Packr comes with two such configurations out of the box, [`soft`](https://github.com/karlsabo/packr/blob/master/Packr/src/main/resources/minimize/soft) and [`hard`](https://github.com/karlsabo/packr/blob/master/Packr/src/main/resources/minimize/hard). The `hard` profile removes a few more files, and repacks some additional JAR files.
+Packr comes with two such configurations out of the box, [`soft`](./Packr/src/main/resources/minimize/soft). The `hard` profile removes a few more files, and repacks some additional JAR files.
 
 ## The "removelibs" option
 Minimization aside, packr can remove all dynamic libraries which do not match the target platform from your project JAR file(s):
@@ -233,7 +233,7 @@ If you want to modify the code invoke Gradle.
 This will create a `packr-VERSION-all.jar` file in `Packr/build/libs` directory, you may invoke as described in the Usage section above.
 
 ## Gradle project structure
-The Gradle build is set up as a multi-project build. In order to fully build the multi-project you must have a compatible JRE (Java 8) and [C/C++ build tools that the Gradle build can find](https://docs.gradle.org/current/userguide/building_cpp_projects.html#sec:cpp_supported_tool_chain).
+The Gradle build is set up as a multi-project build. In order to fully build the multi-project you must have a compatible JRE (Java 8+) and [C/C++ build tools that the Gradle build can find](https://docs.gradle.org/current/userguide/building_cpp_projects.html#sec:cpp_supported_tool_chain).
  
 ### DrOpt Gradle sub-project
 This is a downloaded and unzipped <https://github.com/jamesderlin/dropt/releases> version 1.1.1 source code with a Gradle script used to build it for consumption by the PackrLauncher Gradle project. The DrOpt source required a few modifications to get it compiling, namely some explicit casting in the C code.
