@@ -66,8 +66,6 @@ buildscript {
  */
 val jdksAndCurrentPlatformJlinkedJres = configurations.register("jdksAndCurrentPlatformJlinkedJres")
 
-dependencies {}
-
 /**
  * Gradle property specifying where the JDK archives directory is
  */
