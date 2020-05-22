@@ -25,6 +25,7 @@ version = rootProject.version
 
 plugins {
    `cpp-application`
+   `cpp-unit-test`
    xcode
    `microsoft-visual-cpp-compiler`
    `visual-studio`
@@ -34,6 +35,9 @@ plugins {
 
 repositories {
    jcenter()
+   maven {
+      url = uri("https://repo.gradle.org/gradle/libs-snapshots-local/")
+   }
 }
 
 /**
@@ -79,13 +83,15 @@ dependencies {
    implementation(project(":DrOpt"))
 }
 
+/**
+ * Linux x86 is no longer built because it's impossible to find a survey that shows anyone running x86 Linux.
+ * MacOS x86 is no longer built because it requires and older version of Xcode and Apple makes it too difficult to install on newer versions of Mac
+ * Windows x86 is no longer built because the Adopt OpenJDK has crash failures.
+ */
+val targetPlatformsToBuild = listOf(machines.windows.x86_64, machines.linux.x86_64, machines.macOS.x86_64)
+
 application {
-   /*
-    * Linux x86 is no longer built because it's impossible to find a survey that shows anyone running x86 Linux.
-    * MacOS x86 is no longer built because it requires and older version of Xcode and Apple makes it too difficult to install on newer versions of Mac
-    * Windows x86 is no longer built because the Adopt OpenJDK has crash failures.
-    */
-   targetMachines.set(listOf(machines.windows.x86_64, machines.linux.x86_64, machines.macOS.x86_64))
+   targetMachines.set(targetPlatformsToBuild)
 
    toolChains.forEach { toolChain ->
       if (toolChain is VisualCpp) {
@@ -221,6 +227,19 @@ application {
             binaryLinkTask.linkerArgs.add("-framework")
             binaryLinkTask.linkerArgs.add("CoreFoundation")
          }
+      }
+   }
+}
+
+unitTest {
+   targetMachines.set(targetPlatformsToBuild)
+
+   dependencies {
+      implementation("org.gradle.cpp-samples:googletest:1.9.0-gr4-SNAPSHOT")
+   }
+   binaries.configureEach(CppExecutable::class.java) {
+      if (toolChain is Gcc && targetMachine.operatingSystemFamily.isLinux) {
+         linkTask.get().linkerArgs.add("-lpthread")
       }
    }
 }
