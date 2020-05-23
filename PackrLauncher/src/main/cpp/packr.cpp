@@ -447,31 +447,47 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 	}
 
 	// fill VM options
-
 	if (verbose) {
 		cout << "Passing VM options ..." << endl;
 	}
 
-	size_t vmArgc = 0;
-	JavaVMOption* options = nullptr;
+    vector<JavaVMOption> optionsVector;
 
-	if (hasJsonValue(jsonRoot, "vmArgs", sajson::TYPE_ARRAY)) {
+    if(isZgcSupported() && hasJsonValue(jsonRoot, "useZgcIfSupportedOs", sajson::TYPE_TRUE)){
+        JavaVMOption unlockExperimental;
+        unlockExperimental.optionString = "-XX:+UnlockExperimentalVMOptions";
+        unlockExperimental.extraInfo = nullptr;
+        optionsVector.push_back(unlockExperimental);
+        JavaVMOption useZGC;
+        useZGC.optionString = "-XX:+UseZGC";
+        useZGC.extraInfo = nullptr;
+        optionsVector.push_back(useZGC);
+    }
+
+    if (hasJsonValue(jsonRoot, "vmArgs", sajson::TYPE_ARRAY)) {
 		sajson::value vmArgs = getJsonValue(jsonRoot, "vmArgs");
-		vmArgc = vmArgs.get_length();
 
-		options = new JavaVMOption[vmArgc];
-		for (size_t vmArg = 0; vmArg < vmArgc; vmArg++) {
+		for (size_t vmArg = 0; vmArg < vmArgs.get_length(); vmArg++) {
 			string vmArgValue = vmArgs.get_array_element(vmArg).as_string();
 			if (verbose) {
 				cout << "  # " << vmArgValue << endl;
 			}
-			options[vmArg].optionString = strdup(vmArgValue.c_str());
-			options[vmArg].extraInfo = nullptr;
+			JavaVMOption option;
+			option.optionString = _strdup(vmArgValue.c_str());
+			option.extraInfo = nullptr;
+			optionsVector.push_back(option);
 		}
-	}
+    }
 
-	args.nOptions = vmArgc;
-	args.options = options;
+	args.nOptions = optionsVector.size();
+	args.options = &optionsVector[0];
+
+	if(verbose) {
+	    cout << "Passing VM options:" << endl;
+        for (int optionIndex = 0; optionIndex < args.nOptions; optionIndex++) {
+            cout << "  " << args.options[optionIndex].optionString << endl;
+        }
+    }
 
 	/*
 		Reroute JVM creation through platform-dependent code.
@@ -550,12 +566,6 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 		env->CallStaticVoidMethod(mainClass, mainMethod, appArgs);
 
 		// cleanup
-
-		for (size_t vmArg = 0; vmArg < vmArgc; vmArg++) {
-			free(options[vmArg].optionString);
-		}
-
-		delete[] options;
 
 		for (size_t cmdLineArg = 0; cmdLineArg < cmdLineArgc; cmdLineArg++) {
 			free(cmdLineArgv[cmdLineArg]);
