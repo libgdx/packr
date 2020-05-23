@@ -232,8 +232,16 @@ unitTest {
    }
 
    binaries.configureEach(CppTestExecutable::class.java) {
+      val binaryLinkTask = linkTask.get()
       if (toolChain is Gcc && targetMachine.operatingSystemFamily.isLinux) {
-         linkTask.get().linkerArgs.add("-lpthread")
+         binaryLinkTask.linkerArgs.add("-lpthread")
+      }else if(toolChain is Clang){
+         binaryLinkTask.linkerArgs.add("-ldl")
+      }
+
+      if (targetMachine.operatingSystemFamily.isMacOs) {
+         binaryLinkTask.linkerArgs.add("-framework")
+         binaryLinkTask.linkerArgs.add("CoreFoundation")
       }
 
       addJvmHeaders(compileTask.get(), this)
