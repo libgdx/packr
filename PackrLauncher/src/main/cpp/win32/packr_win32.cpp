@@ -15,7 +15,7 @@
  ******************************************************************************/
 #ifdef _WIN32
 
-#include <windows.h>
+#include <Windows.h>
 
 #include <io.h>
 #include <fcntl.h>
@@ -23,6 +23,11 @@
 #include <direct.h>
 
 #include <packr.h>
+
+#define RETURN_SUCCESS (0x00000000)
+
+typedef LONG NT_STATUS, *P_NT_STATUS;
+typedef NT_STATUS (WINAPI *RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 
 using namespace std;
 
@@ -180,6 +185,37 @@ const char *getExecutablePath(const char *argv0) {
 
 bool changeWorkingDir(const char *directory) {
     return _chdir(directory) == 0;
+}
+
+/**
+ * In Java 14, Windows 10 1803 is required for ZGC, see https://wiki.openjdk.java.net/display/zgc/Main#Main-SupportedPlatforms
+ * for more information. Windows 10 1803 is build 17134.
+ * @return true if the Windows version is 10 build 17134 or higher
+ */
+bool isZgcSupported() {
+    // Try to get the Windows version from RtlGetVersion
+    HMODULE ntDllHandle = ::GetModuleHandleW(L"ntdll.dll");
+    if (ntDllHandle) {
+        auto rtlGetVersionFunction = (RtlGetVersionPtr) ::GetProcAddress(ntDllHandle, "RtlGetVersion");
+        if (rtlGetVersionFunction != nullptr) {
+            RTL_OSVERSIONINFOW versionInformation = {0};
+            versionInformation.dwOSVersionInfoSize = sizeof(versionInformation);
+            if (RETURN_SUCCESS == rtlGetVersionFunction(&versionInformation)) {
+                if (verbose) {
+                    std::cout << "versionInformation.dwMajorVersion=" << versionInformation.dwMajorVersion
+                              << ", versionInformation.dwMinorVersion=" << versionInformation.dwMinorVersion
+                              << ", versionInformation.dwBuildNumber=" << versionInformation.dwBuildNumber
+                              << std::endl;
+                }
+                return versionInformation.dwMajorVersion >= 10 && versionInformation.dwBuildNumber >= 17134;
+            } else {
+                if (verbose) {
+                    std::cout << "RtlGetVersion didn't work" << std::endl;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 #endif
