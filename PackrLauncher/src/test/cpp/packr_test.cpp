@@ -95,7 +95,7 @@ string getSystemInfoOutput() {
 
     DWORD numberOfBytesRead;
     CHAR characterBuffer[BUFFER_SIZE];
-    boolean readSucceeded = FALSE;
+    bool readSucceeded = FALSE;
 
     for (;;) {
         readSucceeded = ReadFile(hReadPipeFromChildStandardOutputAndError, characterBuffer, BUFFER_SIZE, &numberOfBytesRead, nullptr);
@@ -114,11 +114,11 @@ string getSystemInfoOutput() {
  * @param systemInfoOutput the output from `systeminfo`
  * @return true if the OS version was found and the major version is >= 10 and the build number is >= 17134
  */
-boolean isSystemInfoParsedVersionWindows10Build17134OrLater(const string &systemInfoOutput) {
+bool isSystemInfoParsedVersionWindows10Build17134OrLater(const string &systemInfoOutput) {
     // OS Version:                10.0.18363 N/A Build 18363
     regex versionRegularExpression(R"(OS\s+Version:\s+(\d+)\.(\d+)\.(\d+))");
     smatch versionMatches;
-    boolean version10Build17134OrLater = false;
+    bool version10Build17134OrLater = false;
     if (regex_search(systemInfoOutput, versionMatches, versionRegularExpression)) {
         std::cout << "Version regex match found" << endl;
         for (size_t versionMatchIndex = 0; versionMatchIndex < versionMatches.size(); ++versionMatchIndex) {
@@ -138,7 +138,7 @@ boolean isSystemInfoParsedVersionWindows10Build17134OrLater(const string &system
 
 TEST(PackrLauncherTests, test_zgc_supported) {
     verbose = true;
-    boolean zgcSupported = isZgcSupported();
+    bool zgcSupported = isZgcSupported();
     std::cout << "zgcSupported = " << zgcSupported << std::endl;
 #ifdef __linux__
     ASSERT_EQ(true, zgcSupported);
@@ -147,7 +147,7 @@ TEST(PackrLauncherTests, test_zgc_supported) {
 #elif _WIN32
     string systemInfoOutput = getSystemInfoOutput();
     std::cout << "Got output from systeminfo=" << systemInfoOutput << std::endl;
-    boolean windows10Build17134OrLater = isSystemInfoParsedVersionWindows10Build17134OrLater(systemInfoOutput);
+    bool windows10Build17134OrLater = isSystemInfoParsedVersionWindows10Build17134OrLater(systemInfoOutput);
     ASSERT_EQ(windows10Build17134OrLater, zgcSupported);
 #endif
 }
