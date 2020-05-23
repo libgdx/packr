@@ -81,6 +81,7 @@ tasks.withType(CppCompile::class).configureEach {
 
 dependencies {
    implementation(project(":DrOpt"))
+   testImplementation("org.gradle.cpp-samples:googletest:1.9.0-gr4-SNAPSHOT")
 }
 
 /**
@@ -226,10 +227,6 @@ application {
 
 unitTest {
    targetMachines.set(targetPlatformsToBuild)
-
-   dependencies {
-      implementation("org.gradle.cpp-samples:googletest:1.9.0-gr4-SNAPSHOT")
-   }
 
    binaries.configureEach(CppTestExecutable::class.java) {
       val binaryLinkTask = linkTask.get()
