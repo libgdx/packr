@@ -230,9 +230,12 @@ unitTest {
 
    binaries.configureEach(CppTestExecutable::class.java) {
       val binaryLinkTask = linkTask.get()
-      if (toolChain is Gcc && targetMachine.operatingSystemFamily.isLinux) {
-         binaryLinkTask.linkerArgs.add("-lpthread")
-      }else if(toolChain is Clang){
+      if (toolChain is Gcc) {
+         if (targetMachine.operatingSystemFamily.isLinux) {
+            binaryLinkTask.linkerArgs.add("-lpthread")
+         }
+         binaryLinkTask.linkerArgs.add("-ldl")
+      } else if (toolChain is Clang) {
          binaryLinkTask.linkerArgs.add("-ldl")
       }
 
