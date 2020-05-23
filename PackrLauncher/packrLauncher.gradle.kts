@@ -106,12 +106,7 @@ application {
       val binaryToolChain = toolChain
       val binaryCompileTask = compileTask.get()
 
-      binaryCompileTask.includes(file("$javaHomePathString/include"))
-      if (targetMachine.operatingSystemFamily.isLinux) {
-         binaryCompileTask.includes(file("$javaHomePathString/include/linux"))
-      } else if (targetMachine.operatingSystemFamily.isMacOs) {
-         binaryCompileTask.includes(file("$javaHomePathString/include/darwin"))
-      }
+      addJvmHeaders(binaryCompileTask, this)
 
       val binaryLinkTask: LinkExecutable = linkTask.get()
 
@@ -168,8 +163,6 @@ application {
       }
 
       if (binaryToolChain is VisualCpp) {
-         binaryCompileTask.includes(file("$javaHomePathString/include/win32"))
-
          binaryCompileTask.macros["DLL_EXPORT"] = null
          binaryCompileTask.macros["_WIN32"] = null
          binaryCompileTask.macros["WIN32"] = null
@@ -237,10 +230,13 @@ unitTest {
    dependencies {
       implementation("org.gradle.cpp-samples:googletest:1.9.0-gr4-SNAPSHOT")
    }
-   binaries.configureEach(CppExecutable::class.java) {
+
+   binaries.configureEach(CppTestExecutable::class.java) {
       if (toolChain is Gcc && targetMachine.operatingSystemFamily.isLinux) {
          linkTask.get().linkerArgs.add("-lpthread")
       }
+
+      addJvmHeaders(compileTask.get(), this)
    }
 }
 
@@ -319,6 +315,24 @@ afterEvaluate {
       if (name.startsWith("publishMain")) {
          logger.info("Disabling CPP plugin publishing task ${this.name}")
          enabled = false
+      }
+   }
+}
+
+/**
+ * Adds JVM include header paths to [binaryCompileTask].
+ */
+fun addJvmHeaders(binaryCompileTask: CppCompile, cppBinary: CppBinary) {
+   binaryCompileTask.includes(file("${javaHomePathString}/include"))
+   when {
+      cppBinary.targetMachine.operatingSystemFamily.isLinux -> {
+         binaryCompileTask.includes(file("${javaHomePathString}/include/linux"))
+      }
+      cppBinary.targetMachine.operatingSystemFamily.isMacOs -> {
+         binaryCompileTask.includes(file("${javaHomePathString}/include/darwin"))
+      }
+      cppBinary.targetMachine.operatingSystemFamily.isWindows -> {
+         binaryCompileTask.includes(file("${javaHomePathString}/include/win32"))
       }
    }
 }

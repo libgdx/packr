@@ -50,4 +50,5 @@ extern "C" {
 	bool setCmdLineArguments(int argc, char** argv);
 	void launchJavaVM(LaunchJavaVMCallback callback);
 
+	bool isZgcSupported();
 }

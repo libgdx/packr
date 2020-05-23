@@ -292,7 +292,7 @@ bool setCmdLineArguments(int argc, char** argv) {
 		{ '\0', (dropt_char *)"cwd", (dropt_char *)"Sets the working directory.", NULL, dropt_handle_string, &cwd, dropt_attr_optional_val },
 		{ '\0', (dropt_char *)"config", (dropt_char *)"Specifies the configuration file.", (dropt_char *)"config.json", dropt_handle_string, &config, dropt_attr_optional_val },
 		{ 'v', (dropt_char *)"verbose", (dropt_char *)"Prints additional information.", NULL, dropt_handle_bool, &_verbose, dropt_attr_optional_val },
-		{ '\0', (dropt_char *)"console", (dropt_char *)"Attachs a console window. [Windows only]", NULL, dropt_handle_bool, &_console, dropt_attr_optional_val },
+		{ '\0', (dropt_char *)"console", (dropt_char *)"Attaches a console window. [Windows only]", NULL, dropt_handle_bool, &_console, dropt_attr_optional_val },
 		{ 0, NULL, NULL, NULL, NULL, NULL, 0 }
 	};
 

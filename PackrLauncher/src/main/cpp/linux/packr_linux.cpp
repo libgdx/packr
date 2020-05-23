@@ -90,4 +90,8 @@ bool changeWorkingDir(const char* directory) {
 	return chdir(directory) == 0;
 }
 
+bool isZgcSupported() {
+    return true;
+}
+
 #endif
