@@ -272,12 +272,6 @@ string getExecutableName(const char* executablePath) {
 	return string(executablePath);
 }
 
-std::unique_ptr<char *> copyCharArray(const char *charArray) {
-    char *newCharArray = new char[strlen(charArray) + 1];
-    strcpy(newCharArray, charArray);
-    return make_unique<char *>(newCharArray);
-}
-
 bool setCmdLineArguments(int argc, char** argv) {
 
 	const char* executablePath = getExecutablePath(argv[0]);
@@ -461,15 +455,16 @@ void launchJavaVM(const LaunchJavaVMCallback &callback) {
     vector<JavaVMOption> optionsVector;
     vector<unique_ptr<char *>> optionStrings;
 
+    if(verbose){
+        cout << "isZgcSupported()=" << isZgcSupported() << ", hasJsonValue(jsonRoot, \"useZgcIfSupportedOs\", sajson::TYPE_TRUE)=" << hasJsonValue(jsonRoot, "useZgcIfSupportedOs", sajson::TYPE_TRUE) << endl;
+    }
     if (isZgcSupported() && hasJsonValue(jsonRoot, "useZgcIfSupportedOs", sajson::TYPE_TRUE)) {
         JavaVMOption unlockExperimental;
-        optionStrings.push_back(copyCharArray("-XX:+UnlockExperimentalVMOptions"));
-        unlockExperimental.optionString = *optionStrings.back();
+        unlockExperimental.optionString = (char*)"-XX:+UnlockExperimentalVMOptions";
         unlockExperimental.extraInfo = nullptr;
         optionsVector.push_back(unlockExperimental);
         JavaVMOption useZGC;
-        optionStrings.push_back(copyCharArray("-XX:+UseZGC"));
-        useZGC.optionString = *optionStrings.back();
+        useZGC.optionString = (char*)"-XX:+UseZGC";
         useZGC.extraInfo = nullptr;
         optionsVector.push_back(useZGC);
     }
@@ -483,7 +478,7 @@ void launchJavaVM(const LaunchJavaVMCallback &callback) {
                 cout << "  # " << vmArgValue << endl;
             }
             JavaVMOption option;
-            optionStrings.push_back(copyCharArray(vmArgValue.c_str()));
+            optionStrings.push_back(make_unique<char *>(strdup(vmArgValue.c_str())));
             option.optionString = *optionStrings.back();
             option.extraInfo = nullptr;
             optionsVector.push_back(option);

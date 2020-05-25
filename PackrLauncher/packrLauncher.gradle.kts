@@ -238,6 +238,8 @@ unitTest {
          binaryLinkTask.linkerArgs.add("-ldl")
       } else if (toolChain is Clang) {
          binaryLinkTask.linkerArgs.add("-ldl")
+      } else if (toolChain is VisualCpp) {
+         binaryLinkTask.linkerArgs.add("/SUBSYSTEM:CONSOLE")
       }
 
       if (targetMachine.operatingSystemFamily.isMacOs) {
