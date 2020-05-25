@@ -207,7 +207,8 @@ bool isZgcSupported() {
                               << ", versionInformation.dwBuildNumber=" << versionInformation.dwBuildNumber
                               << std::endl;
                 }
-                return versionInformation.dwMajorVersion >= 10 && versionInformation.dwBuildNumber >= 17134;
+                return (versionInformation.dwMajorVersion >= 10 && versionInformation.dwBuildNumber >= 17134)
+                       || (versionInformation.dwMajorVersion >= 10 && versionInformation.dwMinorVersion >= 1);
             } else {
                 if (verbose) {
                     std::cout << "RtlGetVersion didn't work" << std::endl;

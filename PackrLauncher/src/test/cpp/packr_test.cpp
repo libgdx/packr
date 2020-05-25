@@ -126,8 +126,9 @@ bool isSystemInfoParsedVersionWindows10Build17134OrLater(const string &systemInf
         }
 
         int majorVersion = strtol(versionMatches[1].str().c_str(), nullptr, 10);
+        int minorVersion = strtol(versionMatches[2].str().c_str(), nullptr, 10);
         int buildNumber = strtol(versionMatches[3].str().c_str(), nullptr, 10);
-        version10Build17134OrLater = majorVersion >= 10 && buildNumber >= 17134;
+        version10Build17134OrLater = (majorVersion >= 10 && buildNumber >= 17134) || (majorVersion >= 10 && minorVersion >= 1);
     } else {
         std::cout << "Match not found\n";
     }
