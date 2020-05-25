@@ -274,7 +274,7 @@ string getExecutableName(const char* executablePath) {
 
 std::unique_ptr<char *> copyCharArray(const char *charArray) {
     char *newCharArray = new char[strlen(charArray) + 1];
-    strcpy_s(newCharArray, strlen(charArray) + 1, charArray);
+    strcpy(newCharArray, charArray);
     return make_unique<char *>(newCharArray);
 }
 
