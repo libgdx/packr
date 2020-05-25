@@ -1,7 +1,7 @@
 # About
 Packages your JAR, assets and a JVM for distribution on Windows, Linux and Mac OS X, adding a native executable file to make it appear like a native app. Packr is most suitable for GUI applications, such as games made with [libGDX](http://libgdx.badlogicgames.com/).
 
-On the topic of games, Packr version 2.4.2 supports Java 14 and the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) has been verified to work. Because who doesn't want GC pause times guaranteed to not exceed 10ms with work in progress for sub 1ms GC pauses.
+On the topic of games, Packr version 2.4.2 supports Java 14 and the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) has been verified to work. Because who doesn't want GC pause times guaranteed to not exceed 10ms with work in progress for sub 1ms GC pauses. When bundling Java 14+ make sure to use `--useZgcIfSupportedOs` instead of passing `--vmargs XX:+UseZGC` because versions of Windows before Windows 10 1803 are not supported by the Z garbage collector.
 
 # Download
 The latest build is available for [download here](https://github.com/karlsabo/packr/releases).
@@ -36,6 +36,7 @@ java -jar packr-all.jar \
 | removelibs (optional) | file locations of JAR files to remove native libraries which do not match the target platform. See below for details. |
 | mainclass | the fully qualified name of the main class, using dots to delimit package names |
 | vmargs | list of arguments for the JVM, without leading dashes, e.g. "Xmx1G" |
+| useZgcIfSupportedOs | When bundling a Java 14+ JRE, the launcher will check if the operating system supports the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) and use it. At the time of this writing the supported operating systems are Linux, macOS, Windows version 1803 (Windows 10 or Windows Server 2019) or later." |
 | resources (optional) | list of files and directories to be packaged next to the native executable |
 | minimizejre | minimize the JRE by removing directories and files as specified by an additional config file. Comes with a few config files out of the box. See below for details on the minimization config file. |
 | output | the output directory |
