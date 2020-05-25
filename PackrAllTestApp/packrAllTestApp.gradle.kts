@@ -277,10 +277,7 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       args("--vmargs")
       args("XstartOnFirstThread")
       if (jdkPath.fileName.toString().toLowerCase().contains("jdk14")) {
-         args("--vmargs")
-         args("XX:+UnlockExperimentalVMOptions")
-         args("--vmargs")
-         args("XX:+UseZGC")
+         args("--useZgcIfSupportedOs")
          args("--vmargs")
          args("Xlog:gc")
       }

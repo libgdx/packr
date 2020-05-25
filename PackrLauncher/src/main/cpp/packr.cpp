@@ -30,7 +30,7 @@ bool verbose = false;
 
 static string workingDir;
 static string executableName;
-static string configurationPath("config.json");
+static string configurationPath = "config.json";
 
 static size_t cmdLineArgc = 0;
 static char** cmdLineArgv = nullptr;
@@ -47,7 +47,7 @@ static bool checkExceptionAndResult(JNIEnv* env, void* pointer) {
 	return pointer == nullptr;
 }
 
-static int loadStaticMethod(JNIEnv* env, const vector<string>& classPath, string className, jclass* resultClass, jmethodID* resultMethod) {
+static int loadStaticMethod(JNIEnv* env, const vector<string>& classPath, const string& className, jclass* resultClass, jmethodID* resultMethod) {
 
 	//! Method to retrieve 'static void main(String[] args)' from a user-defined class path.
 	//! The original 'packr' passes "-Djava.class.path=<path-to-jar>" as an argument during
@@ -69,45 +69,45 @@ static int loadStaticMethod(JNIEnv* env, const vector<string>& classPath, string
 	}
 
 	jclass urlClass = env->FindClass("java/net/URL");
-	verify(env, urlClass);
+	verify(env, urlClass)
 
 	jobjectArray urlArray = env->NewObjectArray(numCp, urlClass, nullptr);
-	verify(env, urlArray);
+	verify(env, urlArray)
 
-	for (string classPathURL : classPath) {
+	for (const string& classPathURL : classPath) {
 
 		if (verbose) {
 			cout << "  # " << classPathURL << endl;
 		}
 
 		jstring urlStr = env->NewStringUTF(classPathURL.c_str());
-		verify(env, urlStr);
+		verify(env, urlStr)
 
 		// URL url = new File("{classPathURL}").toURI().toURL();
 
 		jclass fileClass = env->FindClass("java/io/File");
-		verify(env, fileClass);
+		verify(env, fileClass)
 
 		jmethodID fileCtor = env->GetMethodID(fileClass, "<init>", "(Ljava/lang/String;)V");
-		verify(env, fileCtor);
+		verify(env, fileCtor)
 
 		jobject file = env->NewObject(fileClass, fileCtor, urlStr);
-		verify(env, file);
+		verify(env, file)
 
 		jmethodID toUriMethod = env->GetMethodID(fileClass, "toURI", "()Ljava/net/URI;");
-		verify(env, toUriMethod);
+		verify(env, toUriMethod)
 
 		jobject uri = env->CallObjectMethod(file, toUriMethod);
-		verify(env, uri);
+		verify(env, uri)
 
 		jclass uriClass = env->FindClass("java/net/URI");
-		verify(env, uriClass);
+		verify(env, uriClass)
 
 		jmethodID toUrlMethod = env->GetMethodID(uriClass, "toURL", "()Ljava/net/URL;");
-		verify(env, toUrlMethod);
+		verify(env, toUrlMethod)
 
 		jobject url = env->CallObjectMethod(uri, toUrlMethod);
-		verify(env, url);
+		verify(env, url)
 
 		env->SetObjectArrayElement(urlArray, cp++, url);
 	}
@@ -115,55 +115,55 @@ static int loadStaticMethod(JNIEnv* env, const vector<string>& classPath, string
 	// Thread thread = Thread.currentThread();
 
 	jclass threadClass = env->FindClass("java/lang/Thread");
-	verify(env, threadClass);
+	verify(env, threadClass)
 
 	jmethodID threadGetCurrent = env->GetStaticMethodID(threadClass, "currentThread", "()Ljava/lang/Thread;");
-	verify(env, threadGetCurrent);
+	verify(env, threadGetCurrent)
 
 	jobject thread = env->CallStaticObjectMethod(threadClass, threadGetCurrent);
-	verify(env, thread);
+	verify(env, thread)
 
 	// ClassLoader contextClassLoader = thread.getContextClassLoader();
 
 	jmethodID threadGetLoader = env->GetMethodID(threadClass, "getContextClassLoader", "()Ljava/lang/ClassLoader;");
-	verify(env, threadGetLoader);
+	verify(env, threadGetLoader)
 
 	jobject contextClassLoader = env->CallObjectMethod(thread, threadGetLoader);
-	verify(env, contextClassLoader);
+	verify(env, contextClassLoader)
 
 	// URLClassLoader urlClassLoader = new URLClassLoader(urlArray, contextClassLoader);
 
 	jclass urlClassLoaderClass = env->FindClass("java/net/URLClassLoader");
-	verify(env, urlClassLoaderClass);
+	verify(env, urlClassLoaderClass)
 	
 	jmethodID urlClassLoaderCtor = env->GetMethodID(urlClassLoaderClass, "<init>", "([Ljava/net/URL;Ljava/lang/ClassLoader;)V");
-	verify(env, urlClassLoaderCtor);
+	verify(env, urlClassLoaderCtor)
 
 	jobject urlClassLoader = env->NewObject(urlClassLoaderClass, urlClassLoaderCtor, urlArray, contextClassLoader);
-	verify(env, urlClassLoader);
+	verify(env, urlClassLoader)
 
 	// thread.setContextClassLoader(urlClassLoader)
 
 	jmethodID threadSetLoader = env->GetMethodID(threadClass, "setContextClassLoader", "(Ljava/lang/ClassLoader;)V");
-	verify(env, threadSetLoader);
+	verify(env, threadSetLoader)
 
 	env->CallVoidMethod(thread, threadSetLoader, urlClassLoader);
 
 	// Class<?> mainClass = urlClassLoader.loadClass(<main-class-name>)
 
 	jmethodID loadClass = env->GetMethodID(urlClassLoaderClass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
-	verify(env, loadClass);
+	verify(env, loadClass)
 
 	jstring mainClassNameUTF = env->NewStringUTF(className.c_str());
-	verify(env, mainClassNameUTF);
+	verify(env, mainClassNameUTF)
 
 	jobject mainClass = env->CallObjectMethod(urlClassLoader, loadClass, mainClassNameUTF);
-	verify(env, mainClass);
+	verify(env, mainClass)
 
 	// method: 'void main(String[])'
 
 	jmethodID mainMethod = env->GetStaticMethodID((jclass) mainClass, "main", "([Ljava/lang/String;)V");
-	verify(env, mainMethod);
+	verify(env, mainMethod)
 
 	*resultClass = (jclass) mainClass;
 	*resultMethod = mainMethod;
@@ -171,7 +171,7 @@ static int loadStaticMethod(JNIEnv* env, const vector<string>& classPath, string
 	return 0;
 }
 
-static sajson::document readConfigurationFile(string fileName) {
+static sajson::document readConfigurationFile(const string& fileName) {
 
 	ifstream in(fileName.c_str(), std::ios::in | std::ios::binary);
 	string content((istreambuf_iterator<char>(in)), (istreambuf_iterator<char>()));
@@ -270,6 +270,12 @@ string getExecutableName(const char* executablePath) {
 	return string(executablePath);
 }
 
+std::unique_ptr<char *> copyCharArray(const char *charArray) {
+    char *newCharArray = new char[strlen(charArray) + 1];
+    strcpy_s(newCharArray, strlen(charArray) + 1, charArray);
+    return make_unique<char *>(newCharArray);
+}
+
 bool setCmdLineArguments(int argc, char** argv) {
 
 	const char* executablePath = getExecutablePath(argv[0]);
@@ -285,15 +291,15 @@ bool setCmdLineArguments(int argc, char** argv) {
 	dropt_bool _cli = 0;
 
 	dropt_option options[] = {
-		{ 'c', (dropt_char *)("cli"), (dropt_char *)"Enables this command line interface.", NULL, dropt_handle_bool, &_cli, dropt_attr_optional_val },
-		{ 'h',  (dropt_char *)"help", (dropt_char *)"Shows help.", NULL, dropt_handle_bool, &showHelp, dropt_attr_halt },
-		{ '?', NULL, NULL, NULL, dropt_handle_bool, &showHelp, dropt_attr_halt | dropt_attr_hidden },
-		{ '\0', (dropt_char *)"version", (dropt_char *)"Shows version information.", NULL, dropt_handle_bool, &showVersion, dropt_attr_halt },
-		{ '\0', (dropt_char *)"cwd", (dropt_char *)"Sets the working directory.", NULL, dropt_handle_string, &cwd, dropt_attr_optional_val },
+		{ 'c', (dropt_char *)("cli"), (dropt_char *)"Enables this command line interface.", nullptr, dropt_handle_bool, &_cli, dropt_attr_optional_val },
+		{ 'h',  (dropt_char *)"help", (dropt_char *)"Shows help.", nullptr, dropt_handle_bool, &showHelp, dropt_attr_halt },
+		{ '?', nullptr, nullptr, nullptr, dropt_handle_bool, &showHelp, static_cast<unsigned long>(dropt_attr_halt) | static_cast<unsigned long>(dropt_attr_hidden) },
+		{ '\0', (dropt_char *)"version", (dropt_char *)"Shows version information.", nullptr, dropt_handle_bool, &showVersion, dropt_attr_halt },
+		{ '\0', (dropt_char *)"cwd", (dropt_char *)"Sets the working directory.", nullptr, dropt_handle_string, &cwd, dropt_attr_optional_val },
 		{ '\0', (dropt_char *)"config", (dropt_char *)"Specifies the configuration file.", (dropt_char *)"config.json", dropt_handle_string, &config, dropt_attr_optional_val },
-		{ 'v', (dropt_char *)"verbose", (dropt_char *)"Prints additional information.", NULL, dropt_handle_bool, &_verbose, dropt_attr_optional_val },
-		{ '\0', (dropt_char *)"console", (dropt_char *)"Attaches a console window. [Windows only]", NULL, dropt_handle_bool, &_console, dropt_attr_optional_val },
-		{ 0, NULL, NULL, NULL, NULL, NULL, 0 }
+		{ 'v', (dropt_char *)"verbose", (dropt_char *)"Prints additional information.", nullptr, dropt_handle_bool, &_verbose, dropt_attr_optional_val },
+		{ '\0', (dropt_char *)"console", (dropt_char *)"Attaches a console window. [Windows only]", nullptr, dropt_handle_bool, &_console, dropt_attr_optional_val },
+		{ 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0 }
 	};
 
 	dropt_context* droptContext = dropt_new_context(options);
@@ -305,7 +311,7 @@ bool setCmdLineArguments(int argc, char** argv) {
 
 	if (argc > 1) {
 
-		char** remains = nullptr;
+		char** remains;
 
 		if ((strcmp("--cli", argv[1]) == 0) || (strcmp("-c", argv[1]) == 0)) {
 
@@ -371,47 +377,46 @@ bool setCmdLineArguments(int argc, char** argv) {
 		cmdLineArgc = 0;
 
 		while (*remains != nullptr) {
-			cmdLineArgv[cmdLineArgc] = strdup(*remains);
-			cmdLineArgc++;
-			remains++;
-		}
+            cmdLineArgv[cmdLineArgc] = strdup(*remains);
+            cmdLineArgc++;
+            remains++;
+        }
+    }
 
-	}
+    dropt_free_context(droptContext);
 
-	dropt_free_context(droptContext);
-
-	return showHelp == 0 && showVersion == 0;
+    return showHelp == 0 && showVersion == 0;
 }
 
-void launchJavaVM(LaunchJavaVMCallback callback) {
+void launchJavaVM(const LaunchJavaVMCallback &callback) {
 
-	// change working directory
+    // change working directory
 
-	if (!workingDir.empty()) {
-		if (verbose) {
-			cout << "Changing working directory to " << workingDir << " ..." << endl;
-		}
-		if (!changeWorkingDir(workingDir.c_str())) {
-			cerr << "Warning: failed to change working directory to " << workingDir << endl;
-		}
-	}
+    if (!workingDir.empty()) {
+        if (verbose) {
+            cout << "Changing working directory to " << workingDir << " ..." << endl;
+        }
+        if (!changeWorkingDir(workingDir.c_str())) {
+            cerr << "Warning: failed to change working directory to " << workingDir << endl;
+        }
+    }
 
-	// read settings
+    // read settings
 
-	sajson::document json = readConfigurationFile(configurationPath);
+    sajson::document json = readConfigurationFile(configurationPath);
 
-	if (!json.is_valid()) {
-		cerr << "Error: failed to load configuration: " << configurationPath << endl;
-		exit(EXIT_FAILURE);
-	}
+    if (!json.is_valid()) {
+        cerr << "Error: failed to load configuration: " << configurationPath << endl;
+        exit(EXIT_FAILURE);
+    }
 
-	sajson::value jsonRoot = json.get_root();
+    sajson::value jsonRoot = json.get_root();
 
-	// load JVM library, get function pointers
+    // load JVM library, get function pointers
 
-	if (verbose) {
-		cout << "Loading JVM runtime library ..." << endl;
-	}
+    if (verbose) {
+        cout << "Loading JVM runtime library ..." << endl;
+    }
 
 	GetDefaultJavaVMInitArgs getDefaultJavaVMInitArgs = nullptr;
 	CreateJavaVM createJavaVM = nullptr;
@@ -430,36 +435,39 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 	args.ignoreUnrecognized = JNI_TRUE;
 
 	if (hasJsonValue(jsonRoot, "jniVersion", sajson::TYPE_INTEGER)) {
-		sajson::value jniVersion = getJsonValue(jsonRoot, "jniVersion");
-		switch (jniVersion.get_integer_value()) {
-			case 8:
-				args.version = JNI_VERSION_1_8;
-				break;
-			default:
-				args.version = JNI_VERSION_1_6;
-				break;
-		}
-	}
+        sajson::value jniVersion = getJsonValue(jsonRoot, "jniVersion");
+        switch (jniVersion.get_integer_value()) {
+            case 8:
+                args.version = JNI_VERSION_1_8;
+                break;
+            default:
+                args.version = JNI_VERSION_1_6;
+                break;
+        }
+    }
 
-	if (getDefaultJavaVMInitArgs(&args) < 0) {
-		cerr << "Error: failed to load default Java VM arguments!" << endl;
-		exit(EXIT_FAILURE);
-	}
+    if (getDefaultJavaVMInitArgs(&args) < 0) {
+        cerr << "Error: failed to load default Java VM arguments!" << endl;
+        exit(EXIT_FAILURE);
+    }
 
-	// fill VM options
-	if (verbose) {
-		cout << "Passing VM options ..." << endl;
-	}
+    // fill VM options
+    if (verbose) {
+        cout << "Passing VM options ..." << endl;
+    }
 
     vector<JavaVMOption> optionsVector;
+    vector<unique_ptr<char *>> optionStrings;
 
-    if(isZgcSupported() && hasJsonValue(jsonRoot, "useZgcIfSupportedOs", sajson::TYPE_TRUE)){
+    if (isZgcSupported() && hasJsonValue(jsonRoot, "useZgcIfSupportedOs", sajson::TYPE_TRUE)) {
         JavaVMOption unlockExperimental;
-        unlockExperimental.optionString = (char *) "-XX:+UnlockExperimentalVMOptions";
+        optionStrings.push_back(copyCharArray("-XX:+UnlockExperimentalVMOptions"));
+        unlockExperimental.optionString = *optionStrings.back();
         unlockExperimental.extraInfo = nullptr;
         optionsVector.push_back(unlockExperimental);
         JavaVMOption useZGC;
-        useZGC.optionString = (char *) "-XX:+UseZGC";
+        optionStrings.push_back(copyCharArray("-XX:+UseZGC"));
+        useZGC.optionString = *optionStrings.back();
         useZGC.extraInfo = nullptr;
         optionsVector.push_back(useZGC);
     }
@@ -473,7 +481,8 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
                 cout << "  # " << vmArgValue << endl;
             }
             JavaVMOption option;
-            option.optionString = strdup(vmArgValue.c_str());
+            optionStrings.push_back(copyCharArray(vmArgValue.c_str()));
+            option.optionString = *optionStrings.back();
             option.extraInfo = nullptr;
             optionsVector.push_back(option);
         }
@@ -566,7 +575,6 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 		env->CallStaticVoidMethod(mainClass, mainMethod, appArgs);
 
 		// cleanup
-
 		for (size_t cmdLineArg = 0; cmdLineArg < cmdLineArgc; cmdLineArg++) {
 			free(cmdLineArgv[cmdLineArg]);
 		}

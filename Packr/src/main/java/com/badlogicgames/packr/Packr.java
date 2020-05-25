@@ -310,6 +310,7 @@ public class Packr {
       builder.append("\n  ],\n");
 
       builder.append("  \"mainClass\": \"").append(config.mainClass).append("\",\n");
+      builder.append("  \"useZgcIfSupportedOs\": ").append(config.useZgcIfSupportedOs).append(",\n");
       builder.append("  \"vmArgs\": [\n");
 
       for (int i = 0; i < config.vmArgs.size(); i++) {

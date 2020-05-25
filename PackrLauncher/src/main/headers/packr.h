@@ -48,7 +48,7 @@ extern "C" {
 
 	/* entry point for all platforms - called from main()/WinMain() */
 	bool setCmdLineArguments(int argc, char** argv);
-	void launchJavaVM(LaunchJavaVMCallback callback);
+	void launchJavaVM(const LaunchJavaVMCallback& callback);
 
 	bool isZgcSupported();
 }

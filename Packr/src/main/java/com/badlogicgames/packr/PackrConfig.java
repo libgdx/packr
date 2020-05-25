@@ -50,6 +50,7 @@ import java.util.List;
    public File iconResource;
    public String bundleIdentifier;
    public boolean verbose;
+   public boolean useZgcIfSupportedOs;
 
    @SuppressWarnings("unused") public PackrConfig() {
       super();
@@ -125,6 +126,10 @@ import java.util.List;
       if (commandLine.bundleIdentifier() != null) {
          bundleIdentifier = commandLine.bundleIdentifier();
       }
+
+      if (commandLine.useZgcIfSupportedOs()) {
+         useZgcIfSupportedOs = true;
+      }
    }
 
    private void readConfigJson(File configJson) throws IOException {
@@ -180,6 +185,9 @@ import java.util.List;
       }
       if (json.get("bundle") != null) {
          bundleIdentifier = json.get("bundle").asString();
+      }
+      if (json.get("useZgcIfSupportedOs") != null) {
+         useZgcIfSupportedOs = json.get("useZgcIfSupportedOs").asBoolean();
       }
    }
 

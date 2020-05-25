@@ -69,4 +69,5 @@ public interface PackrCommandLine {
 	@Option(description = "bundle identifier, e.g. com.badlogic (used for Info.plist on OS X)", longName = "bundle", defaultToNull = true)
 	String bundleIdentifier();
 
+	@Option(description = "use ZGC if the operating system supports it", longName = "useZgcIfSupportedOs") boolean useZgcIfSupportedOs();
 }
