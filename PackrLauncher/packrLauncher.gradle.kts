@@ -174,7 +174,7 @@ application {
          binaryCompileTask.compilerArgs.add("/EHs")
          binaryCompileTask.compilerArgs.add("/MT")
          binaryCompileTask.compilerArgs.add("/nologo")
-         binaryCompileTask.compilerArgs.add("/std:c++17")
+         binaryCompileTask.compilerArgs.add("/std:c++11")
 
          binaryLinkTask.linkerArgs.add("/nologo")
 
@@ -192,6 +192,7 @@ application {
          binaryCompileTask.compilerArgs.add("-c")
          binaryCompileTask.compilerArgs.add("-fmessage-length=0")
          binaryCompileTask.compilerArgs.add("-Wwrite-strings")
+         binaryCompileTask.compilerArgs.add("-std=c++11")
 
          // compiler linux
          if (targetPlatform.targetMachine.architecture.name == MachineArchitecture.X86) {
