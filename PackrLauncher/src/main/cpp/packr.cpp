@@ -455,11 +455,11 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 
     if(isZgcSupported() && hasJsonValue(jsonRoot, "useZgcIfSupportedOs", sajson::TYPE_TRUE)){
         JavaVMOption unlockExperimental;
-        unlockExperimental.optionString = "-XX:+UnlockExperimentalVMOptions";
+        unlockExperimental.optionString = (char *) "-XX:+UnlockExperimentalVMOptions";
         unlockExperimental.extraInfo = nullptr;
         optionsVector.push_back(unlockExperimental);
         JavaVMOption useZGC;
-        useZGC.optionString = "-XX:+UseZGC";
+        useZGC.optionString = (char *) "-XX:+UseZGC";
         useZGC.extraInfo = nullptr;
         optionsVector.push_back(useZGC);
     }
@@ -468,15 +468,15 @@ void launchJavaVM(LaunchJavaVMCallback callback) {
 		sajson::value vmArgs = getJsonValue(jsonRoot, "vmArgs");
 
 		for (size_t vmArg = 0; vmArg < vmArgs.get_length(); vmArg++) {
-			string vmArgValue = vmArgs.get_array_element(vmArg).as_string();
-			if (verbose) {
-				cout << "  # " << vmArgValue << endl;
-			}
-			JavaVMOption option;
-			option.optionString = _strdup(vmArgValue.c_str());
-			option.extraInfo = nullptr;
-			optionsVector.push_back(option);
-		}
+            string vmArgValue = vmArgs.get_array_element(vmArg).as_string();
+            if (verbose) {
+                cout << "  # " << vmArgValue << endl;
+            }
+            JavaVMOption option;
+            option.optionString = strdup(vmArgValue.c_str());
+            option.extraInfo = nullptr;
+            optionsVector.push_back(option);
+        }
     }
 
 	args.nOptions = optionsVector.size();
