@@ -1,6 +1,9 @@
 # Release 2.5.0
 1. Added `useZgcIfSupportedOs` flag making it easier to use the Z garbage collector when bundling Java 14+.
    * The launcher executable will detect if the running operating system supports the Z garbage collector and use it.
+2. Added [Google Test](https://github.com/google/googletest) C++ test framework to the [PackrLauncher code](PackrLauncher/src/test/cpp).
+3. Updated Gradle wrapper to 6.4.1.
+4. Updated to C++14 as the minimum supported C++ version.
 
 # Release 2.4.2
 1. Added support for Java 11 and 14
