@@ -1,3 +1,7 @@
+# Release 2.5.0
+1. Added `useZgcIfSupportedOs` flag making it easier to use the Z garbage collector when bundling Java 14+.
+   * The launcher executable will detect if the running operating system supports the Z garbage collector and use it.
+
 # Release 2.4.2
 1. Added support for Java 11 and 14
    * Including jlink created JREs

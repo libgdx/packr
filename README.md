@@ -16,7 +16,8 @@ Invoking packr from the command line may look like the following. For a more com
 ```bash
 java -jar packr-all.jar \
      --platform mac \
-     --jdk OpenJDK8U-jdk_x64_mac_hotspot_8u252b09.tar.gz \
+     --jdk OpenJDK14U-jdk_x64_mac_hotspot_14.0.1_7.tar.gz \
+     --useZgcIfSupportedOs \
      --executable myapp \
      --classpath myapp.jar \
      --removelibs myapp.jar \
@@ -36,7 +37,7 @@ java -jar packr-all.jar \
 | removelibs (optional) | file locations of JAR files to remove native libraries which do not match the target platform. See below for details. |
 | mainclass | the fully qualified name of the main class, using dots to delimit package names |
 | vmargs | list of arguments for the JVM, without leading dashes, e.g. "Xmx1G" |
-| useZgcIfSupportedOs | When bundling a Java 14+ JRE, the launcher will check if the operating system supports the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) and use it. At the time of this writing the supported operating systems are Linux, macOS, Windows version 1803 (Windows 10 or Windows Server 2019) or later." |
+| useZgcIfSupportedOs | When bundling a Java 14+ JRE, the launcher will check if the operating system supports the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) and use it. At the time of this writing, the supported operating systems are Linux, macOS, and Windows version 1803 (Windows 10 or Windows Server 2019) or later." |
 | resources (optional) | list of files and directories to be packaged next to the native executable |
 | minimizejre | minimize the JRE by removing directories and files as specified by an additional config file. Comes with a few config files out of the box. See below for details on the minimization config file. |
 | output | the output directory |
@@ -110,6 +111,7 @@ config.mainClass = "com.my.app.MainClass";
 config.vmArgs = Arrays.asList("Xmx1G");
 config.minimizeJre = "soft";
 config.outDir = new java.io.File("out-mac");
+config.useZgcIfSupportedOs = true;
 
 new Packr().pack(config);
 ```
