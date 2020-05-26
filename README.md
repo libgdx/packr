@@ -114,6 +114,29 @@ config.outDir = new java.io.File("out-mac");
 new Packr().pack(config);
 ```
 
+## macOS notarization and entitlements
+The following entitlements when signing the PackrLauncher executable are known to work on macOS 10.15 (Catalina) and Java 14.
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+	<key>com.apple.security.cs.disable-executable-page-protection</key>
+	<true/>
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+	<key>com.apple.security.cs.allow-dyld-environment-variables</key>
+	<true/>
+</dict>
+</plist> 
+```
+
+If all the bundled dylibs are signed, less entitlements might be possible. When using Java 8, `com.apple.security.cs.allow-unsigned-executable-memory`, and `com.apple.security.cs.disable-executable-page-protection` were not needed.
+
 # Minimization
 Unless you're stuck with using Java 8, it's best to create a minimized JRE using [jlink](https://docs.oracle.com/en/java/javase/11/tools/jlink.html). See [TestAppJreDist/testAppJreDist.gradle.kts](./TestAppJreDist/testAppJreDist.gradle.kts) for an example Gradle build script which generates JREs from downloaded JDKs.
 
