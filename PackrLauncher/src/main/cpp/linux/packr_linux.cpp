@@ -74,7 +74,7 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, Create
 	return true;
 }
 
-const char* getExecutablePath(const char* argv0) {
+const dropt_char* getExecutablePath(const dropt_char* argv0) {
 
     static char buf[PATH_MAX];
     uint32_t size = sizeof(buf);
@@ -86,7 +86,7 @@ const char* getExecutablePath(const char* argv0) {
     return buf;
 }
 
-bool changeWorkingDir(const char* directory) {
+bool changeWorkingDir(const dropt_char* directory) {
 	return chdir(directory) == 0;
 }
 
