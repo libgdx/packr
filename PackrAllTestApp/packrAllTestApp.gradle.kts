@@ -147,7 +147,8 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
       jvmArchivesToRunPackrOn.parallelStream().forEach { path ->
          logger.info("Running packr against $path")
          val fileNameNoExtension = path.fileName.toString().substring(0, path.fileName.toString().indexOf('.'))
-         val packrOutputDirectory = outputDirectoryPath.resolve(fileNameNoExtension)
+         // Add the Ä to test unicode paths
+         val packrOutputDirectory = outputDirectoryPath.resolve("${fileNameNoExtension}Ä")
          val osFamily = when {
             fileNameNoExtension.contains("linux") -> FAMILY_UNIX
             fileNameNoExtension.contains("mac") -> FAMILY_MAC
