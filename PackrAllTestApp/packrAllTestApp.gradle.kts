@@ -227,6 +227,7 @@ val javaHomePath: String = Jvm.current().jre?.homeDir?.absolutePath ?: Jvm.curre
  *
  */
 fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
+   delete(destination.toFile())
    exec {
       executable = "$javaHomePath/bin/java"
 

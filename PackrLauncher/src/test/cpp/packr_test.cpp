@@ -70,8 +70,11 @@ string getSystemInfoOutput() {
     startupInfo.hStdInput = hChildStandardInputHandle;
     startupInfo.dwFlags |= static_cast<DWORD>(STARTF_USESTDHANDLES);
 
-    if (!CreateProcess(nullptr,
-                       (LPSTR) "systeminfo",     // command line
+    wchar_t systemInfoExecutableName[128];
+    wcscpy(systemInfoExecutableName, L"systeminfo");
+    if (!CreateProcess(
+                       nullptr,     // application name
+                       systemInfoExecutableName, // command line
                        nullptr,          // process security attributes
                        nullptr,          // primary thread security attributes
                        TRUE,          // handles are inherited

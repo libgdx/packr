@@ -74,10 +74,9 @@ library {
          binaryCompileTask.macros["DLL_EXPORT"] = null
          binaryCompileTask.macros["_WIN32"] = null
          binaryCompileTask.macros["WIN32"] = null
+         binaryCompileTask.macros["_WIN32_WINNT_WINXP=0x0501"] = null // target windows xp
          binaryCompileTask.macros["UNICODE"] = null
          binaryCompileTask.macros["_UNICODE"] = null
-         binaryCompileTask.macros["_WIN32_WINNT_WINXP=0x0501"] = null // target windows xp
-
          binaryCompileTask.compilerArgs.add("/EHsc")
          binaryCompileTask.compilerArgs.add("/nologo")
          binaryCompileTask.compilerArgs.add("/GF")

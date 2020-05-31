@@ -175,18 +175,13 @@ application {
          binaryCompileTask.compilerArgs.add("/MT")
          binaryCompileTask.compilerArgs.add("/nologo")
          binaryCompileTask.compilerArgs.add("/std:c++14")
+         binaryCompileTask.compilerArgs.add("/utf-8")
 
          binaryLinkTask.linkerArgs.add("/nologo")
 
-         if (targetMachine.architecture.name == MachineArchitecture.X86) {
-            binaryLinkTask.linkerArgs.add("/MACHINE:X86")
-         } else if (targetPlatform.targetMachine.architecture.name == MachineArchitecture.X86_64) {
-            binaryLinkTask.linkerArgs.add("/MACHINE:X86_64")
-         }
-
          binaryLinkTask.linkerArgs.add("/SUBSYSTEM:WINDOWS")
-
          binaryLinkTask.linkerArgs.add("User32.lib")
+         binaryLinkTask.linkerArgs.add("Shell32.lib")
       } else if (binaryToolChain is Gcc) {
          binaryCompileTask.compilerArgs.add("-fPIC")
          binaryCompileTask.compilerArgs.add("-c")
@@ -239,7 +234,10 @@ unitTest {
       } else if (toolChain is Clang) {
          binaryLinkTask.linkerArgs.add("-ldl")
       } else if (toolChain is VisualCpp) {
+         compileTask.get().macros["UNICODE"] = null
+         compileTask.get().macros["_UNICODE"] = null
          binaryLinkTask.linkerArgs.add("/SUBSYSTEM:CONSOLE")
+         binaryLinkTask.linkerArgs.add("Shell32.lib")
       }
 
       if (targetMachine.operatingSystemFamily.isMacOs) {

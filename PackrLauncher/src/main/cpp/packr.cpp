@@ -25,16 +25,30 @@
 #include <vector>
 #include <memory>
 #include <cstring>
+#include <codecvt>
 
 using namespace std;
 
+#ifdef UNICODE
+#define stringCompare wcscmp
+#else
+#define stringCompare strcmp
+#endif
+
 bool verbose = false;
 
+/**
+ * UTF-8 encoded working directory.
+ */
 static string workingDir;
 static string executableName;
 static string configurationPath = "config.json";
 
 static size_t cmdLineArgc = 0;
+
+/**
+ * UTF-8 encoded command line options for passing to the JVM.
+ */
 static char** cmdLineArgv = nullptr;
 
 #define verify(env, pointer) \
@@ -244,136 +258,164 @@ static vector<string> extractClassPath(const sajson::value& classPath) {
 	return paths;
 }
 
-string getExecutableDirectory(const char* executablePath) {
+/**
+ *
+ * @param executablePath
+ * @return a UTF-8 encoded string
+ */
+string getExecutableDirectory(const dropt_char *executablePath) {
+    const dropt_char *delim = findLastCharacter(executablePath, '/');
+    if (delim == nullptr) {
+        delim = findLastCharacter(executablePath, '\\');
+    }
 
-	const char* delim = strrchr(executablePath, '/');
-	if (delim == nullptr) {
-		delim = strrchr(executablePath, '\\');
-	}
+    if (delim != nullptr) {
+#ifdef UNICODE
+        wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+        return converter.to_bytes(executablePath);
+#else
+        return string(executablePath, delim - executablePath);
+#endif
+    }
 
-	if (delim != nullptr) {
-		return string(executablePath, delim - executablePath);
-	}
-
-	return string("");
+    return string("");
 }
 
-string getExecutableName(const char* executablePath) {
+/**
+ * Finds the last path element by searching for a / or \, all text found after the last / is returned. If a / or \ isn't found then {@code executablePath} is returned UTF-8 encoded in a string.
+ *
+ * @param executablePath the path to find the executable in
+ * @return UTF-8 encoded executable name from {@code executablePath}
+ */
+string getExecutableName(const dropt_char *executablePath) {
+    const dropt_char *delim = findLastCharacter(executablePath, DROPT_TEXT_LITERAL('/'));
+    if (delim == nullptr) {
+        delim = findLastCharacter(executablePath, DROPT_TEXT_LITERAL('\\'));
+    }
 
-	const char* delim = strrchr(executablePath, '/');
-	if (delim == nullptr) {
-		delim = strrchr(executablePath, '\\');
-	}
+    if (delim != nullptr) {
+#ifdef UNICODE
+		wcout << "Found / or \\, delim=" << delim << endl;
+        wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+        return converter.to_bytes(++delim);
+#else
+        return string(++delim);
+#endif
+    }
 
-	if (delim != nullptr) {
-		return string(++delim);
-	}
-
-	return string(executablePath);
+#ifdef UNICODE
+	wcout << "Did not find / or \\ in " << executablePath << endl;
+    wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    string utf8Path = converter.to_bytes(executablePath);
+    cout << "Did not find / or \\ in path, returning utf8Path=" << utf8Path << endl;
+    return utf8Path;
+#else
+    return string(executablePath);
+#endif
 }
 
-bool setCmdLineArguments(int argc, char** argv) {
+bool setCmdLineArguments(int argc, dropt_char **argv) {
+    const dropt_char *executablePath = getExecutablePath(argv[0]);
+    workingDir = getExecutableDirectory(executablePath);
+    executableName = getExecutableName(executablePath);
 
-	const char* executablePath = getExecutablePath(argv[0]);
-	workingDir = getExecutableDirectory(executablePath);
-	executableName = getExecutableName(executablePath);
+    dropt_bool showHelp = 0;
+    dropt_bool showVersion = 0;
+    dropt_char *cwd = nullptr;
+    dropt_char *config = nullptr;
+    dropt_bool _verbose = 0;
+    dropt_bool _console = 0;
+    dropt_bool _cli = 0;
 
-	dropt_bool showHelp = 0;
-	dropt_bool showVersion = 0;
-	dropt_char* cwd = nullptr;
-	dropt_char* config = nullptr;
-	dropt_bool _verbose = 0;
-	dropt_bool _console = 0;
-	dropt_bool _cli = 0;
+    dropt_option options[] = {
+            {'c',  DROPT_TEXT_LITERAL("cli"),  DROPT_TEXT_LITERAL("Enables this command line interface."), nullptr, dropt_handle_bool, &_cli, dropt_attr_optional_val},
+            {'h', DROPT_TEXT_LITERAL("help"),    DROPT_TEXT_LITERAL("Shows help."), nullptr, dropt_handle_bool, &showHelp, dropt_attr_halt},
+            {'?', nullptr, nullptr,                                                                     nullptr,                   dropt_handle_bool,   &showHelp,    static_cast<unsigned long>(dropt_attr_halt) |
+                                                                                                                                                                      static_cast<unsigned long>(dropt_attr_hidden)},
+            {'\0', DROPT_TEXT_LITERAL("version"), DROPT_TEXT_LITERAL(
+                                                          "Shows version information."),                nullptr,                   dropt_handle_bool,   &showVersion, dropt_attr_halt},
+            {'\0', DROPT_TEXT_LITERAL("cwd"),     DROPT_TEXT_LITERAL(
+                                                          "Sets the working directory."),               nullptr,                   dropt_handle_string, &cwd,         dropt_attr_optional_val},
+            {'\0', DROPT_TEXT_LITERAL("config"),  DROPT_TEXT_LITERAL("Specifies the configuration file."), DROPT_TEXT_LITERAL(
+                                                                                                                   "config.json"), dropt_handle_string, &config,      dropt_attr_optional_val},
+            {'v',  DROPT_TEXT_LITERAL("verbose"), DROPT_TEXT_LITERAL(
+                                                          "Prints additional information."),            nullptr,                   dropt_handle_bool,   &_verbose,    dropt_attr_optional_val},
+            {'\0', DROPT_TEXT_LITERAL("console"), DROPT_TEXT_LITERAL(
+                                                          "Attaches a console window. [Windows only]"), nullptr,                   dropt_handle_bool,   &_console,    dropt_attr_optional_val},
+            {0,   nullptr, nullptr,                                                                     nullptr,                   nullptr,             nullptr,      0}
+    };
 
-	dropt_option options[] = {
-		{ 'c', (dropt_char *)("cli"), (dropt_char *)"Enables this command line interface.", nullptr, dropt_handle_bool, &_cli, dropt_attr_optional_val },
-		{ 'h',  (dropt_char *)"help", (dropt_char *)"Shows help.", nullptr, dropt_handle_bool, &showHelp, dropt_attr_halt },
-		{ '?', nullptr, nullptr, nullptr, dropt_handle_bool, &showHelp, static_cast<unsigned long>(dropt_attr_halt) | static_cast<unsigned long>(dropt_attr_hidden) },
-		{ '\0', (dropt_char *)"version", (dropt_char *)"Shows version information.", nullptr, dropt_handle_bool, &showVersion, dropt_attr_halt },
-		{ '\0', (dropt_char *)"cwd", (dropt_char *)"Sets the working directory.", nullptr, dropt_handle_string, &cwd, dropt_attr_optional_val },
-		{ '\0', (dropt_char *)"config", (dropt_char *)"Specifies the configuration file.", (dropt_char *)"config.json", dropt_handle_string, &config, dropt_attr_optional_val },
-		{ 'v', (dropt_char *)"verbose", (dropt_char *)"Prints additional information.", nullptr, dropt_handle_bool, &_verbose, dropt_attr_optional_val },
-		{ '\0', (dropt_char *)"console", (dropt_char *)"Attaches a console window. [Windows only]", nullptr, dropt_handle_bool, &_console, dropt_attr_optional_val },
-		{ 0, nullptr, nullptr, nullptr, nullptr, nullptr, 0 }
-	};
+    dropt_context *droptContext = dropt_new_context(options);
 
-	dropt_context* droptContext = dropt_new_context(options);
+    if (droptContext == nullptr) {
+        cerr << "Error: failed to parse command line!" << endl;
+        exit(EXIT_FAILURE);
+    }
 
-	if (droptContext == nullptr) {
-		cerr << "Error: failed to parse command line!" << endl;
-		exit(EXIT_FAILURE);
-	}
+    if (argc > 1) {
 
-	if (argc > 1) {
+        dropt_char **remains;
 
-		char** remains;
+        if ((stringCompare(DROPT_TEXT_LITERAL("--cli"), argv[1]) == 0) || (stringCompare(DROPT_TEXT_LITERAL("-c"), argv[1]) == 0)) {
+            // only parse command line if the first argument is "--cli" or "-c"
 
-		if ((strcmp("--cli", argv[1]) == 0) || (strcmp("-c", argv[1]) == 0)) {
+            remains = dropt_parse(droptContext, -1, &argv[1]);
 
-			// only parse command line if the first argument is "--cli"
+            if (dropt_get_error(droptContext) != dropt_error_none) {
+                cerr << dropt_get_error_message(droptContext) << endl;
+                exit(EXIT_FAILURE);
+            }
 
-			remains = (char **)dropt_parse(droptContext, -1, (dropt_char **)(&argv[1]));
+            if (showHelp) {
+                cout << "Usage: " << executableName << " [java arguments]" << endl;
+                cout << "       " << executableName << " -c [options] [-- [java arguments]]" << endl;
+                cout << endl << "Options:" << endl;
 
-			if (dropt_get_error(droptContext) != dropt_error_none) {
-				cerr << dropt_get_error_message(droptContext) << endl;
-				exit(EXIT_FAILURE);
-			}
+                dropt_print_help(stdout, droptContext, nullptr);
+            } else if (showVersion) {
+                cout << executableName << " version " << PACKR_VERSION_STRING << endl;
+            } else {
+                // evaluate parameters
+                verbose = _verbose != 0;
 
-			if (showHelp) {
+                if (cwd != nullptr) {
+                    if (verbose) {
+                        cout << "Using working directory " << cwd << " ..." << endl;
+                    }
+                    workingDir = string((char *) cwd);
+                }
 
-				cout << "Usage: " << executableName << " [java arguments]" << endl;
-				cout << "       " << executableName << " -c [options] [-- [java arguments]]" << endl;
-				cout << endl << "Options:" << endl;
-
-				dropt_print_help(stdout, droptContext, nullptr);
-
-			} else if (showVersion) {
-
-				cout << executableName << " version " << PACKR_VERSION_STRING << endl;
-
-			} else {
-
-				// evalute parameters
-
-				verbose = _verbose != 0;
-
-				if (cwd != nullptr) {
-					if (verbose) {
-						cout << "Using working directory " << cwd << " ..." << endl;
-					}
-					workingDir = string((char*)cwd);
-				}
-
-				if (config != nullptr) {
-					if (verbose) {
-						cout << "Using configuration file " << config << " ..." << endl;
-					}
-					configurationPath = string((char*)config);
-				}
-
-			}
-
+                if (config != nullptr) {
+                    if (verbose) {
+                        cout << "Using configuration file " << config << " ..." << endl;
+                    }
+                    configurationPath = string((char *) config);
+                }
+            }
 		} else {
 			// treat all arguments as "remains"
 			remains = &argv[1];
 		}
 
 		// count number of unparsed arguments
-
-		char** cnt = remains;
+		dropt_char ** cnt = remains;
 		while (*cnt != nullptr) {
 			cmdLineArgc++;
 			cnt++;
 		}
 
 		// copy unparsed arguments
-
 		cmdLineArgv = new char*[cmdLineArgc];
 		cmdLineArgc = 0;
 
 		while (*remains != nullptr) {
+#ifdef UNICODE
+            wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+            string utf8CommandLineArgument = converter.to_bytes(*remains);
+            cmdLineArgv[cmdLineArgc] = strdup(utf8CommandLineArgument.c_str());
+#else
             cmdLineArgv[cmdLineArgc] = strdup(*remains);
+#endif
             cmdLineArgc++;
             remains++;
         }
@@ -385,16 +427,22 @@ bool setCmdLineArguments(int argc, char** argv) {
 }
 
 void launchJavaVM(const LaunchJavaVMCallback &callback) {
-
     // change working directory
-
     if (!workingDir.empty()) {
         if (verbose) {
             cout << "Changing working directory to " << workingDir << " ..." << endl;
         }
+#ifdef UNICODE
+        wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+        wstring workingDirectoryUnicode = converter.from_bytes(workingDir);
+        if (!changeWorkingDir(workingDirectoryUnicode.c_str())) {
+            wcerr << "Warning: failed to change working directory to " << workingDirectoryUnicode << endl;
+        }
+#else
         if (!changeWorkingDir(workingDir.c_str())) {
             cerr << "Warning: failed to change working directory to " << workingDir << endl;
         }
+#endif
     }
 
     // read settings
@@ -409,7 +457,6 @@ void launchJavaVM(const LaunchJavaVMCallback &callback) {
     sajson::value jsonRoot = json.get_root();
 
     // load JVM library, get function pointers
-
     if (verbose) {
         cout << "Loading JVM runtime library ..." << endl;
     }
@@ -423,7 +470,6 @@ void launchJavaVM(const LaunchJavaVMCallback &callback) {
 	}
 
 	// get default init arguments
-
 	JavaVMInitArgs args;
 	args.version = JNI_VERSION_1_6;
 	args.options = nullptr;
