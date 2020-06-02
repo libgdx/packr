@@ -164,7 +164,7 @@ TEST(PackrLauncherTests, test_changeWorkingDir) {
     CreateDirectory(directory, nullptr);
 #else
     char* directory = "testDirÄ";
-    mkdir(directory)
+    mkdir(directory, 0700);
 #endif
     bool changedDirectory = changeWorkingDir(directory);
     cout << "changedDirectory=" << changedDirectory << endl;
