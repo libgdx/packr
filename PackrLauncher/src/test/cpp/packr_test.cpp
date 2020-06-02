@@ -8,6 +8,8 @@
 #include <regex>
 #include <codecvt>
 
+#else
+#include <limits.h>
 #endif
 
 #define BUFFER_SIZE 4096
