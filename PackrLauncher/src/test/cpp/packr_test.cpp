@@ -175,8 +175,8 @@ TEST(PackrLauncherTests, test_changeWorkingDir) {
     cout << "currentWorkingDirectory=" << currentWorkingDirectory << endl;
     ASSERT_TRUE(wcsstr(currentWorkingDirectory, directory) != nullptr);
 #else
-    char currentWorkingDirectory[MAX_PATH];
-    getcwd(currentWorkingDirectory, MAX_PATH);
+    char currentWorkingDirectory[PATH_MAX];
+    getcwd(currentWorkingDirectory, PATH_MAX);
     cout << "currentWorkingDirectory=" << currentWorkingDirectory << endl;
     ASSERT_TRUE(strstr(currentWorkingDirectory, directory) != nullptr);
 #endif
