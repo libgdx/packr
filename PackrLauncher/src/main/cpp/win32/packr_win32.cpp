@@ -30,17 +30,8 @@
 #include <packr.h>
 
 #define RETURN_SUCCESS (0x00000000)
-#ifdef UNICODE
-#define stringCompareIgnoreCase wcsicmp
-#define stringCopy wcscpy
-#define stringConcatenate wcscat
-#else
-#define stringCompareIgnoreCase stricmp
-#define stringCopy strcpy
-#define stringConcatenate strcat
-#endif
 
-typedef LONG NT_STATUS, *P_NT_STATUS;
+typedef LONG NT_STATUS;
 
 typedef NT_STATUS (WINAPI *RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 
@@ -64,7 +55,7 @@ static bool attachToConsole(int argc, PTCHAR *argv) {
 
     // pre-parse command line here to have a console in case of command line parse errors
     for (int arg = 0; arg < argc && !attach; arg++) {
-        attach = (argv[arg] != nullptr && stringCompareIgnoreCase(argv[arg], TEXT("--console")) == 0);
+        attach = (argv[arg] != nullptr && wcsicmp(argv[arg], TEXT("--console")) == 0);
     }
 
     if (attach) {
@@ -165,14 +156,9 @@ int CALLBACK WinMain(
     registerSignalHandlers();
     clearEnvironment();
     try {
-#ifdef UNICODE
         int argc = 0;
         PTCHAR commandLine = GetCommandLine();
         PTCHAR* argv = CommandLineToArgvW(commandLine, &argc);
-#else
-        int argc = __argc;
-        PTCHAR* argv = __argv;
-#endif
         attachToConsole(argc, argv);
         if (!setCmdLineArguments(argc, argv)) {
             cerr << "Failed to set the command line arguments" << endl;
@@ -191,11 +177,7 @@ int CALLBACK WinMain(
     return 0;
 }
 
-#ifdef UNICODE
 int wmain(int argc, wchar_t **argv) {
-#else
-int main(int argc, char **argv) {
-#endif
     registerSignalHandlers();
     clearEnvironment();
     if (!setCmdLineArguments(argc, argv)) {
@@ -237,8 +219,8 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, Create
                 if (verbose) {
                     cout << "Found msvcr*.dll file " << FindFileData.cFileName << endl;
                 }
-                stringCopy(msvcrPath, TEXT("jre\\bin\\"));
-                stringConcatenate(msvcrPath, FindFileData.cFileName);
+                wcscpy(msvcrPath, TEXT("jre\\bin\\"));
+                wcscat(msvcrPath, FindFileData.cFileName);
                 HINSTANCE hinstVCR = LoadLibrary(msvcrPath);
                 if (hinstVCR != nullptr) {
                     hinstLib = LoadLibrary(jvmDLLPath);
@@ -279,7 +261,11 @@ const dropt_char *getExecutablePath(const dropt_char *argv0) {
 }
 
 bool changeWorkingDir(const dropt_char *directory) {
-    return SetCurrentDirectory(directory) == 0;
+    BOOL currentDirectory = SetCurrentDirectory(directory);
+    if(currentDirectory == 0){
+        printLastError(TEXT("Failed to change the working directory"));
+    }
+    return currentDirectory != 0;
 }
 
 /**

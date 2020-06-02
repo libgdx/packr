@@ -25,15 +25,17 @@
 #include <vector>
 #include <memory>
 #include <cstring>
-#include <codecvt>
-
-using namespace std;
 
 #ifdef UNICODE
+#include <codecvt>
 #define stringCompare wcscmp
+#define findLastCharacter wcsrchr
 #else
 #define stringCompare strcmp
+#define findLastCharacter strrchr
 #endif
+
+using namespace std;
 
 bool verbose = false;
 
@@ -259,22 +261,23 @@ static vector<string> extractClassPath(const sajson::value& classPath) {
 }
 
 /**
+ * Searches for the last / or \ and returns all prior characters.
  *
- * @param executablePath
- * @return a UTF-8 encoded string
+ * @param executablePath to get the parent directory of
+ * @return the parent directory of {@code executablePath}. The returned string is UTF-8 encoded.
  */
 string getExecutableDirectory(const dropt_char *executablePath) {
-    const dropt_char *delim = findLastCharacter(executablePath, '/');
-    if (delim == nullptr) {
-        delim = findLastCharacter(executablePath, '\\');
+    const dropt_char *lastSlash = findLastCharacter(executablePath, '/');
+    if (lastSlash == nullptr) {
+        lastSlash = findLastCharacter(executablePath, '\\');
     }
 
-    if (delim != nullptr) {
+    if (lastSlash != nullptr) {
 #ifdef UNICODE
         wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-        return converter.to_bytes(executablePath);
+        return converter.to_bytes(lastSlash - executablePath);
 #else
-        return string(executablePath, delim - executablePath);
+        return string(executablePath, lastSlash - executablePath);
 #endif
     }
 
@@ -295,7 +298,6 @@ string getExecutableName(const dropt_char *executablePath) {
 
     if (delim != nullptr) {
 #ifdef UNICODE
-		wcout << "Found / or \\, delim=" << delim << endl;
         wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
         return converter.to_bytes(++delim);
 #else
@@ -304,10 +306,8 @@ string getExecutableName(const dropt_char *executablePath) {
     }
 
 #ifdef UNICODE
-	wcout << "Did not find / or \\ in " << executablePath << endl;
     wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     string utf8Path = converter.to_bytes(executablePath);
-    cout << "Did not find / or \\ in path, returning utf8Path=" << utf8Path << endl;
     return utf8Path;
 #else
     return string(executablePath);
@@ -327,23 +327,57 @@ bool setCmdLineArguments(int argc, dropt_char **argv) {
     dropt_bool _console = 0;
     dropt_bool _cli = 0;
 
-    dropt_option options[] = {
-            {'c',  DROPT_TEXT_LITERAL("cli"),  DROPT_TEXT_LITERAL("Enables this command line interface."), nullptr, dropt_handle_bool, &_cli, dropt_attr_optional_val},
-            {'h', DROPT_TEXT_LITERAL("help"),    DROPT_TEXT_LITERAL("Shows help."), nullptr, dropt_handle_bool, &showHelp, dropt_attr_halt},
-            {'?', nullptr, nullptr,                                                                     nullptr,                   dropt_handle_bool,   &showHelp,    static_cast<unsigned long>(dropt_attr_halt) |
-                                                                                                                                                                      static_cast<unsigned long>(dropt_attr_hidden)},
-            {'\0', DROPT_TEXT_LITERAL("version"), DROPT_TEXT_LITERAL(
-                                                          "Shows version information."),                nullptr,                   dropt_handle_bool,   &showVersion, dropt_attr_halt},
-            {'\0', DROPT_TEXT_LITERAL("cwd"),     DROPT_TEXT_LITERAL(
-                                                          "Sets the working directory."),               nullptr,                   dropt_handle_string, &cwd,         dropt_attr_optional_val},
-            {'\0', DROPT_TEXT_LITERAL("config"),  DROPT_TEXT_LITERAL("Specifies the configuration file."), DROPT_TEXT_LITERAL(
-                                                                                                                   "config.json"), dropt_handle_string, &config,      dropt_attr_optional_val},
-            {'v',  DROPT_TEXT_LITERAL("verbose"), DROPT_TEXT_LITERAL(
-                                                          "Prints additional information."),            nullptr,                   dropt_handle_bool,   &_verbose,    dropt_attr_optional_val},
-            {'\0', DROPT_TEXT_LITERAL("console"), DROPT_TEXT_LITERAL(
-                                                          "Attaches a console window. [Windows only]"), nullptr,                   dropt_handle_bool,   &_console,    dropt_attr_optional_val},
-            {0,   nullptr, nullptr,                                                                     nullptr,                   nullptr,             nullptr,      0}
-    };
+    dropt_option options[] = {{'c',
+                               DROPT_TEXT_LITERAL("cli"),
+                               DROPT_TEXT_LITERAL("Enables this command line interface."),
+                               nullptr,
+                               dropt_handle_bool,
+                               &_cli,
+                               dropt_attr_optional_val},
+                              {'h', DROPT_TEXT_LITERAL("help"), DROPT_TEXT_LITERAL("Shows help."), nullptr, dropt_handle_bool, &showHelp, dropt_attr_halt},
+                              {'?',
+                               nullptr,
+                               nullptr,
+                               nullptr,
+                               dropt_handle_bool,
+                               &showHelp,
+                               static_cast<unsigned long>(dropt_attr_halt) | static_cast<unsigned long>(dropt_attr_hidden)},
+                              {'\0',
+                               DROPT_TEXT_LITERAL("version"),
+                               DROPT_TEXT_LITERAL("Shows version information."),
+                               nullptr,
+                               dropt_handle_bool,
+                               &showVersion,
+                               dropt_attr_halt},
+                              {'\0',
+                               DROPT_TEXT_LITERAL("cwd"),
+                               DROPT_TEXT_LITERAL("Sets the working directory."),
+                               nullptr,
+                               dropt_handle_string,
+                               &cwd,
+                               dropt_attr_optional_val},
+                              {'\0',
+                               DROPT_TEXT_LITERAL("config"),
+                               DROPT_TEXT_LITERAL("Specifies the configuration file."),
+                               DROPT_TEXT_LITERAL("config.json"),
+                               dropt_handle_string,
+                               &config,
+                               dropt_attr_optional_val},
+                              {'v',
+                               DROPT_TEXT_LITERAL("verbose"),
+                               DROPT_TEXT_LITERAL("Prints additional information."),
+                               nullptr,
+                               dropt_handle_bool,
+                               &_verbose,
+                               dropt_attr_optional_val},
+                              {'\0',
+                               DROPT_TEXT_LITERAL("console"),
+                               DROPT_TEXT_LITERAL("Attaches a console window. [Windows only]"),
+                               nullptr,
+                               dropt_handle_bool,
+                               &_console,
+                               dropt_attr_optional_val},
+                              {0, nullptr, nullptr, nullptr, nullptr, nullptr, 0}};
 
     dropt_context *droptContext = dropt_new_context(options);
 

@@ -249,6 +249,10 @@ unitTest {
    }
 }
 
+tasks.withType(RunTestExecutable::class).configureEach {
+   workingDir = buildDir.toPath().resolve("cppTestDirectory").toFile()
+}
+
 artifacts {
    add(configurations.register("currentOsExecutables").name, currentOsExecutableZip)
 }

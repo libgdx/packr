@@ -22,12 +22,6 @@
 
 #define PACKR_VERSION_STRING "2.1"
 
-#ifdef UNICODE
-#define findLastCharacter wcsrchr
-#else
-#define findLastCharacter strrchr
-#endif
-
 #if !defined(JNI_VERSION_1_8)
 # define JNI_VERSION_1_8 0x00010008
 #endif
