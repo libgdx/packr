@@ -275,7 +275,7 @@ string getExecutableDirectory(const dropt_char *executablePath) {
     if (lastSlash != nullptr) {
 #ifdef UNICODE
         wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-        return converter.to_bytes(lastSlash - executablePath);
+        return converter.to_bytes(executablePath, lastSlash);
 #else
         return string(executablePath, lastSlash - executablePath);
 #endif
@@ -470,7 +470,7 @@ void launchJavaVM(const LaunchJavaVMCallback &callback) {
         wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
         wstring workingDirectoryUnicode = converter.from_bytes(workingDir);
         if (!changeWorkingDir(workingDirectoryUnicode.c_str())) {
-            wcerr << "Warning: failed to change working directory to " << workingDirectoryUnicode << endl;
+            cerr << "Warning: failed to change working directory (unicode) to '" << workingDir << "'" << endl;
         }
 #else
         if (!changeWorkingDir(workingDir.c_str())) {
