@@ -26,6 +26,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <codecvt>
 
 #include <packr.h>
 
@@ -46,30 +47,75 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
 static void waitAtExit() {
-    cout << "Press ENTER key to exit." << endl;
+    cout << "Press ENTER key to exit." << endl << flush;
     cin.get();
 }
 
-static bool attachToConsole(int argc, PTCHAR *argv) {
-    bool attach = false;
+/**
+ * If the '--console' argument is passed, then a new console is allocated, otherwise attaching to the parent console is attempted.
+ *
+ * @param argc the number of elements in {@code argv}
+ * @param argv the list of arguments to parse for --console
+ * @return true if the parent console was successfully attached to or a new console was allocated. false if no console could be acquired
+ */
+static bool attachToOrAllocateConsole(int argc, PTCHAR *argv) {
+    bool allocConsole = false;
 
     // pre-parse command line here to have a console in case of command line parse errors
-    for (int arg = 0; arg < argc && !attach; arg++) {
-        attach = (argv[arg] != nullptr && wcsicmp(argv[arg], TEXT("--console")) == 0);
+    for (int arg = 0; arg < argc && !allocConsole; arg++) {
+        allocConsole = (argv[arg] != nullptr && wcsicmp(argv[arg], TEXT("--console")) == 0);
     }
 
-    if (attach) {
+    bool gotConsole = false;
+    if (allocConsole) {
         FreeConsole();
-        AllocConsole();
-
-        freopen("CONIN$", "r", stdin);
-        freopen("CONOUT$", "w", stdout);
-        freopen("CONOUT$", "w", stderr);
-
-        atexit(waitAtExit);
+        gotConsole = AllocConsole();
+    } else {
+        gotConsole = AttachConsole(ATTACH_PARENT_PROCESS);
     }
 
-    return attach;
+    if (gotConsole) {
+        // Open C standard streams
+        FILE *reusedThrowAwayHandle;
+        freopen_s(&reusedThrowAwayHandle, "CONOUT$", "w", stdout);
+        freopen_s(&reusedThrowAwayHandle, "CONOUT$", "w", stderr);
+        freopen_s(&reusedThrowAwayHandle, "CONIN$", "r", stdin);
+        cout.clear();
+        clog.clear();
+        cerr.clear();
+        cin.clear();
+
+        // Open the C++ wide streams
+        HANDLE hConOut = CreateFile(TEXT("CONOUT$"),
+                GENERIC_READ | GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                nullptr,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                nullptr);
+        HANDLE hConIn = CreateFile(TEXT("CONIN$"),
+                GENERIC_READ | GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                nullptr,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                nullptr);
+        SetStdHandle(STD_OUTPUT_HANDLE, hConOut);
+        SetStdHandle(STD_ERROR_HANDLE, hConOut);
+        SetStdHandle(STD_INPUT_HANDLE, hConIn);
+        wcout.clear();
+        wclog.clear();
+        wcerr.clear();
+        wcin.clear();
+
+        SetConsoleOutputCP(CP_UTF8);
+
+        if (allocConsole) {
+            atexit(waitAtExit);
+        }
+    }
+
+    return gotConsole;
 }
 
 static void printLastError(const PTCHAR reason) {
@@ -77,9 +123,15 @@ static void printLastError(const PTCHAR reason) {
     DWORD errorCode = GetLastError();
 
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                  nullptr, errorCode, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), (LPTSTR) &buffer, 0, nullptr);
+            nullptr,
+            errorCode,
+            MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT),
+            (LPTSTR) &buffer,
+            0,
+            nullptr);
 
-    cerr << "Error code [" << errorCode << "] when trying to " << reason << ": " << buffer << endl;
+    wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+    cerr << "Error code [" << errorCode << "] when trying to " << converter.to_bytes(reason) << ": " << converter.to_bytes(buffer) << endl;
 
     LocalFree(buffer);
 }
@@ -87,10 +139,6 @@ static void printLastError(const PTCHAR reason) {
 static void catchFunction(int signo) {
     puts("Interactive attention signal caught.");
     cerr << "Caught signal " << signo << endl;
-}
-
-static void atExitListener() {
-	cout << "Exiting" << endl;
 }
 
 bool g_showCrashDialog = false;
@@ -143,8 +191,6 @@ static void registerSignalHandlers() {
         cerr << "Failed to listen to SIGABRT_COMPAT" << endl;
     }
 
-    atexit(atExitListener);
-
     SetUnhandledExceptionFilter(crashHandler);
 }
 
@@ -158,18 +204,17 @@ int CALLBACK WinMain(
     try {
         int argc = 0;
         PTCHAR commandLine = GetCommandLine();
-        PTCHAR* argv = CommandLineToArgvW(commandLine, &argc);
-        attachToConsole(argc, argv);
+        PTCHAR *argv = CommandLineToArgvW(commandLine, &argc);
+        attachToOrAllocateConsole(argc, argv);
         if (!setCmdLineArguments(argc, argv)) {
             cerr << "Failed to set the command line arguments" << endl;
             return EXIT_FAILURE;
         }
 
-        cout << "launchJavaVM" << endl;
         launchJavaVM(defaultLaunchVMDelegate);
-    } catch (std::exception &theException) {
+    } catch (exception &theException) {
         cerr << "Caught exception:" << endl;
-	    cerr << theException.what() << endl;
+        cerr << theException.what() << endl;
     } catch (...) {
         cerr << "Caught unknown exception:" << endl;
     }
@@ -178,6 +223,7 @@ int CALLBACK WinMain(
 }
 
 int wmain(int argc, wchar_t **argv) {
+    SetConsoleOutputCP(CP_UTF8);
     registerSignalHandlers();
     clearEnvironment();
     if (!setCmdLineArguments(argc, argv)) {
@@ -283,16 +329,20 @@ bool isZgcSupported() {
             versionInformation.dwOSVersionInfoSize = sizeof(versionInformation);
             if (RETURN_SUCCESS == rtlGetVersionFunction(&versionInformation)) {
                 if (verbose) {
-                    std::cout << "versionInformation.dwMajorVersion=" << versionInformation.dwMajorVersion
-                              << ", versionInformation.dwMinorVersion=" << versionInformation.dwMinorVersion
-                              << ", versionInformation.dwBuildNumber=" << versionInformation.dwBuildNumber
-                              << std::endl;
+                    cout
+                            << "versionInformation.dwMajorVersion="
+                            << versionInformation.dwMajorVersion
+                            << ", versionInformation.dwMinorVersion="
+                            << versionInformation.dwMinorVersion
+                            << ", versionInformation.dwBuildNumber="
+                            << versionInformation.dwBuildNumber
+                            << endl;
                 }
                 return (versionInformation.dwMajorVersion >= 10 && versionInformation.dwBuildNumber >= 17134)
                        || (versionInformation.dwMajorVersion >= 10 && versionInformation.dwMinorVersion >= 1);
             } else {
                 if (verbose) {
-                    std::cout << "RtlGetVersion didn't work" << std::endl;
+                    cout << "RtlGetVersion didn't work" << endl;
                 }
             }
         }

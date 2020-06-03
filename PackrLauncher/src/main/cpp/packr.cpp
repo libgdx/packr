@@ -480,7 +480,6 @@ void launchJavaVM(const LaunchJavaVMCallback &callback) {
     }
 
     // read settings
-
     sajson::document json = readConfigurationFile(configurationPath);
 
     if (!json.is_valid()) {
