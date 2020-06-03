@@ -1,3 +1,9 @@
+# Release 2.6.0
+1. Added support for unicode directories on Windows.
+2. Fixed `--console` on Windows.
+3. If the PackrLauncher parent process has a console, PackrLauncher attaches to it.
+   * This allows debug output from a command prompt without opening a new command prompt.
+   
 # Release 2.5.0
 1. Added `useZgcIfSupportedOs` flag making it easier to use the Z garbage collector when bundling Java 14+.
    * The launcher executable will detect if the running operating system supports the Z garbage collector and use it.

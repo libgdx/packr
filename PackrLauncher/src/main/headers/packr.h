@@ -20,7 +20,7 @@
 #include <dropt.h>
 #include <string>
 
-#define PACKR_VERSION_STRING "2.1"
+#define PACKR_VERSION_STRING "2.6.0"
 
 #if !defined(JNI_VERSION_1_8)
 # define JNI_VERSION_1_8 0x00010008
