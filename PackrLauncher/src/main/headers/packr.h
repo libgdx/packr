@@ -17,6 +17,8 @@
 
 #include <functional>
 #include <jni.h>
+#include <dropt.h>
+#include <string>
 
 #define PACKR_VERSION_STRING "2.1"
 
@@ -34,7 +36,6 @@ typedef std::function<void (LaunchJavaVMDelegate delegate, const JavaVMInitArgs&
 	[](LaunchJavaVMDelegate delegate, const JavaVMInitArgs&) { delegate(nullptr); }
 
 extern "C" {
-
 	/* configuration */
 	extern bool verbose;
 
@@ -43,11 +44,12 @@ extern "C" {
 
 	/* platform-dependent functions */
 	bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM);
-	const char* getExecutablePath(const char* argv0);
-	bool changeWorkingDir(const char* directory);
+	const dropt_char* getExecutablePath(const dropt_char* argv0);
+
+	bool changeWorkingDir(const dropt_char* directory);
 
 	/* entry point for all platforms - called from main()/WinMain() */
-	bool setCmdLineArguments(int argc, char** argv);
+	bool setCmdLineArguments(int argc, dropt_char** argv);
 	void launchJavaVM(const LaunchJavaVMCallback& callback);
 
 	bool isZgcSupported();

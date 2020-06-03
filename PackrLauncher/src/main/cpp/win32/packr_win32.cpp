@@ -16,17 +16,24 @@
 #ifdef _WIN32
 
 #include <Windows.h>
+#include <processenv.h>
 
 #include <io.h>
 #include <fcntl.h>
 #include <iostream>
 #include <direct.h>
 
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <codecvt>
+
 #include <packr.h>
 
 #define RETURN_SUCCESS (0x00000000)
 
-typedef LONG NT_STATUS, *P_NT_STATUS;
+typedef LONG NT_STATUS;
+
 typedef NT_STATUS (WINAPI *RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 
 using namespace std;
@@ -39,46 +46,152 @@ __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
-static void waitAtExit(void) {
-    cout << "Press ENTER key to exit.";
+static void waitAtExit() {
+    cout << "Press ENTER key to exit." << endl << flush;
     cin.get();
 }
 
-static bool attachToConsole(int argc, char **argv) {
-
-    bool attach = false;
+/**
+ * If the '--console' argument is passed, then a new console is allocated, otherwise attaching to the parent console is attempted.
+ *
+ * @param argc the number of elements in {@code argv}
+ * @param argv the list of arguments to parse for --console
+ * @return true if the parent console was successfully attached to or a new console was allocated. false if no console could be acquired
+ */
+static bool attachToOrAllocateConsole(int argc, PTCHAR *argv) {
+    bool allocConsole = false;
 
     // pre-parse command line here to have a console in case of command line parse errors
-    for (int arg = 0; arg < argc && !attach; arg++) {
-        attach = (argv[arg] != nullptr && stricmp(argv[arg], "--console") == 0);
+    for (int arg = 0; arg < argc && !allocConsole; arg++) {
+        allocConsole = (argv[arg] != nullptr && wcsicmp(argv[arg], TEXT("--console")) == 0);
     }
 
-    if (attach) {
-
+    bool gotConsole = false;
+    if (allocConsole) {
         FreeConsole();
-        AllocConsole();
-
-        freopen("CONIN$", "r", stdin);
-        freopen("CONOUT$", "w", stdout);
-        freopen("CONOUT$", "w", stderr);
-
-        atexit(waitAtExit);
+        gotConsole = AllocConsole();
+    } else {
+        gotConsole = AttachConsole(ATTACH_PARENT_PROCESS);
     }
 
-    return attach;
+    if (gotConsole) {
+        // Open C standard streams
+        FILE *reusedThrowAwayHandle;
+        freopen_s(&reusedThrowAwayHandle, "CONOUT$", "w", stdout);
+        freopen_s(&reusedThrowAwayHandle, "CONOUT$", "w", stderr);
+        freopen_s(&reusedThrowAwayHandle, "CONIN$", "r", stdin);
+        cout.clear();
+        clog.clear();
+        cerr.clear();
+        cin.clear();
+
+        // Open the C++ wide streams
+        HANDLE hConOut = CreateFile(TEXT("CONOUT$"),
+                GENERIC_READ | GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                nullptr,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                nullptr);
+        HANDLE hConIn = CreateFile(TEXT("CONIN$"),
+                GENERIC_READ | GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                nullptr,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                nullptr);
+        SetStdHandle(STD_OUTPUT_HANDLE, hConOut);
+        SetStdHandle(STD_ERROR_HANDLE, hConOut);
+        SetStdHandle(STD_INPUT_HANDLE, hConIn);
+        wcout.clear();
+        wclog.clear();
+        wcerr.clear();
+        wcin.clear();
+
+        SetConsoleOutputCP(CP_UTF8);
+
+        if (allocConsole) {
+            atexit(waitAtExit);
+        }
+    }
+
+    return gotConsole;
 }
 
-static void printLastError(const char *reason) {
-
+static void printLastError(const PTCHAR reason) {
     LPTSTR buffer;
     DWORD errorCode = GetLastError();
 
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                  nullptr, errorCode, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), (LPTSTR) &buffer, 0, nullptr);
+            nullptr,
+            errorCode,
+            MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT),
+            (LPTSTR) &buffer,
+            0,
+            nullptr);
 
-    cerr << "Error code [" << errorCode << "] when trying to " << reason << ": " << buffer;
+    wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+    cerr << "Error code [" << errorCode << "] when trying to " << converter.to_bytes(reason) << ": " << converter.to_bytes(buffer) << endl;
 
     LocalFree(buffer);
+}
+
+static void catchFunction(int signo) {
+    puts("Interactive attention signal caught.");
+    cerr << "Caught signal " << signo << endl;
+}
+
+bool g_showCrashDialog = false;
+
+LONG WINAPI crashHandler(EXCEPTION_POINTERS * /*ExceptionInfo*/) {
+    cerr << "Unhandled windows exception occurred" << endl;
+
+    return g_showCrashDialog ? EXCEPTION_CONTINUE_SEARCH : EXCEPTION_EXECUTE_HANDLER;
+}
+
+static void clearEnvironment() {
+	cout << "clearEnvironment" << endl;
+    _putenv_s("_JAVA_OPTIONS", "");
+    _putenv_s("JAVA_TOOL_OPTIONS", "");
+    _putenv_s("CLASSPATH", "");
+}
+
+static void registerSignalHandlers() {
+    void (*code)(int);
+    code = signal(SIGINT, catchFunction);
+    if (code == SIG_ERR) {
+        cerr << "Failed to listen to SIGINT" << endl;
+    }
+    code = signal(SIGILL, catchFunction);
+    if (code == SIG_ERR) {
+        cerr << "Failed to listen to SIGILL" << endl;
+    }
+    code = signal(SIGFPE, catchFunction);
+    if (code == SIG_ERR) {
+        cerr << "Failed to listen to SIGFPE" << endl;
+    }
+    code = signal(SIGSEGV, catchFunction);
+    if (code == SIG_ERR) {
+        cerr << "Failed to listen to SIGSEGV" << endl;
+    }
+    code = signal(SIGTERM, catchFunction);
+    if (code == SIG_ERR) {
+        cerr << "Failed to listen to SIGTERM" << endl;
+    }
+    code = signal(SIGBREAK, catchFunction);
+    if (code == SIG_ERR) {
+        cerr << "Failed to listen to SIGBREAK" << endl;
+    }
+    code = signal(SIGABRT, catchFunction);
+    if (code == SIG_ERR) {
+        cerr << "Failed to listen to SIGABRT" << endl;
+    }
+    code = signal(SIGABRT_COMPAT, catchFunction);
+    if (code == SIG_ERR) {
+        cerr << "Failed to listen to SIGABRT_COMPAT" << endl;
+    }
+
+    SetUnhandledExceptionFilter(crashHandler);
 }
 
 int CALLBACK WinMain(
@@ -86,23 +199,33 @@ int CALLBACK WinMain(
         HINSTANCE hPrevInstance,
         LPSTR lpCmdLine,
         int nCmdShow) {
+    registerSignalHandlers();
+    clearEnvironment();
+    try {
+        int argc = 0;
+        PTCHAR commandLine = GetCommandLine();
+        PTCHAR *argv = CommandLineToArgvW(commandLine, &argc);
+        attachToOrAllocateConsole(argc, argv);
+        if (!setCmdLineArguments(argc, argv)) {
+            cerr << "Failed to set the command line arguments" << endl;
+            return EXIT_FAILURE;
+        }
 
-    int argc = __argc;
-    char **argv = __argv;
-
-    attachToConsole(argc, argv);
-
-    if (!setCmdLineArguments(argc, argv)) {
-        return EXIT_FAILURE;
+        launchJavaVM(defaultLaunchVMDelegate);
+    } catch (exception &theException) {
+        cerr << "Caught exception:" << endl;
+        cerr << theException.what() << endl;
+    } catch (...) {
+        cerr << "Caught unknown exception:" << endl;
     }
-
-    launchJavaVM(defaultLaunchVMDelegate);
 
     return 0;
 }
 
-int main(int argc, char **argv) {
-
+int wmain(int argc, wchar_t **argv) {
+    SetConsoleOutputCP(CP_UTF8);
+    registerSignalHandlers();
+    clearEnvironment();
     if (!setCmdLineArguments(argc, argv)) {
         return EXIT_FAILURE;
     }
@@ -127,11 +250,11 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, Create
                 cout << "Failed to load jvm.dll. Trying to load msvcr*.dll first ..." << endl;
             }
 
-            WIN32_FIND_DATAA FindFileData;
+            WIN32_FIND_DATA FindFileData;
             HANDLE hFind = nullptr;
-            char msvcrPath[MAX_PATH];
+            TCHAR msvcrPath[MAX_PATH];
 
-            hFind = FindFirstFileA("jre\\bin\\msvcr*.dll", &FindFileData);
+            hFind = FindFirstFile(TEXT("jre\\bin\\msvcr*.dll"), &FindFileData);
             if (hFind == INVALID_HANDLE_VALUE) {
                 if (verbose) {
                     cout << "Couldn't find msvcr*.dll file." << "FindFirstFile failed " << GetLastError() << "."
@@ -142,9 +265,9 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, Create
                 if (verbose) {
                     cout << "Found msvcr*.dll file " << FindFileData.cFileName << endl;
                 }
-                strcpy(msvcrPath, "jre\\bin\\");
-                strcat(msvcrPath, FindFileData.cFileName);
-                HINSTANCE hinstVCR = LoadLibraryA(msvcrPath);
+                wcscpy(msvcrPath, TEXT("jre\\bin\\"));
+                wcscat(msvcrPath, FindFileData.cFileName);
+                HINSTANCE hinstVCR = LoadLibrary(msvcrPath);
                 if (hinstVCR != nullptr) {
                     hinstLib = LoadLibrary(jvmDLLPath);
                     if (verbose) {
@@ -160,31 +283,35 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, Create
     }
 
     if (hinstLib == nullptr) {
-        printLastError("load jvm.dll");
+        printLastError(TEXT("load jvm.dll"));
         return false;
     }
 
     *getDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs) GetProcAddress(hinstLib, "JNI_GetDefaultJavaVMInitArgs");
     if (*getDefaultJavaVMInitArgs == nullptr) {
-        printLastError("obtain JNI_GetDefaultJavaVMInitArgs address");
+        printLastError(TEXT("obtain JNI_GetDefaultJavaVMInitArgs address"));
         return false;
     }
 
     *createJavaVM = (CreateJavaVM) GetProcAddress(hinstLib, "JNI_CreateJavaVM");
     if (*createJavaVM == nullptr) {
-        printLastError("obtain JNI_CreateJavaVM address");
+        printLastError(TEXT("obtain JNI_CreateJavaVM address"));
         return false;
     }
 
     return true;
 }
 
-const char *getExecutablePath(const char *argv0) {
+const dropt_char *getExecutablePath(const dropt_char *argv0) {
     return argv0;
 }
 
-bool changeWorkingDir(const char *directory) {
-    return _chdir(directory) == 0;
+bool changeWorkingDir(const dropt_char *directory) {
+    BOOL currentDirectory = SetCurrentDirectory(directory);
+    if(currentDirectory == 0){
+        printLastError(TEXT("Failed to change the working directory"));
+    }
+    return currentDirectory != 0;
 }
 
 /**
@@ -202,16 +329,20 @@ bool isZgcSupported() {
             versionInformation.dwOSVersionInfoSize = sizeof(versionInformation);
             if (RETURN_SUCCESS == rtlGetVersionFunction(&versionInformation)) {
                 if (verbose) {
-                    std::cout << "versionInformation.dwMajorVersion=" << versionInformation.dwMajorVersion
-                              << ", versionInformation.dwMinorVersion=" << versionInformation.dwMinorVersion
-                              << ", versionInformation.dwBuildNumber=" << versionInformation.dwBuildNumber
-                              << std::endl;
+                    cout
+                            << "versionInformation.dwMajorVersion="
+                            << versionInformation.dwMajorVersion
+                            << ", versionInformation.dwMinorVersion="
+                            << versionInformation.dwMinorVersion
+                            << ", versionInformation.dwBuildNumber="
+                            << versionInformation.dwBuildNumber
+                            << endl;
                 }
                 return (versionInformation.dwMajorVersion >= 10 && versionInformation.dwBuildNumber >= 17134)
                        || (versionInformation.dwMajorVersion >= 10 && versionInformation.dwMinorVersion >= 1);
             } else {
                 if (verbose) {
-                    std::cout << "RtlGetVersion didn't work" << std::endl;
+                    cout << "RtlGetVersion didn't work" << endl;
                 }
             }
         }

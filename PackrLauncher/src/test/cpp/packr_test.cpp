@@ -1,11 +1,15 @@
 #include "gtest/gtest.h"
 #include "packr.h"
+#include "dropt_string.h"
 
 #ifdef _WIN32
 
 #include <Windows.h>
 #include <regex>
+#include <codecvt>
 
+#else
+#include <limits.h>
 #endif
 
 #define BUFFER_SIZE 4096
@@ -70,8 +74,11 @@ string getSystemInfoOutput() {
     startupInfo.hStdInput = hChildStandardInputHandle;
     startupInfo.dwFlags |= static_cast<DWORD>(STARTF_USESTDHANDLES);
 
-    if (!CreateProcess(nullptr,
-                       (LPSTR) "systeminfo",     // command line
+    wchar_t systemInfoExecutableName[128];
+    wcscpy(systemInfoExecutableName, L"systeminfo");
+    if (!CreateProcess(
+                       nullptr,     // application name
+                       systemInfoExecutableName, // command line
                        nullptr,          // process security attributes
                        nullptr,          // primary thread security attributes
                        TRUE,          // handles are inherited
@@ -151,4 +158,61 @@ TEST(PackrLauncherTests, test_zgc_supported) {
     bool windows10Build17134OrLater = isSystemInfoParsedVersionWindows10Build17134OrLater(systemInfoOutput);
     ASSERT_EQ(windows10Build17134OrLater, zgcSupported);
 #endif
+}
+
+TEST(PackrLauncherTests, test_changeWorkingDir) {
+#ifdef _WIN32
+    wchar_t *directory = L"testDirÄ";
+    CreateDirectory(directory, nullptr);
+#else
+    char* directory = "testDirÄ";
+    mkdir(directory, 0700);
+#endif
+    bool changedDirectory = changeWorkingDir(directory);
+    cout << "changedDirectory=" << changedDirectory << endl;
+    ASSERT_TRUE(changedDirectory);
+#ifdef  _WIN32
+    wchar_t currentWorkingDirectory[MAX_PATH];
+    GetCurrentDirectoryW(MAX_PATH, currentWorkingDirectory);
+    cout << "currentWorkingDirectory=" << currentWorkingDirectory << endl;
+    ASSERT_TRUE(wcsstr(currentWorkingDirectory, directory) != nullptr);
+#else
+    char currentWorkingDirectory[PATH_MAX];
+    getcwd(currentWorkingDirectory, PATH_MAX);
+    cout << "currentWorkingDirectory=" << currentWorkingDirectory << endl;
+    ASSERT_TRUE(strstr(currentWorkingDirectory, directory) != nullptr);
+#endif
+}
+
+TEST(PackrLauncherTest, test_setCmdLineArguments) {
+    // config
+    const int argumentCount = 7;
+    dropt_char **commandLineArguments = new dropt_char *[argumentCount + 1];
+    commandLineArguments[0] = dropt_strdup(DROPT_TEXT_LITERAL("path/to/executable"));
+    commandLineArguments[1] = dropt_strdup(DROPT_TEXT_LITERAL("-c"));
+    commandLineArguments[2] = dropt_strdup(DROPT_TEXT_LITERAL("--config"));
+    commandLineArguments[3] = dropt_strdup(DROPT_TEXT_LITERAL("hello"));
+    commandLineArguments[4] = dropt_strdup(DROPT_TEXT_LITERAL("--"));
+    commandLineArguments[5] = dropt_strdup(DROPT_TEXT_LITERAL("remaining"));
+    commandLineArguments[6] = dropt_strdup(DROPT_TEXT_LITERAL("option"));
+    commandLineArguments[7] = nullptr;
+    cout << "Allocated and initialized commandLineArguments" << endl;
+    for (int argumentIndex = 0; argumentIndex < argumentCount; ++argumentIndex) {
+#ifdef UNICODE
+        wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+        string argument = converter.to_bytes(commandLineArguments[argumentIndex]);
+        cout << "commandLineArguments[" << argumentIndex << "]=" << argument << endl;
+#else
+        cout << "commandLineArguments[" << argumentIndex << "]=" << commandLineArguments[argumentIndex] << endl;
+#endif
+    }
+    cout << "Calling setCmdLineArguments" << endl;
+    bool argumentSetSuccess = setCmdLineArguments(argumentCount, commandLineArguments);
+    cout << "Finished calling setCmdLineArguments" << endl;
+    ASSERT_TRUE(argumentSetSuccess);
+
+    for (int argumentIndex = 0; argumentIndex < argumentCount; ++argumentIndex) {
+        delete[](commandLineArguments[argumentIndex]);
+    }
+    delete[](commandLineArguments);
 }
