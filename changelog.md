@@ -1,8 +1,10 @@
 # Release 2.6.0
 1. Added support for unicode directories on Windows.
+   * This resolves issues where PackrLauncher is running from a directory with international characters in it.
 2. Fixed `--console` on Windows.
+   * When running from a Windows Explorer shortcut, a new console is popped up and if `--verbose` was also specified then all debug output shows up in the console window.
 3. If the PackrLauncher parent process has a console, PackrLauncher attaches to it.
-   * This allows debug output from a command prompt without opening a new command prompt.
+   * This allows debug output when PackrLauncher is launched from a command prompt window, without the need for passing `--console`.
    
 # Release 2.5.0
 1. Added `useZgcIfSupportedOs` flag making it easier to use the Z garbage collector when bundling Java 14+.
