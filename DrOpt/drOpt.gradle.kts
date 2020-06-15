@@ -54,13 +54,6 @@ library {
 
    targetMachines.set(listOf(machines.windows.x86_64, machines.linux.x86_64, machines.macOS.x86_64))
 
-   toolChains.forEach { toolChain ->
-      if (toolChain is VisualCpp) {
-         toolChain.setInstallDir(File("C:/Program Files (x86)/Microsoft Visual Studio/2017/Community"))
-         toolChain.setWindowsSdkDir(File("C:/Program Files/Microsoft SDKs/Windows/v7.1"))
-      }
-   }
-
    binaries.configureEach(CppStaticLibrary::class.java) {
       val binaryToolChain = toolChain
 
