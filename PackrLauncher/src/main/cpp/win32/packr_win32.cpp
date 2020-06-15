@@ -235,6 +235,42 @@ int wmain(int argc, wchar_t **argv) {
     return 0;
 }
 
+bool loadRuntimeLibrary(const PTCHAR runtimeLibraryPattern){
+    WIN32_FIND_DATA FindFileData;
+    HANDLE hFind = nullptr;
+    TCHAR msvcrPath[MAX_PATH];
+
+    wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+
+    bool loadedRuntimeDll = false;
+    hFind = FindFirstFile(runtimeLibraryPattern, &FindFileData);
+    if (hFind == INVALID_HANDLE_VALUE) {
+        if (verbose) {
+            cout << "Couldn't find " << converter.to_bytes(runtimeLibraryPattern) << " file." << "FindFirstFile failed " << GetLastError() << "."
+                 << endl;
+        }
+    } else {
+        FindClose(hFind);
+        if (verbose) {
+            cout << "Found " << converter.to_bytes(runtimeLibraryPattern) << " file " << converter.to_bytes(FindFileData.cFileName) << endl;
+        }
+        wcscpy(msvcrPath, TEXT("jre\\bin\\"));
+        wcscat(msvcrPath, FindFileData.cFileName);
+        HINSTANCE hinstVCR = LoadLibrary(msvcrPath);
+        if (hinstVCR != nullptr) {
+            loadedRuntimeDll = true;
+            if (verbose) {
+                cout << "Loaded library " << converter.to_bytes(msvcrPath) << endl;
+            }
+        } else {
+            if (verbose) {
+                cout << "Failed to load library " << converter.to_bytes(FindFileData.cFileName) << endl;
+            }
+        }
+    }
+    return loadedRuntimeDll;
+}
+
 bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, CreateJavaVM *createJavaVM) {
     LPCTSTR jvmDLLPath = TEXT("jre\\bin\\server\\jvm.dll");
     HINSTANCE hinstLib = LoadLibrary(jvmDLLPath);
@@ -247,37 +283,14 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, Create
             // "The specified module could not be found."
             // load msvcr*.dll from the bundled JRE, then try again
             if (verbose) {
-                cout << "Failed to load jvm.dll. Trying to load msvcr*.dll first ..." << endl;
+                cout << "Failed to load jvm.dll. Trying to load Microsoft runtime libraries" << endl;
             }
 
-            WIN32_FIND_DATA FindFileData;
-            HANDLE hFind = nullptr;
-            TCHAR msvcrPath[MAX_PATH];
+            bool loadedRuntimeDll = loadRuntimeLibrary(TEXT("jre\\bin\\msvcr*.dll"));
+            loadedRuntimeDll = loadRuntimeLibrary(TEXT("jre\\bin\\vcruntime*.dll"));
 
-            hFind = FindFirstFile(TEXT("jre\\bin\\msvcr*.dll"), &FindFileData);
-            if (hFind == INVALID_HANDLE_VALUE) {
-                if (verbose) {
-                    cout << "Couldn't find msvcr*.dll file." << "FindFirstFile failed " << GetLastError() << "."
-                         << endl;
-                }
-            } else {
-                FindClose(hFind);
-                if (verbose) {
-                    cout << "Found msvcr*.dll file " << FindFileData.cFileName << endl;
-                }
-                wcscpy(msvcrPath, TEXT("jre\\bin\\"));
-                wcscat(msvcrPath, FindFileData.cFileName);
-                HINSTANCE hinstVCR = LoadLibrary(msvcrPath);
-                if (hinstVCR != nullptr) {
-                    hinstLib = LoadLibrary(jvmDLLPath);
-                    if (verbose) {
-                        cout << "Loaded library " << msvcrPath << endl;
-                    }
-                } else {
-                    if (verbose) {
-                        cout << "Failed to load library " << FindFileData.cFileName << endl;
-                    }
-                }
+            if(loadedRuntimeDll){
+                hinstLib = LoadLibrary(jvmDLLPath);
             }
         }
     }
