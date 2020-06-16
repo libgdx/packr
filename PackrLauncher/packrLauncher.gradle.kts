@@ -94,13 +94,6 @@ val targetPlatformsToBuild = listOf(machines.windows.x86_64, machines.linux.x86_
 application {
     targetMachines.set(targetPlatformsToBuild)
 
-    toolChains.forEach { toolChain ->
-        if (toolChain is VisualCpp) {
-            toolChain.setInstallDir(File("C:/Program Files (x86)/Microsoft Visual Studio/2017/Community"))
-            toolChain.setWindowsSdkDir(File("C:/Program Files/Microsoft SDKs/Windows/v7.1"))
-        }
-    }
-
     binaries.configureEach(CppExecutable::class.java) {
         logger.debug("Configuring executable ${this.name}")
 

@@ -267,9 +267,9 @@ static vector<string> extractClassPath(const sajson::value& classPath) {
  * @return the parent directory of {@code executablePath}. The returned string is UTF-8 encoded.
  */
 string getExecutableDirectory(const dropt_char *executablePath) {
-    const dropt_char *lastSlash = findLastCharacter(executablePath, '/');
+    const dropt_char *lastSlash = findLastCharacter(executablePath, DROPT_TEXT_LITERAL('/'));
     if (lastSlash == nullptr) {
-        lastSlash = findLastCharacter(executablePath, '\\');
+        lastSlash = findLastCharacter(executablePath, DROPT_TEXT_LITERAL('\\'));
     }
 
     if (lastSlash != nullptr) {
