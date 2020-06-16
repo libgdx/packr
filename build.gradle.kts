@@ -17,7 +17,7 @@
 
 
 group = "com.nimblygames.packr"
-version = "2.6.0"
+version = "2.6.2"
 
 plugins {
    base
