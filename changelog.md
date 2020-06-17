@@ -1,3 +1,6 @@
+# Release 2.6.2
+1. Resolves an issue for newer JVMs that rely on vcruntime140.dll (The Visual C++ 2017 Redistributable).
+   * If loading the jvm.dll fails on Windows, then PackrLauncher searches for a vcruntime*.dll file in "jre/bin" and loads that library and attempts to load the jvm.dll again. This resolves an issue where the jvm.dll can't be loaded on Windows systems that don't have the Visual C++ 2017 Redistributable installed. 
 # Release 2.6.0
 1. Added support for unicode directories on Windows.
    * This resolves issues where PackrLauncher is running from a directory with international characters in it.
