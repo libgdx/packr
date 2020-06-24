@@ -113,6 +113,9 @@ library {
          binaryCompileTask.compilerArgs.add("-x")
          binaryCompileTask.compilerArgs.add("c")
          binaryCompileTask.compilerArgs.add("-std=c11")
+         if (targetMachine.operatingSystemFamily.isMacOs) {
+            binaryCompileTask.compilerArgs.add("-mmacosx-version-min=10.13")
+         }
 
          binaryCompileTask.includes(file("$javaHomePathString/include"))
          binaryCompileTask.includes(file("$javaHomePathString/include/darwin"))
