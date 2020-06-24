@@ -205,7 +205,8 @@ application {
             binaryCompileTask.compilerArgs.add("-fmessage-length=0")
             binaryCompileTask.compilerArgs.add("-Wwrite-strings")
             if (targetMachine.operatingSystemFamily.isMacOs) {
-                binaryCompileTask.compilerArgs.add("-mmacosx-version-min=10.13")
+                binaryCompileTask.compilerArgs.add("-mmacosx-version-min=${rootProject.ext["macOsMinimumVersion"]}")
+                binaryLinkTask.linkerArgs.add("-mmacosx-version-min=${rootProject.ext["macOsMinimumVersion"]}")
             }
 
             binaryCompileTask.compilerArgs.add("-std=c++14")

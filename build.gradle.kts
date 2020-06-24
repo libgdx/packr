@@ -19,6 +19,8 @@
 group = "com.nimblygames.packr"
 version = "2.7.0-SNAPSHOT"
 
+ext["macOsMinimumVersion"] = "10.10"
+
 plugins {
    base
 }
