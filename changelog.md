@@ -1,4 +1,4 @@
-# Release 2.7.0-SNAPSHOT
+# Release 2.6.3
 1. Support macOS versions down to 10.10 Yosemite
    * Added compiler flag `-mmacosx-version-min=10.10`
 # Release 2.6.2
