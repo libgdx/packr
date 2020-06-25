@@ -85,6 +85,11 @@ dependencies {
 }
 
 /**
+ * Stores a mapping from the registered publication names to the operating system family for generating the name in the published POM file.
+ */
+val operatingSystemFamilyByPublicationName: MutableMap<String, OperatingSystemFamily> = mutableMapOf<String, OperatingSystemFamily>()
+
+/**
  * Linux x86 is no longer built because it's impossible to find a survey that shows anyone running x86 Linux.
  * MacOS x86 is no longer built because it requires and older version of Xcode and Apple makes it too difficult to install on newer versions of Mac
  * Windows x86 is no longer built because the Adopt OpenJDK has crash failures.
@@ -113,6 +118,7 @@ application {
         if (binaryCompileTask.isOptimized && publishing.publications.findByName(publicationName) == null) {
             logger.info("binaryLinkTask.linkedFile = ${binaryLinkTask.linkedFile.get()}")
 
+            operatingSystemFamilyByPublicationName[publicationName] = targetMachine.operatingSystemFamily
             publishing.publications.register<MavenPublication>(publicationName) {
                 val artifactFile = if (targetMachine.operatingSystemFamily.isMacOs) macOsLipoOutputFilePath.toFile() as Any else binaryLinkTask.linkedFile
                 artifact(artifactFile) {
@@ -284,27 +290,36 @@ publishing {
     publications {
         configureEach {
             if (this is MavenPublication) {
-                pom {
-                    name.set("Packr launchers from libGdx")
-                    description.set("Forked version of libGdx Packr launchers built and modified by Nimbly Games")
-                    url.set("https://nimblygames.com/")
-                    licenses {
-                        license {
-                            name.set("The Apache License, Version 2.0")
-                            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                val publicationOperatingSystemFamily = operatingSystemFamilyByPublicationName[name]
+                if (publicationOperatingSystemFamily != null) {
+                    pom {
+                        val osName = when {
+                            publicationOperatingSystemFamily.isLinux -> "Linux"
+                            publicationOperatingSystemFamily.isMacOs -> "macOS"
+                            publicationOperatingSystemFamily.isWindows -> "Windows"
+                            else -> throw IllegalArgumentException("Unknown OS $publicationOperatingSystemFamily")
                         }
-                    }
-                    developers {
-                        developer {
-                            id.set("KarlSabo")
-                            name.set("Karl Sabo")
-                            email.set("karl@nimblygames.com")
+                        name.set("Packr native launcher for $osName")
+                        description.set("A native executable for launching a JVM app, making it appear like a native app.")
+                        url.set("https://nimblygames.com/")
+                        licenses {
+                            license {
+                                name.set("The Apache License, Version 2.0")
+                                url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                            }
                         }
-                    }
-                    scm {
-                        connection.set("scm:git:https://github.com/karlsabo/packr")
-                        developerConnection.set("scm:git:https://github.com/karlsabo/packr")
-                        url.set("https://github.com/karlsabo/packr")
+                        developers {
+                            developer {
+                                id.set("KarlSabo")
+                                name.set("Karl Sabo")
+                                email.set("karl@nimblygames.com")
+                            }
+                        }
+                        scm {
+                            connection.set("scm:git:https://github.com/karlsabo/packr")
+                            developerConnection.set("scm:git:https://github.com/karlsabo/packr")
+                            url.set("https://github.com/karlsabo/packr")
+                        }
                     }
                 }
             }

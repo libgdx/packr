@@ -283,8 +283,8 @@ publishing {
          artifactId = project.name.toLowerCase() + "-all"
          version = project.version as String
          pom {
-            name.set("Packr from libGdx")
-            description.set("Forked version of libGdx Packr built and modified by Nimbly Games. This is the shadow (uber) jar version that can be executed with java -jar")
+            name.set("Packr shadow jar")
+            description.set("A single executable jar for use from the command line. Packages your JAR, assets and a JVM for distribution on Windows, Linux and macOS, adding a native executable file to make it appear like a native app.")
             url.set("https://nimblygames.com/")
             licenses {
                license {
@@ -311,8 +311,8 @@ publishing {
          from(components["java"])
          artifactId = project.name.toLowerCase()
          pom {
-            name.set("Packr from libGdx")
-            description.set("Forked version of libGdx Packr built and modified by Nimbly Games")
+            name.set("Packr")
+            description.set("A normal jar with Maven dependencies for use as part of an application or build script. This can be useful for creating Packr configuration JSON files. Packages your JAR, assets and a JVM for distribution on Windows, Linux and macOS, adding a native executable file to make it appear like a native app.")
             url.set("https://nimblygames.com/")
             licenses {
                license {
