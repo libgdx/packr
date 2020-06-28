@@ -51,213 +51,213 @@ static size_t cmdLineArgc = 0;
 /**
  * UTF-8 encoded command line options for passing to the JVM.
  */
-static char** cmdLineArgv = nullptr;
+static char **cmdLineArgv = nullptr;
 
 #define verify(env, pointer) \
-	if (checkExceptionAndResult(env, pointer)) return EXIT_FAILURE;
+    if (checkExceptionAndResult(env, pointer)) return EXIT_FAILURE;
 
-static bool checkExceptionAndResult(JNIEnv* env, void* pointer) {
-	if (env->ExceptionOccurred() != nullptr) {
-		env->ExceptionDescribe();
-		env->ExceptionClear();
-		return true;
-	}
-	return pointer == nullptr;
+static bool checkExceptionAndResult(JNIEnv *env, void *pointer) {
+    if (env->ExceptionOccurred() != nullptr) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        return true;
+    }
+    return pointer == nullptr;
 }
 
-static int loadStaticMethod(JNIEnv* env, const vector<string>& classPath, const string& className, jclass* resultClass, jmethodID* resultMethod) {
+static int loadStaticMethod(JNIEnv *env, const vector<string> &classPath, const string &className, jclass *resultClass, jmethodID *resultMethod) {
 
-	//! Method to retrieve 'static void main(String[] args)' from a user-defined class path.
-	//! The original 'packr' passes "-Djava.class.path=<path-to-jar>" as an argument during
-	//! initialization of the JVM. For some reason this didn't work for me on *some* systems.
-	//!
-	//! This method uses JNI voodoo to get the thread context classloader, construct a file
-	//! URL, point it to the user JAR, then use the classloader to load the application class'
-	//! static main() method.
-	//!
-	//! References:
-	//! http://stackoverflow.com/questions/20328012/c-plugin-jni-java-classpath
-	//! http://www.java-gaming.org/index.php/topic,6516.0
+    //! Method to retrieve 'static void main(String[] args)' from a user-defined class path.
+    //! The original 'packr' passes "-Djava.class.path=<path-to-jar>" as an argument during
+    //! initialization of the JVM. For some reason this didn't work for me on *some* systems.
+    //!
+    //! This method uses JNI voodoo to get the thread context classloader, construct a file
+    //! URL, point it to the user JAR, then use the classloader to load the application class'
+    //! static main() method.
+    //!
+    //! References:
+    //! http://stackoverflow.com/questions/20328012/c-plugin-jni-java-classpath
+    //! http://www.java-gaming.org/index.php/topic,6516.0
 
-	size_t cp = 0;
-	size_t numCp = classPath.size();
+    size_t cp = 0;
+    size_t numCp = classPath.size();
 
-	if (verbose) {
-		cout << "Adding " << numCp << " classpaths ..." << endl;
-	}
+    if (verbose) {
+        cout << "Adding " << numCp << " classpaths ..." << endl;
+    }
 
-	jclass urlClass = env->FindClass("java/net/URL");
-	verify(env, urlClass)
+    jclass urlClass = env->FindClass("java/net/URL");
+    verify(env, urlClass)
 
-	jobjectArray urlArray = env->NewObjectArray(numCp, urlClass, nullptr);
-	verify(env, urlArray)
+    jobjectArray urlArray = env->NewObjectArray(numCp, urlClass, nullptr);
+    verify(env, urlArray)
 
-	for (const string& classPathURL : classPath) {
+    for (const string &classPathURL : classPath) {
 
-		if (verbose) {
-			cout << "  # " << classPathURL << endl;
-		}
+        if (verbose) {
+            cout << "  # " << classPathURL << endl;
+        }
 
-		jstring urlStr = env->NewStringUTF(classPathURL.c_str());
-		verify(env, urlStr)
+        jstring urlStr = env->NewStringUTF(classPathURL.c_str());
+        verify(env, urlStr)
 
-		// URL url = new File("{classPathURL}").toURI().toURL();
+        // URL url = new File("{classPathURL}").toURI().toURL();
 
-		jclass fileClass = env->FindClass("java/io/File");
-		verify(env, fileClass)
+        jclass fileClass = env->FindClass("java/io/File");
+        verify(env, fileClass)
 
-		jmethodID fileCtor = env->GetMethodID(fileClass, "<init>", "(Ljava/lang/String;)V");
-		verify(env, fileCtor)
+        jmethodID fileCtor = env->GetMethodID(fileClass, "<init>", "(Ljava/lang/String;)V");
+        verify(env, fileCtor)
 
-		jobject file = env->NewObject(fileClass, fileCtor, urlStr);
-		verify(env, file)
+        jobject file = env->NewObject(fileClass, fileCtor, urlStr);
+        verify(env, file)
 
-		jmethodID toUriMethod = env->GetMethodID(fileClass, "toURI", "()Ljava/net/URI;");
-		verify(env, toUriMethod)
+        jmethodID toUriMethod = env->GetMethodID(fileClass, "toURI", "()Ljava/net/URI;");
+        verify(env, toUriMethod)
 
-		jobject uri = env->CallObjectMethod(file, toUriMethod);
-		verify(env, uri)
+        jobject uri = env->CallObjectMethod(file, toUriMethod);
+        verify(env, uri)
 
-		jclass uriClass = env->FindClass("java/net/URI");
-		verify(env, uriClass)
+        jclass uriClass = env->FindClass("java/net/URI");
+        verify(env, uriClass)
 
-		jmethodID toUrlMethod = env->GetMethodID(uriClass, "toURL", "()Ljava/net/URL;");
-		verify(env, toUrlMethod)
+        jmethodID toUrlMethod = env->GetMethodID(uriClass, "toURL", "()Ljava/net/URL;");
+        verify(env, toUrlMethod)
 
-		jobject url = env->CallObjectMethod(uri, toUrlMethod);
-		verify(env, url)
+        jobject url = env->CallObjectMethod(uri, toUrlMethod);
+        verify(env, url)
 
-		env->SetObjectArrayElement(urlArray, cp++, url);
-	}
+        env->SetObjectArrayElement(urlArray, cp++, url);
+    }
 
-	// Thread thread = Thread.currentThread();
+    // Thread thread = Thread.currentThread();
 
-	jclass threadClass = env->FindClass("java/lang/Thread");
-	verify(env, threadClass)
+    jclass threadClass = env->FindClass("java/lang/Thread");
+    verify(env, threadClass)
 
-	jmethodID threadGetCurrent = env->GetStaticMethodID(threadClass, "currentThread", "()Ljava/lang/Thread;");
-	verify(env, threadGetCurrent)
+    jmethodID threadGetCurrent = env->GetStaticMethodID(threadClass, "currentThread", "()Ljava/lang/Thread;");
+    verify(env, threadGetCurrent)
 
-	jobject thread = env->CallStaticObjectMethod(threadClass, threadGetCurrent);
-	verify(env, thread)
+    jobject thread = env->CallStaticObjectMethod(threadClass, threadGetCurrent);
+    verify(env, thread)
 
-	// ClassLoader contextClassLoader = thread.getContextClassLoader();
+    // ClassLoader contextClassLoader = thread.getContextClassLoader();
 
-	jmethodID threadGetLoader = env->GetMethodID(threadClass, "getContextClassLoader", "()Ljava/lang/ClassLoader;");
-	verify(env, threadGetLoader)
+    jmethodID threadGetLoader = env->GetMethodID(threadClass, "getContextClassLoader", "()Ljava/lang/ClassLoader;");
+    verify(env, threadGetLoader)
 
-	jobject contextClassLoader = env->CallObjectMethod(thread, threadGetLoader);
-	verify(env, contextClassLoader)
+    jobject contextClassLoader = env->CallObjectMethod(thread, threadGetLoader);
+    verify(env, contextClassLoader)
 
-	// URLClassLoader urlClassLoader = new URLClassLoader(urlArray, contextClassLoader);
+    // URLClassLoader urlClassLoader = new URLClassLoader(urlArray, contextClassLoader);
 
-	jclass urlClassLoaderClass = env->FindClass("java/net/URLClassLoader");
-	verify(env, urlClassLoaderClass)
-	
-	jmethodID urlClassLoaderCtor = env->GetMethodID(urlClassLoaderClass, "<init>", "([Ljava/net/URL;Ljava/lang/ClassLoader;)V");
-	verify(env, urlClassLoaderCtor)
+    jclass urlClassLoaderClass = env->FindClass("java/net/URLClassLoader");
+    verify(env, urlClassLoaderClass)
 
-	jobject urlClassLoader = env->NewObject(urlClassLoaderClass, urlClassLoaderCtor, urlArray, contextClassLoader);
-	verify(env, urlClassLoader)
+    jmethodID urlClassLoaderCtor = env->GetMethodID(urlClassLoaderClass, "<init>", "([Ljava/net/URL;Ljava/lang/ClassLoader;)V");
+    verify(env, urlClassLoaderCtor)
 
-	// thread.setContextClassLoader(urlClassLoader)
+    jobject urlClassLoader = env->NewObject(urlClassLoaderClass, urlClassLoaderCtor, urlArray, contextClassLoader);
+    verify(env, urlClassLoader)
 
-	jmethodID threadSetLoader = env->GetMethodID(threadClass, "setContextClassLoader", "(Ljava/lang/ClassLoader;)V");
-	verify(env, threadSetLoader)
+    // thread.setContextClassLoader(urlClassLoader)
 
-	env->CallVoidMethod(thread, threadSetLoader, urlClassLoader);
+    jmethodID threadSetLoader = env->GetMethodID(threadClass, "setContextClassLoader", "(Ljava/lang/ClassLoader;)V");
+    verify(env, threadSetLoader)
 
-	// Class<?> mainClass = urlClassLoader.loadClass(<main-class-name>)
+    env->CallVoidMethod(thread, threadSetLoader, urlClassLoader);
 
-	jmethodID loadClass = env->GetMethodID(urlClassLoaderClass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
-	verify(env, loadClass)
+    // Class<?> mainClass = urlClassLoader.loadClass(<main-class-name>)
 
-	jstring mainClassNameUTF = env->NewStringUTF(className.c_str());
-	verify(env, mainClassNameUTF)
+    jmethodID loadClass = env->GetMethodID(urlClassLoaderClass, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+    verify(env, loadClass)
 
-	jobject mainClass = env->CallObjectMethod(urlClassLoader, loadClass, mainClassNameUTF);
-	verify(env, mainClass)
+    jstring mainClassNameUTF = env->NewStringUTF(className.c_str());
+    verify(env, mainClassNameUTF)
 
-	// method: 'void main(String[])'
+    jobject mainClass = env->CallObjectMethod(urlClassLoader, loadClass, mainClassNameUTF);
+    verify(env, mainClass)
 
-	jmethodID mainMethod = env->GetStaticMethodID((jclass) mainClass, "main", "([Ljava/lang/String;)V");
-	verify(env, mainMethod)
+    // method: 'void main(String[])'
 
-	*resultClass = (jclass) mainClass;
-	*resultMethod = mainMethod;
+    jmethodID mainMethod = env->GetStaticMethodID((jclass) mainClass, "main", "([Ljava/lang/String;)V");
+    verify(env, mainMethod)
 
-	return 0;
+    *resultClass = (jclass) mainClass;
+    *resultMethod = mainMethod;
+
+    return 0;
 }
 
-static sajson::document readConfigurationFile(const string& fileName) {
+static sajson::document readConfigurationFile(const string &fileName) {
 
-	ifstream in(fileName.c_str(), std::ios::in | std::ios::binary);
-	string content((istreambuf_iterator<char>(in)), (istreambuf_iterator<char>()));
+    ifstream in(fileName.c_str(), std::ios::in | std::ios::binary);
+    string content((istreambuf_iterator<char>(in)), (istreambuf_iterator<char>()));
 
-	sajson::document json = sajson::parse(sajson::literal(content.c_str()));
-	return json;
+    sajson::document json = sajson::parse(sajson::literal(content.c_str()));
+    return json;
 }
 
-static bool hasJsonValue(sajson::value jsonObject, const char* key, sajson::type expectedType) {
-	size_t index = jsonObject.find_object_key(sajson::literal(key));
-	if (index == jsonObject.get_length()) {
-		return false;
-	}
-	sajson::value value = jsonObject.get_object_value(index);
-	return value.get_type() == expectedType;
+static bool hasJsonValue(sajson::value jsonObject, const char *key, sajson::type expectedType) {
+    size_t index = jsonObject.find_object_key(sajson::literal(key));
+    if (index == jsonObject.get_length()) {
+        return false;
+    }
+    sajson::value value = jsonObject.get_object_value(index);
+    return value.get_type() == expectedType;
 }
 
-static sajson::value getJsonValue(sajson::value jsonObject, const char* key) {
-	size_t index = jsonObject.find_object_key(sajson::literal(key));
-	return jsonObject.get_object_value(index);
+static sajson::value getJsonValue(sajson::value jsonObject, const char *key) {
+    size_t index = jsonObject.find_object_key(sajson::literal(key));
+    return jsonObject.get_object_value(index);
 }
 
-static vector<string> extractClassPath(const sajson::value& classPath) {
+static vector<string> extractClassPath(const sajson::value &classPath) {
 
-	size_t count = classPath.get_length();
-	vector<string> paths;
+    size_t count = classPath.get_length();
+    vector<string> paths;
 
-	for (size_t cp = 0; cp < count; cp++) {
+    for (size_t cp = 0; cp < count; cp++) {
 
-		string classPathURL = classPath.get_array_element(cp).as_string();
+        string classPathURL = classPath.get_array_element(cp).as_string();
 
-		// TODO: don't just test for file extension
-		if (classPathURL.rfind(".txt") != classPathURL.length() - 4) {
+        // TODO: don't just test for file extension
+        if (classPathURL.rfind(".txt") != classPathURL.length() - 4) {
 
-			paths.push_back(classPathURL);
+            paths.push_back(classPathURL);
 
-		} else {
+        } else {
 
-			ifstream txt(classPathURL.c_str());
-			string line;
+            ifstream txt(classPathURL.c_str());
+            string line;
 
-			while (!txt.eof()) {
+            while (!txt.eof()) {
 
-				txt >> line;
+                txt >> line;
 
-				if (line.find("-classpath") == 0) {
+                if (line.find("-classpath") == 0) {
 
-					txt >> line;
+                    txt >> line;
 
-					istringstream iss(line);
-					string path;
+                    istringstream iss(line);
+                    string path;
 
-					while (getline(iss, path, __CLASS_PATH_DELIM)) {
-						paths.push_back(path);
-					}
+                    while (getline(iss, path, __CLASS_PATH_DELIM)) {
+                        paths.push_back(path);
+                    }
 
-					break;
-				}
+                    break;
+                }
 
-			}
+            }
 
-			txt.close();
+            txt.close();
 
-		}
+        }
 
-	}
+    }
 
-	return paths;
+    return paths;
 }
 
 /**
@@ -426,23 +426,23 @@ bool setCmdLineArguments(int argc, dropt_char **argv) {
                     configurationPath = string((char *) config);
                 }
             }
-		} else {
-			// treat all arguments as "remains"
-			remains = &argv[1];
-		}
+        } else {
+            // treat all arguments as "remains"
+            remains = &argv[1];
+        }
 
-		// count number of unparsed arguments
-		dropt_char ** cnt = remains;
-		while (*cnt != nullptr) {
-			cmdLineArgc++;
-			cnt++;
-		}
+        // count number of unparsed arguments
+        dropt_char **cnt = remains;
+        while (*cnt != nullptr) {
+            cmdLineArgc++;
+            cnt++;
+        }
 
-		// copy unparsed arguments
-		cmdLineArgv = new char*[cmdLineArgc];
-		cmdLineArgc = 0;
+        // copy unparsed arguments
+        cmdLineArgv = new char *[cmdLineArgc];
+        cmdLineArgc = 0;
 
-		while (*remains != nullptr) {
+        while (*remains != nullptr) {
 #ifdef UNICODE
             wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
             string utf8CommandLineArgument = converter.to_bytes(*remains);
@@ -494,29 +494,27 @@ void launchJavaVM(const LaunchJavaVMCallback &callback) {
         cout << "Loading JVM runtime library ..." << endl;
     }
 
-	GetDefaultJavaVMInitArgs getDefaultJavaVMInitArgs = nullptr;
-	CreateJavaVM createJavaVM = nullptr;
+    GetDefaultJavaVMInitArgs getDefaultJavaVMInitArgs = nullptr;
+    CreateJavaVM createJavaVM = nullptr;
 
-	if (!loadJNIFunctions(&getDefaultJavaVMInitArgs, &createJavaVM)) {
-		cerr << "Error: failed to load VM runtime library!" << endl;
-		exit(EXIT_FAILURE);
-	}
+    if (!loadJNIFunctions(&getDefaultJavaVMInitArgs, &createJavaVM)) {
+        cerr << "Error: failed to load VM runtime library!" << endl;
+        exit(EXIT_FAILURE);
+    }
 
-	// get default init arguments
-	JavaVMInitArgs args;
-	args.version = JNI_VERSION_1_6;
-	args.options = nullptr;
-	args.nOptions = 0;
-	args.ignoreUnrecognized = JNI_TRUE;
+    // get default init arguments
+    JavaVMInitArgs args;
+    args.version = JNI_VERSION_1_6;
+    args.options = nullptr;
+    args.nOptions = 0;
+    args.ignoreUnrecognized = JNI_TRUE;
 
-	if (hasJsonValue(jsonRoot, "jniVersion", sajson::TYPE_INTEGER)) {
+    if (hasJsonValue(jsonRoot, "jniVersion", sajson::TYPE_INTEGER)) {
         sajson::value jniVersion = getJsonValue(jsonRoot, "jniVersion");
         switch (jniVersion.get_integer_value()) {
-            case 8:
-                args.version = JNI_VERSION_1_8;
+            case 8:args.version = JNI_VERSION_1_8;
                 break;
-            default:
-                args.version = JNI_VERSION_1_6;
+            default:args.version = JNI_VERSION_1_6;
                 break;
         }
     }
@@ -534,24 +532,29 @@ void launchJavaVM(const LaunchJavaVMCallback &callback) {
     vector<JavaVMOption> optionsVector;
     vector<unique_ptr<char *>> optionStrings;
 
-    if(verbose){
-        cout << "isZgcSupported()=" << isZgcSupported() << ", hasJsonValue(jsonRoot, \"useZgcIfSupportedOs\", sajson::TYPE_TRUE)=" << hasJsonValue(jsonRoot, "useZgcIfSupportedOs", sajson::TYPE_TRUE) << endl;
+    if (verbose) {
+        cout
+                << "isZgcSupported()="
+                << isZgcSupported()
+                << ", hasJsonValue(jsonRoot, \"useZgcIfSupportedOs\", sajson::TYPE_TRUE)="
+                << hasJsonValue(jsonRoot, "useZgcIfSupportedOs", sajson::TYPE_TRUE)
+                << endl;
     }
     if (isZgcSupported() && hasJsonValue(jsonRoot, "useZgcIfSupportedOs", sajson::TYPE_TRUE)) {
         JavaVMOption unlockExperimental;
-        unlockExperimental.optionString = (char*)"-XX:+UnlockExperimentalVMOptions";
+        unlockExperimental.optionString = (char *) "-XX:+UnlockExperimentalVMOptions";
         unlockExperimental.extraInfo = nullptr;
         optionsVector.push_back(unlockExperimental);
         JavaVMOption useZGC;
-        useZGC.optionString = (char*)"-XX:+UseZGC";
+        useZGC.optionString = (char *) "-XX:+UseZGC";
         useZGC.extraInfo = nullptr;
         optionsVector.push_back(useZGC);
     }
 
     if (hasJsonValue(jsonRoot, "vmArgs", sajson::TYPE_ARRAY)) {
-		sajson::value vmArgs = getJsonValue(jsonRoot, "vmArgs");
+        sajson::value vmArgs = getJsonValue(jsonRoot, "vmArgs");
 
-		for (size_t vmArg = 0; vmArg < vmArgs.get_length(); vmArg++) {
+        for (size_t vmArg = 0; vmArg < vmArgs.get_length(); vmArg++) {
             string vmArgValue = vmArgs.get_array_element(vmArg).as_string();
             if (verbose) {
                 cout << "  # " << vmArgValue << endl;
@@ -564,107 +567,141 @@ void launchJavaVM(const LaunchJavaVMCallback &callback) {
         }
     }
 
-	args.nOptions = optionsVector.size();
-	args.options = &optionsVector[0];
+    args.nOptions = optionsVector.size();
+    args.options = &optionsVector[0];
 
-	if(verbose) {
-	    cout << "Passing VM options:" << endl;
+    if (verbose) {
+        cout << "Passing VM options:" << endl;
         for (int optionIndex = 0; optionIndex < args.nOptions; optionIndex++) {
             cout << "  " << args.options[optionIndex].optionString << endl;
         }
     }
 
-	/*
-		Reroute JVM creation through platform-dependent code.
+    /*
+        Reroute JVM creation through platform-dependent code.
 
-		On OS X this is used to decide if packr needs to spawn an additional thread, and create
-		its own RunLoop.
+        On OS X this is used to decide if packr needs to spawn an additional thread, and create
+        its own RunLoop.
 
-		Done as lambda to capture local variables, and remain in function scope.
-	*/
+        Done as lambda to capture local variables, and remain in function scope.
+    */
 
-	callback([&](void*) {
+    callback([&](void *) {
 
-		// create JVM
+        // create JVM
 
-		JavaVM* jvm = nullptr;
-		JNIEnv* env = nullptr;
+        JavaVM *jvm = nullptr;
+        JNIEnv *env = nullptr;
 
-		if (verbose) {
-			cout << "Creating Java VM ..." << endl;
-		}
+        if (verbose) {
+            cout << "Creating Java VM ..." << endl;
+        }
 
-		if (createJavaVM(&jvm, (void**) &env, &args) < 0) {
-			cerr << "Error: failed to create Java VM!" << endl;
-			exit(EXIT_FAILURE);
-		}
+        if (createJavaVM(&jvm, (void **) &env, &args) < 0) {
+            cerr << "Error: failed to create Java VM!" << endl;
+            exit(EXIT_FAILURE);
+        }
 
-		// create array of arguments to pass to Java main()
+        // create array of arguments to pass to Java main()
 
-		if (verbose) {
-			cout << "Passing command line arguments ..." << endl;
-		}
+        if (verbose) {
+            cout << "Passing command line arguments ..." << endl;
+        }
 
-		jobjectArray appArgs = env->NewObjectArray(cmdLineArgc, env->FindClass("java/lang/String"), nullptr);
-		for (size_t i = 0; i < cmdLineArgc; i++) {
-			if (verbose) {
-				cout << "  # " << cmdLineArgv[i] << endl;
-			}
-			jstring arg = env->NewStringUTF(cmdLineArgv[i]);
-			env->SetObjectArrayElement(appArgs, i, arg);
-		}
+        jobjectArray appArgs = env->NewObjectArray(cmdLineArgc, env->FindClass("java/lang/String"), nullptr);
+        for (size_t i = 0; i < cmdLineArgc; i++) {
+            if (verbose) {
+                cout << "  # " << cmdLineArgv[i] << endl;
+            }
+            jstring arg = env->NewStringUTF(cmdLineArgv[i]);
+            env->SetObjectArrayElement(appArgs, i, arg);
+        }
 
-		// load main class & method from classpath
+        // load main class & method from classpath
 
-		if (verbose) {
-			cout << "Loading JAR file ..." << endl;
-		}
+        if (verbose) {
+            cout << "Loading JAR file ..." << endl;
+        }
 
-		if (!hasJsonValue(jsonRoot, "mainClass", sajson::TYPE_STRING)) {
-			cerr << "Error: no 'mainClass' element found in config!" << endl;
-			exit(EXIT_FAILURE);
-		}
+        if (!hasJsonValue(jsonRoot, "mainClass", sajson::TYPE_STRING)) {
+            cerr << "Error: no 'mainClass' element found in config!" << endl;
+            exit(EXIT_FAILURE);
+        }
 
-		if (!hasJsonValue(jsonRoot, "classPath", sajson::TYPE_ARRAY)) {
-			cerr << "Error: no 'classPath' array found in config!" << endl;
-			exit(EXIT_FAILURE);
-		}
+        if (!hasJsonValue(jsonRoot, "classPath", sajson::TYPE_ARRAY)) {
+            cerr << "Error: no 'classPath' array found in config!" << endl;
+            exit(EXIT_FAILURE);
+        }
 
-		const string main = getJsonValue(jsonRoot, "mainClass").as_string();
-		sajson::value jsonClassPath = getJsonValue(jsonRoot, "classPath");
-		vector<string> classPath = extractClassPath(jsonClassPath);
+        const string main = getJsonValue(jsonRoot, "mainClass").as_string();
+        sajson::value jsonClassPath = getJsonValue(jsonRoot, "classPath");
+        vector<string> classPath = extractClassPath(jsonClassPath);
 
-		jclass mainClass = nullptr;
-		jmethodID mainMethod = nullptr;
+        jclass mainClass = nullptr;
+        jmethodID mainMethod = nullptr;
 
-		if (loadStaticMethod(env, classPath, main, &mainClass, &mainMethod) != 0) {
-			cerr << "Error: failed to load/find main class " << main << endl;
-			exit(EXIT_FAILURE);
-		}
+        if (loadStaticMethod(env, classPath, main, &mainClass, &mainMethod) != 0) {
+            cerr << "Error: failed to load/find main class " << main << endl;
+            exit(EXIT_FAILURE);
+        }
 
-		// call main() method
+        // call main() method
 
-		if (verbose) {
-			cout << "Invoking static " << main << ".main() function ..." << endl;
-		}
+        if (verbose) {
+            cout << "Invoking static " << main << ".main() function ..." << endl;
+        }
 
-		env->CallStaticVoidMethod(mainClass, mainMethod, appArgs);
+        env->CallStaticVoidMethod(mainClass, mainMethod, appArgs);
+        jboolean exceptionOccurred = env->ExceptionCheck();
+        if (verbose) {
+            cout << "Checked for an exception from the main method, exceptionOccurred=" << (bool) exceptionOccurred << endl;
+        }
+        if (exceptionOccurred) {
+            if (verbose) {
+                cout << "Calling java.lang.Thread#dispatchUncaughtException(Throwable) on main thread" << endl;
+            }
+            jthrowable throwable = env->ExceptionOccurred();
+            // Thread thread = Thread.currentThread();
+            jclass threadClass = env->FindClass("java/lang/Thread");
+            if (threadClass == nullptr) {
+                cerr << "Couldn't load thread class";
+                return nullptr;
+            }
+            jmethodID threadGetCurrent = env->GetStaticMethodID(threadClass, "currentThread", "()Ljava/lang/Thread;");
+            if (threadGetCurrent == nullptr) {
+                cerr << "Couldn't load current thread method";
+                return nullptr;
+            }
+            jobject thread = env->CallStaticObjectMethod(threadClass, threadGetCurrent);
+            if (thread == nullptr) {
+                cerr << "Couldn't load thread current";
+                return nullptr;
+            }
+            // call java.lang.Thread#dispatchUncaughtException(Throwable)
+            jmethodID dispatchMethodId = env->GetMethodID(threadClass, "dispatchUncaughtException", "(Ljava/lang/Throwable;)V");
+            if(threadClass== nullptr){
+                cerr << "Couldn't find method dispatchUncaughtException";
+                return nullptr;
+            }
+            env->CallVoidMethod(thread, dispatchMethodId, throwable);
+            env->ExceptionClear();
+        }
 
-		// cleanup
-		for (size_t cmdLineArg = 0; cmdLineArg < cmdLineArgc; cmdLineArg++) {
-			free(cmdLineArgv[cmdLineArg]);
-		}
+        // cleanup
+        for (size_t cmdLineArg = 0; cmdLineArg < cmdLineArgc; cmdLineArg++) {
+            free(cmdLineArgv[cmdLineArg]);
+        }
 
-		delete[] cmdLineArgv;
+        delete[] cmdLineArgv;
 
-		// blocks this thread until the Java main() method exits
+        // blocks this thread until the Java main() method exits
 
-		jvm->DestroyJavaVM();
+        jvm->DestroyJavaVM();
 
-		if (verbose) {
-			cout << "Destroyed Java VM ..." << endl;
-		}
+        if (verbose) {
+            cout << "Destroyed Java VM ..." << endl;
+        }
 
-		return nullptr;
-	}, args);
+        return nullptr;
+    }, args);
 }

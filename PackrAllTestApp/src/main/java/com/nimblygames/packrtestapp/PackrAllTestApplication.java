@@ -36,19 +36,13 @@ public class PackrAllTestApplication {
         System.out.println("Running from java.version=" + System.getProperty("java.version"));
 
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-            System.out.println("Received uncaught exception");
+            System.out.println("Received uncaught exception in thread.getName()=" + thread.getName() + ", Thread.currentThread().getName()=" + Thread.currentThread().getName());
             throwable.printStackTrace(System.out);
         });
-
-        Thread throwingThread = new Thread(() -> {
-            throw new RuntimeException("Unchecked exception from thread " + Thread.currentThread().getName());
-        }, "throwing-thread");
-        throwingThread.start();
 
         Files.lines(Paths.get("application-resources").resolve("fake-resource.txt"))
                 .forEach(resourceLine -> System.out.println("Loaded resource line: " + resourceLine));
 
-        throwingThread.join();
-        Thread.sleep(250);
+        throw new RuntimeException("Testing uncaught exception handler. Thrown from the main thread, Thread.currentThread().getName()=" + Thread.currentThread().getName());
     }
 }
