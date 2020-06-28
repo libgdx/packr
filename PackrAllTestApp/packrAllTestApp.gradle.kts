@@ -16,10 +16,7 @@
  */
 
 import org.apache.tools.ant.taskdefs.condition.Os
-import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_MAC
-import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_UNIX
-import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS
-import org.apache.tools.ant.taskdefs.condition.Os.isFamily
+import org.apache.tools.ant.taskdefs.condition.Os.*
 import org.gradle.internal.jvm.Jvm
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
@@ -188,6 +185,9 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
             }
             if (!outputAsString.contains("Loaded resource line: My resource!")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't execute properly, output did not contain My resource!")
+            }
+            if (!outputAsString.contains("Received uncaught exception")) {
+               throw GradleException("Packr bundle in $packrOutputDirectory didn't catch an unchecked exception with setDefaultUncaughtExceptionHandler")
             }
             if (fileNameNoExtension.toLowerCase().contains("jdk14") && !outputAsString.contains("Using The Z Garbage Collector")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't execute using the Z garbage collector")
