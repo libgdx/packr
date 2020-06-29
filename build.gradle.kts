@@ -17,7 +17,7 @@
 
 
 group = "com.nimblygames.packr"
-version = "2.6.3"
+version = "2.6.4-SNAPSHOT"
 
 ext["macOsMinimumVersion"] = "10.10"
 
