@@ -1,3 +1,6 @@
+# Release 2.6.4
+1. Fixed an issue with uncaught exception handlers not being called for the main thread.
+   * dispatchUncaughtException is called on the main thread if an exception is detected after calling the main method.
 # Release 2.6.3
 1. Support macOS versions down to 10.10 Yosemite
    * Added compiler flag `-mmacosx-version-min=10.10`
