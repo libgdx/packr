@@ -340,7 +340,7 @@ publishing {
 signing.useGpgCmd()
 
 if (isSnapshot) {
-   logger.info("Skipping signing ")
+   logger.info("Skipping signing")
 } else {
    publishing.publications.configureEach {
       logger.info("Should sign publication ${this.name}")
