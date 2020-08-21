@@ -1,3 +1,6 @@
+# Unreleased
+1. Fixed a Gradle script error where it was bundling the release builds with debug info on Linux and macOS.
+   * For Linux this reduces the executable size from ~722K to ~95K.
 # Release 2.6.4
 1. Fixed an issue with uncaught exception handlers not being called for the main thread.
    * dispatchUncaughtException is called on the main thread if an exception is detected after calling the main method.
