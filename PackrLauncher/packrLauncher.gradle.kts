@@ -190,6 +190,8 @@ application {
          binaryCompileTask.compilerArgs.add("-fmessage-length=0")
          binaryCompileTask.compilerArgs.add("-Wwrite-strings")
          binaryCompileTask.compilerArgs.add("-std=c++14")
+         binaryCompileTask.compilerArgs.add("-no-pie")
+         binaryCompileTask.compilerArgs.add("-fno-pie")
 
          // compiler linux
          if (targetPlatform.targetMachine.architecture.name == MachineArchitecture.X86) {
@@ -205,6 +207,8 @@ application {
          }
 
          binaryLinkTask.linkerArgs.add("-ldl")
+         binaryLinkTask.linkerArgs.add("-no-pie")
+         binaryLinkTask.linkerArgs.add("-fno-pie")
       } else if (binaryToolChain is Clang) {
          binaryCompileTask.compilerArgs.add("-fPIC")
          binaryCompileTask.compilerArgs.add("-c")
@@ -237,6 +241,8 @@ unitTest {
             binaryLinkTask.linkerArgs.add("-lpthread")
          }
          binaryLinkTask.linkerArgs.add("-ldl")
+         binaryLinkTask.linkerArgs.add("-no-pie")
+         binaryLinkTask.linkerArgs.add("-fno-pie")
       } else if (toolChain is Clang) {
          binaryLinkTask.linkerArgs.add("-ldl")
       } else if (toolChain is VisualCpp) {

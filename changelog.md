@@ -1,6 +1,9 @@
 # Unreleased
 1. Fixed a Gradle script error where it was bundling the release builds with debug info on Linux and macOS.
    * For Linux this reduces the executable size from ~722K to ~95K.
+1. Compile with `-no-pie` on Linux to work around a Nautilus bug.
+   * <https://stackoverflow.com/questions/41398444/gcc-creates-mime-type-application-x-sharedlib-instead-of-application-x-applicati>
+   * <https://stackoverflow.com/questions/34519521/why-does-gcc-create-a-shared-object-instead-of-an-executable-binary-according-to?noredirect=1&lq=1>
 1. Updated Gradle wrapper to version 6.5.1.
 # Release 2.6.4
 1. Fixed an issue with uncaught exception handlers not being called for the main thread.
