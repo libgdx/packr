@@ -180,10 +180,18 @@ application {
          binaryCompileTask.compilerArgs.add("/utf-8")
 
          binaryLinkTask.linkerArgs.add("/nologo")
-
          binaryLinkTask.linkerArgs.add("/SUBSYSTEM:WINDOWS")
          binaryLinkTask.linkerArgs.add("User32.lib")
          binaryLinkTask.linkerArgs.add("Shell32.lib")
+
+         if (binaryCompileTask.isOptimized) {
+            binaryCompileTask.compilerArgs.add("/Os")
+            binaryCompileTask.compilerArgs.add("/Gw")
+            binaryCompileTask.compilerArgs.add("/Gy")
+
+            binaryLinkTask.linkerArgs.add("/opt:icf")
+            binaryLinkTask.linkerArgs.add("/opt:ref")
+         }
       } else if (binaryToolChain is Gcc) {
          binaryCompileTask.compilerArgs.add("-fPIC")
          binaryCompileTask.compilerArgs.add("-c")
