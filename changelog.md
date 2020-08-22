@@ -1,4 +1,4 @@
-# Unreleased
+# Release 2.7.0
 1. Fixed a Gradle script error where it was bundling the release builds with debug info on Linux and macOS.
    * For Linux this reduces the executable size from ~722K to ~95K.
 1. Compile with `-no-pie` on Linux to work around a Nautilus bug.
