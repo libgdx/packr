@@ -27,3 +27,18 @@ include("PackrAllTestApp")
 project(":PackrAllTestApp").buildFileName = "packrAllTestApp.gradle.kts"
 include("TestAppJreDist")
 project(":TestAppJreDist").buildFileName = "testAppJreDist.gradle.kts"
+
+pluginManagement {
+   repositories {
+      gradlePluginPortal()
+      mavenCentral()
+      maven(uri("https://oss.sonatype.org/content/repositories/snapshots/"))
+   }
+   resolutionStrategy {
+      eachPlugin {
+         if (requested.id.id == "com.nimblygames.gradle") {
+            useModule("com.nimblygames.gradle:gradle-plugin:1.2.0-SNAPSHOT")
+         }
+      }
+   }
+}

@@ -16,6 +16,9 @@
  */
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.nimblygames.gradle.getPropertyOrEnvVar
+import com.nimblygames.gradle.hasPropertyOrEnvVar
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -28,14 +31,19 @@ plugins {
    application
    id("com.github.johnrengelman.shadow") version "5.2.0"
    signing
+   id("com.nimblygames.gradle")
 }
+
+/**
+ * URI for the GitHub Packr Maven repository.
+ */
+val gitHubPackrMavenUri: URI = uri("https://maven.pkg.github.com/karlsabo/packr")
 
 repositories {
    mavenCentral()
    jcenter()
-   maven {
-      url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
-   }
+   maven(uri("https://oss.sonatype.org/content/repositories/snapshots/"))
+   maven(gitHubPackrMavenUri)
    for (repositoryIndex in 0..10) {
       if (project.hasProperty("maven.repository.url.$repositoryIndex") && project.findProperty("maven.repository.isdownload.$repositoryIndex")
             .toString()
@@ -264,6 +272,14 @@ publishing {
                   username = project.findProperty("maven.repository.username.$repositoryIndex") as String
                   password = project.findProperty("maven.repository.password.$repositoryIndex") as String
                }
+            }
+         }
+      }
+      if (hasPropertyOrEnvVar("GITHUB_PACKR_MAVEN_USERNAME")) {
+         maven(gitHubPackrMavenUri) {
+            credentials {
+               username = getPropertyOrEnvVar("GITHUB_PACKR_MAVEN_USERNAME")
+               password = getPropertyOrEnvVar("GITHUB_PACKR_MAVEN_TOKEN")
             }
          }
       }

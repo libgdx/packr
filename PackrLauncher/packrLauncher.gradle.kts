@@ -17,7 +17,10 @@
 
 @file:Suppress("UnstableApiUsage")
 
+import com.nimblygames.gradle.getPropertyOrEnvVar
+import com.nimblygames.gradle.hasPropertyOrEnvVar
 import org.gradle.internal.jvm.Jvm
+import java.net.URI
 import java.nio.file.Path
 
 group = rootProject.group
@@ -31,6 +34,7 @@ plugins {
    `visual-studio`
    `maven-publish`
    signing
+   id("com.nimblygames.gradle")
 }
 
 repositories {
@@ -244,20 +248,24 @@ unitTest {
 
    binaries.configureEach(CppTestExecutable::class.java) {
       val binaryLinkTask = linkTask.get()
-      if (toolChain is Gcc) {
-         if (targetMachine.operatingSystemFamily.isLinux) {
-            binaryLinkTask.linkerArgs.add("-lpthread")
+      when (toolChain) {
+         is Gcc -> {
+            if (targetMachine.operatingSystemFamily.isLinux) {
+               binaryLinkTask.linkerArgs.add("-lpthread")
+            }
+            binaryLinkTask.linkerArgs.add("-ldl")
+            binaryLinkTask.linkerArgs.add("-no-pie")
+            binaryLinkTask.linkerArgs.add("-fno-pie")
          }
-         binaryLinkTask.linkerArgs.add("-ldl")
-         binaryLinkTask.linkerArgs.add("-no-pie")
-         binaryLinkTask.linkerArgs.add("-fno-pie")
-      } else if (toolChain is Clang) {
-         binaryLinkTask.linkerArgs.add("-ldl")
-      } else if (toolChain is VisualCpp) {
-         compileTask.get().macros["UNICODE"] = null
-         compileTask.get().macros["_UNICODE"] = null
-         binaryLinkTask.linkerArgs.add("/SUBSYSTEM:CONSOLE")
-         binaryLinkTask.linkerArgs.add("Shell32.lib")
+         is Clang -> {
+            binaryLinkTask.linkerArgs.add("-ldl")
+         }
+         is VisualCpp -> {
+            compileTask.get().macros["UNICODE"] = null
+            compileTask.get().macros["_UNICODE"] = null
+            binaryLinkTask.linkerArgs.add("/SUBSYSTEM:CONSOLE")
+            binaryLinkTask.linkerArgs.add("Shell32.lib")
+         }
       }
 
       if (targetMachine.operatingSystemFamily.isMacOs) {
@@ -276,6 +284,11 @@ tasks.withType(RunTestExecutable::class).configureEach {
 artifacts {
    add(configurations.register("currentOsExecutables").name, currentOsExecutableZip)
 }
+
+/**
+ * URI for the GitHub Packr Maven repository.
+ */
+val gitHubPackrMavenUri: URI = uri("https://maven.pkg.github.com/karlsabo/packr")
 
 /**
  * Is the packer launcher version a snapshot or release?
@@ -299,6 +312,14 @@ publishing {
                   }
                }
             }
+      }
+      if (hasPropertyOrEnvVar("GITHUB_PACKR_MAVEN_USERNAME")) {
+         maven(uri(gitHubPackrMavenUri)) {
+            credentials {
+               username = getPropertyOrEnvVar("GITHUB_PACKR_MAVEN_USERNAME")
+               password = getPropertyOrEnvVar("GITHUB_PACKR_MAVEN_TOKEN")
+            }
+         }
       }
    }
    publications {
