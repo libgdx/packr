@@ -43,7 +43,14 @@ repositories {
    mavenCentral()
    jcenter()
    maven(uri("https://oss.sonatype.org/content/repositories/snapshots/"))
-   maven(gitHubPackrMavenUri)
+   if (hasPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")) {
+      maven(gitHubPackrMavenUri) {
+         credentials {
+            username = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")
+            password = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_TOKEN")
+         }
+      }
+   }
    for (repositoryIndex in 0..10) {
       if (project.hasProperty("maven.repository.url.$repositoryIndex") && project.findProperty("maven.repository.isdownload.$repositoryIndex")
             .toString()
