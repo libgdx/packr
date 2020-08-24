@@ -43,14 +43,8 @@ repositories {
    mavenCentral()
    jcenter()
    maven(uri("https://oss.sonatype.org/content/repositories/snapshots/"))
-   if (hasPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")) {
-      maven(gitHubPackrMavenUri) {
-         credentials {
-            username = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")
-            password = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_TOKEN")
-         }
-      }
-   }
+   // TODO GitHub isn't respecting Maven coordinates and is given errors `Could not GET 'https://maven.pkg.github.com/karlsabo/packr/com/nimblygames/packr/packrLauncher-linux-x86-64/2.8.0-SNAPSHOT/maven-metadata.xml'. Received status code 400 from server: Bad Request`
+   //      maven(gitHubPackrMavenUri)
    for (repositoryIndex in 0..10) {
       if (project.hasProperty("maven.repository.url.$repositoryIndex") && project.findProperty("maven.repository.isdownload.$repositoryIndex")
             .toString()

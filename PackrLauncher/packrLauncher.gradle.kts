@@ -313,6 +313,8 @@ publishing {
                }
             }
       }
+
+      // TODO GitHub isn't respecting Maven coordinates.
       if (hasPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")) {
          maven(uri(gitHubPackrMavenUri)) {
             credentials {
