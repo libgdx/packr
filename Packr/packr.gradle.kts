@@ -275,11 +275,11 @@ publishing {
             }
          }
       }
-      if (hasPropertyOrEnvVar("GITHUB_PACKR_MAVEN_USERNAME")) {
+      if (hasPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")) {
          maven(gitHubPackrMavenUri) {
             credentials {
-               username = getPropertyOrEnvVar("GITHUB_PACKR_MAVEN_USERNAME")
-               password = getPropertyOrEnvVar("GITHUB_PACKR_MAVEN_TOKEN")
+               username = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")
+               password = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_TOKEN")
             }
          }
       }
