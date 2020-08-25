@@ -276,7 +276,8 @@ publishing {
             }
          }
       }
-      if (hasPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")) {
+      // TODO GitHub repository isn't working. It doesn't behave like other Maven repositories (Sonatype or Artifactory).
+      @Suppress("SimplifyBooleanWithConstants") if (false && hasPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")) {
          maven(gitHubPackrMavenUri) {
             credentials {
                username = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")

@@ -314,8 +314,11 @@ publishing {
             }
       }
 
-      // TODO GitHub isn't respecting Maven coordinates.
-      if (hasPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")) {
+      /*
+       * TODO GitHub repository isn't working, it isn't respecting Maven coordinates or keeping maven-metadata.xml.
+       *  It doesn't behave like other Maven repositories (Sonatype or Artifactory).
+       */
+      @Suppress("SimplifyBooleanWithConstants") if (false && hasPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")) {
          maven(uri(gitHubPackrMavenUri)) {
             credentials {
                username = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")
