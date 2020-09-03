@@ -7,7 +7,7 @@ On the topic of games, Packr version 2.4.2+ supports Java 14 and the [Z garbage 
 The latest build is available for [download here](https://github.com/libgdx/packr/releases).
 
 Resource artifacts are available at [Maven Central](https://mvnrepository.com/artifact/com.nimblygames.packr)
-* Soon to be available from [Maven Central](https://mvnrepository.com/artifact/com.libgdx.packr)
+* Soon to be available from [Maven Central](https://mvnrepository.com/artifact/com.badlogicgames.packr)
 
 # Usage
 You point packr at your JAR file(s) containing your code and assets, some configuration parameters, and a URL or local file location to a JDK build for your target platform.
@@ -95,7 +95,7 @@ repositories {
    mavenCentral()
 }
 dependencies {
-   imlementation("com.libgdx.packr:packr:2.6.3")
+   imlementation("com.badlogicgames.packr:packr:2.6.3")
 }
 ```
 

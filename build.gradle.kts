@@ -16,7 +16,7 @@
  */
 
 
-group = "com.libgdx.packr"
+group = "com.badlogicgames.packr"
 version = "3.0.0-SNAPSHOT"
 
 ext["macOsMinimumVersion"] = "10.10"

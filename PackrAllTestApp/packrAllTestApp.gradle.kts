@@ -94,7 +94,7 @@ dependencies {
 }
 
 application {
-   mainClassName = "com.libgdx.packrtestapp.PackrAllTestApplication"
+   mainClassName = "com.badlogicgames.packrtestapp.PackrAllTestApplication"
 }
 
 /**
@@ -272,7 +272,7 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       args("--minimizejre")
       args("soft")
       args("--mainclass")
-      args("com.libgdx.packrtestapp.PackrAllTestApplication")
+      args("com.badlogicgames.packrtestapp.PackrAllTestApplication")
       args("--vmargs")
       args("Xms64M")
       args("--vmargs")
