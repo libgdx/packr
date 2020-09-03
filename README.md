@@ -96,7 +96,7 @@ repositories {
    mavenCentral()
 }
 dependencies {
-   imlementation("com.badlogicgames.packr:packr:2.6.3")
+   imlementation("com.badlogicgames.packr:packr:3.0.0")
 }
 ```
 
@@ -281,7 +281,7 @@ This project downloads JDKS 8, 11, and 14 and runs jlink on the 11 and 14 versio
 ## Limitations
 * Only Adopt OpenJDKs 8, 11, and 14 are tested (other JDKs probably work)
 * Icons aren't set yet on Windows and Linux, you need to do that manually.
-* Minimum platform requirement on MacOS is OS X 10.10 (Only 10.15 macOS Catalina actively tested, there are users that report 10.14 works).
+* Minimum platform requirement on MacOS is OS X 10.10 (Only 10.15 macOS Catalina is actively tested, there are users that report 10.14 works).
 * JRE minimization is very conservative. Depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr. If you're using Java 11+ you should create a JRE using [jlink](https://docs.oracle.com/en/java/javase/11/tools/jlink.html).
 * On MacOS, the JVM is spawned in its own thread by default, which is a requirement of AWT. This does not work with code based on LWJGL3/GLFW, which needs the JVM be spawned on the main thread. You can enforce the latter with adding the `-XstartOnFirstThread` VM argument to your MacOS packr config.
 
