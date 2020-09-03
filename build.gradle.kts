@@ -17,7 +17,7 @@
 
 
 group = "com.libgdx.packr"
-version = "2.8.0-SNAPSHOT"
+version = "3.0.0-SNAPSHOT"
 
 ext["macOsMinimumVersion"] = "10.10"
 
