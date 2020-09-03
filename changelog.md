@@ -1,3 +1,5 @@
+# Release 3.0.0-SNAPSHOT
+1. Refactored code to fit better into libGdx/packr parent repository.
 # Release 2.7.0
 1. Fixed a Gradle script error where it was bundling the release builds with debug info on Linux and macOS.
    * For Linux this reduces the executable size from ~722K to ~95K.

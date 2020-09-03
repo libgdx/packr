@@ -3,11 +3,12 @@ Packages your JAR, assets and a JVM for distribution on Windows, Linux and macOS
 
 On the topic of games, Packr version 2.4.2+ supports Java 14 and the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) has been verified to work. Because who doesn't want GC pause times guaranteed to not exceed 10ms with work in progress for sub 1ms GC pauses. When bundling Java 14+ make sure to use `--useZgcIfSupportedOs` instead of passing `--vmargs XX:+UseZGC` because versions of Windows before Windows 10 1803 are not supported by the Z garbage collector.
 
+Starting with Java 14, there's a new tool that is included with the JDK called [jpackage](https://docs.oracle.com/en/java/javase/14/jpackage/packaging-overview.html). There's a lot of overlap between jpackage and packr. Considering jpackage is supported by the broader OpenJDK community, it's worth looking into. It might be a better solution for your product.
+
 # Download
 The latest build is available for [download here](https://github.com/libgdx/packr/releases).
 
-Resource artifacts are available at [Maven Central](https://mvnrepository.com/artifact/com.nimblygames.packr)
-* Soon to be available from [Maven Central](https://mvnrepository.com/artifact/com.badlogicgames.packr)
+Resource artifacts are available at [Maven Central](https://mvnrepository.com/artifact/com.badlogicgames.packr)
 
 # Usage
 You point packr at your JAR file(s) containing your code and assets, some configuration parameters, and a URL or local file location to a JDK build for your target platform.
