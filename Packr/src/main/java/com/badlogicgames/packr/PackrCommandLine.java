@@ -30,44 +30,47 @@ import java.util.List;
  */
 public interface PackrCommandLine {
 
-	@Option(helpRequest = true, description = "display help", shortName = "h", longName = "help") boolean help();
+	 @Option(helpRequest = true, description = "display help", shortName = "h", longName = "help") boolean help ();
 
-	@Option(description = "print additional information to console", shortName = "v", longName = "verbose") boolean verbose();
+	 @Option(description = "print additional information to console", shortName = "v", longName = "verbose") boolean verbose ();
 
-	@Unparsed File config();
+	 @Unparsed File config ();
 
-	boolean isConfig();
+	 boolean isConfig ();
 
-	@Option(description = "target operating system", longName = "platform", defaultToNull = true) String platform();
+	 @Option(description = "target operating system", longName = "platform", defaultToNull = true) String platform ();
 
-	@Option(description = "file path or URL to a JDK to be bundled", longName = "jdk", defaultToNull = true) String jdk();
+	 @Option(description = "file path or URL to a JDK to be bundled", longName = "jdk", defaultToNull = true) String jdk ();
 
-	@Option(description = "name of native executable, without extension", longName = "executable", defaultToNull = true) String executable();
+	 @Option(description = "name of native executable, without extension", longName = "executable", defaultToNull = true) String executable ();
 
-	@Option(description = "JAR file(s) containing code and assets to be packed", longName = "classpath", defaultToNull = true) List<String> classpath();
+	 @Option(description = "JAR file(s) containing code and assets to be packed", longName = "classpath", defaultToNull = true) List<String> classpath ();
 
-	@Option(description = "JAR file(s) to remove platform libs", longName = "removelibs", defaultToNull = true) List<String> removePlatformLibs();
+	 @Option(description = "JAR file(s) to remove platform libs", longName = "removelibs", defaultToNull = true) List<String> removePlatformLibs ();
 
-	@Option(description = "fully qualified main class name, e.g. com.badlogic.MyApp", longName = "mainclass", defaultToNull = true) String mainClass();
+	 @Option(description = "fully qualified main class name, e.g. com.badlogic.MyApp", longName = "mainclass", defaultToNull = true) String mainClass ();
 
-	@Option(description = "arguments passed to the JVM, e.g. Xmx1G, without dashes", longName = "vmargs", defaultToNull = true) List<String> vmArgs();
+	 @Option(description = "arguments passed to the JVM, e.g. Xmx1G, without dashes", longName = "vmargs", defaultToNull = true) List<String> vmArgs ();
 
-	@Option(description = "minimize JRE by removing folders and files specified in config file", longName = "minimizejre", defaultToNull = true)
-	String minimizeJre();
+	 @Option(description = "minimize JRE by removing folders and files specified in config file",
+		 longName = "minimizejre",
+		 defaultToNull = true) String minimizeJre ();
 
-	@Option(description = "folder to cache bundled JRE, to speedup builds", longName = "cachejre", defaultToNull = true) File cacheJre();
+	 @Option(description = "folder to cache bundled JRE, to speedup builds", longName = "cachejre", defaultToNull = true) File cacheJre ();
 
-	@Option(description = "additional files and folders to be packed next to the executable", longName = "resources", defaultToNull = true)
-	List<File> resources();
+	 @Option(description = "additional files and folders to be packed next to the executable",
+		 longName = "resources",
+		 defaultToNull = true) List<File> resources ();
 
-	@Option(description = "output directory", longName = "output", defaultToNull = true) File outDir();
+	 @Option(description = "output directory", longName = "output", defaultToNull = true) File outDir ();
 
-	@Option(description = "platform libs output directory", longName = "libs", defaultToNull = true) File platformLibsOutDir();
+	 @Option(description = "platform libs output directory", longName = "libs", defaultToNull = true) File platformLibsOutDir ();
 
-	@Option(description = "file containing icon resources (needs to fit platform, OS X only)", longName = "icon", defaultToNull = true) File iconResource();
+	 @Option(description = "file containing icon resources (needs to fit platform, OS X only)", longName = "icon", defaultToNull = true) File iconResource ();
 
-	@Option(description = "bundle identifier, e.g. com.badlogic (used for Info.plist on OS X)", longName = "bundle", defaultToNull = true)
-	String bundleIdentifier();
+	 @Option(description = "bundle identifier, e.g. com.badlogic (used for Info.plist on OS X)",
+		 longName = "bundle",
+		 defaultToNull = true) String bundleIdentifier ();
 
-	@Option(description = "use ZGC if the operating system supports it", longName = "useZgcIfSupportedOs") boolean useZgcIfSupportedOs();
+	 @Option(description = "use ZGC if the operating system supports it", longName = "useZgcIfSupportedOs") boolean useZgcIfSupportedOs ();
 }

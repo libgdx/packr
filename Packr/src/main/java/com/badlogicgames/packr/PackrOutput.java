@@ -24,12 +24,12 @@ import java.io.File;
  */
 class PackrOutput {
 
-	final File executableFolder;
-	final File resourcesFolder;
+	 final File executableFolder;
+	 final File resourcesFolder;
 
-	PackrOutput(File executableFolder, File resourcesFolder) {
-		this.executableFolder = executableFolder;
-		this.resourcesFolder = resourcesFolder;
-	}
+	 PackrOutput (File executableFolder, File resourcesFolder) {
+		  this.executableFolder = executableFolder;
+		  this.resourcesFolder = resourcesFolder;
+	 }
 
 }

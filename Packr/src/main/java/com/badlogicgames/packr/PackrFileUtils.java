@@ -31,67 +31,67 @@ import java.nio.file.attribute.BasicFileAttributes;
  * Some file utility wrappers to check for function results, and to raise exceptions in case of error.
  */
 class PackrFileUtils {
-   /**
-    * Changes the file {@code path} to executable.
-    *
-    * @param path the path to the file to change to executable
-    */
-   static void chmodX(File path) {
-      if (!path.setExecutable(true)) {
-         System.err.println("Warning! Failed setting executable flag for: " + path);
-      }
-   }
+	 /**
+	  * Changes the file {@code path} to executable.
+	  *
+	  * @param path the path to the file to change to executable
+	  */
+	 static void chmodX (File path) {
+		  if (!path.setExecutable(true)) {
+				System.err.println("Warning! Failed setting executable flag for: " + path);
+		  }
+	 }
 
-   /**
-    * Copies directories, preserving file attributes.
-    * <p>
-    * The {@link org.zeroturnaround.zip.commons.FileUtilsV2_2#copyDirectory(File, File)} function does not preserve file attributes.
-    *
-    * @param sourceDirectory the directory to copy from
-    * @param targetDirectory the directory to copy into
-    *
-    * @throws IOException if an IO error occurs
-    */
-   static void copyDirectory(File sourceDirectory, File targetDirectory) throws IOException {
-      final Path sourcePath = Paths.get(sourceDirectory.toURI()).toRealPath();
-      final Path targetPath = Paths.get(targetDirectory.toURI());
+	 /**
+	  * Copies directories, preserving file attributes.
+	  * <p>
+	  * The {@link org.zeroturnaround.zip.commons.FileUtilsV2_2#copyDirectory(File, File)} function does not preserve file attributes.
+	  *
+	  * @param sourceDirectory the directory to copy from
+	  * @param targetDirectory the directory to copy into
+	  *
+	  * @throws IOException if an IO error occurs
+	  */
+	 static void copyDirectory (File sourceDirectory, File targetDirectory) throws IOException {
+		  final Path sourcePath = Paths.get(sourceDirectory.toURI()).toRealPath();
+		  final Path targetPath = Paths.get(targetDirectory.toURI());
 
-      Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
-         @Override public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-            Path relative = sourcePath.relativize(dir);
-            Path target = targetPath.resolve(relative);
-            File folder = target.toFile();
-            Files.createDirectories(folder.toPath());
-            return FileVisitResult.CONTINUE;
-         }
+		  Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
+				@Override public FileVisitResult preVisitDirectory (Path dir, BasicFileAttributes attrs) throws IOException {
+					 Path relative = sourcePath.relativize(dir);
+					 Path target = targetPath.resolve(relative);
+					 File folder = target.toFile();
+					 Files.createDirectories(folder.toPath());
+					 return FileVisitResult.CONTINUE;
+				}
 
-         @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-            Path relative = sourcePath.relativize(file);
-            Path target = targetPath.resolve(relative);
-            Files.copy(file, target, StandardCopyOption.COPY_ATTRIBUTES);
-            return FileVisitResult.CONTINUE;
-         }
-      });
-   }
+				@Override public FileVisitResult visitFile (Path file, BasicFileAttributes attrs) throws IOException {
+					 Path relative = sourcePath.relativize(file);
+					 Path target = targetPath.resolve(relative);
+					 Files.copy(file, target, StandardCopyOption.COPY_ATTRIBUTES);
+					 return FileVisitResult.CONTINUE;
+				}
+		  });
+	 }
 
-   /**
-    * Deletes all the content of a directory and the directory itself.
-    *
-    * @param directory the directory to delete
-    *
-    * @throws IOException if an IO error occurs
-    */
-   static void deleteDirectory(File directory) throws IOException {
-      Files.walkFileTree(directory.toPath(), new SimpleFileVisitor<Path>() {
-         @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-            Files.deleteIfExists(file);
-            return super.visitFile(file, attrs);
-         }
+	 /**
+	  * Deletes all the content of a directory and the directory itself.
+	  *
+	  * @param directory the directory to delete
+	  *
+	  * @throws IOException if an IO error occurs
+	  */
+	 static void deleteDirectory (File directory) throws IOException {
+		  Files.walkFileTree(directory.toPath(), new SimpleFileVisitor<Path>() {
+				@Override public FileVisitResult visitFile (Path file, BasicFileAttributes attrs) throws IOException {
+					 Files.deleteIfExists(file);
+					 return super.visitFile(file, attrs);
+				}
 
-         @Override public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-            Files.deleteIfExists(dir);
-            return super.postVisitDirectory(dir, exc);
-         }
-      });
-   }
+				@Override public FileVisitResult postVisitDirectory (Path dir, IOException exc) throws IOException {
+					 Files.deleteIfExists(dir);
+					 return super.postVisitDirectory(dir, exc);
+				}
+		  });
+	 }
 }
