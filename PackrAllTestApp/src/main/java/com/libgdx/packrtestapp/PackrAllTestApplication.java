@@ -15,7 +15,7 @@
  *
  */
 
-package com.nimblygames.packrtestapp;
+package com.libgdx.packrtestapp;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,19 +29,22 @@ public class PackrAllTestApplication {
      * Main CLI entrance.
      *
      * @param args ignored
+     *
      * @throws IOException if an IO error occurs
      */
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main (String[] args) throws IOException {
         System.out.println("Hello world!");
         System.out.println("Running from java.version=" + System.getProperty("java.version"));
 
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-            System.out.println("Received uncaught exception in thread.getName()=" + thread.getName() + ", Thread.currentThread().getName()=" + Thread.currentThread().getName());
+            System.out.println(
+               "Received uncaught exception in thread.getName()=" + thread.getName() + ", Thread.currentThread().getName()=" + Thread.currentThread()
+                  .getName());
             throwable.printStackTrace(System.out);
         });
 
         Files.lines(Paths.get("application-resources").resolve("fake-resource.txt"))
-                .forEach(resourceLine -> System.out.println("Loaded resource line: " + resourceLine));
+           .forEach(resourceLine -> System.out.println("Loaded resource line: " + resourceLine));
 
         throw new RuntimeException("Testing uncaught exception handler. Thrown from the main thread, Thread.currentThread().getName()=" + Thread.currentThread().getName());
     }

@@ -16,7 +16,10 @@
  */
 
 import org.apache.tools.ant.taskdefs.condition.Os
-import org.apache.tools.ant.taskdefs.condition.Os.*
+import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_MAC
+import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_UNIX
+import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS
+import org.apache.tools.ant.taskdefs.condition.Os.isFamily
 import org.gradle.internal.jvm.Jvm
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
@@ -91,7 +94,7 @@ dependencies {
 }
 
 application {
-   mainClassName = "com.nimblygames.packrtestapp.PackrAllTestApplication"
+   mainClassName = "com.libgdx.packrtestapp.PackrAllTestApplication"
 }
 
 /**
@@ -269,7 +272,7 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       args("--minimizejre")
       args("soft")
       args("--mainclass")
-      args("com.nimblygames.packrtestapp.PackrAllTestApplication")
+      args("com.libgdx.packrtestapp.PackrAllTestApplication")
       args("--vmargs")
       args("Xms64M")
       args("--vmargs")

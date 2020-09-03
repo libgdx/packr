@@ -16,8 +16,6 @@
  */
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import com.nimblygames.gradle.getPropertyOrEnvVar
-import com.nimblygames.gradle.hasPropertyOrEnvVar
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -31,19 +29,18 @@ plugins {
    application
    id("com.github.johnrengelman.shadow") version "5.2.0"
    signing
-   id("com.nimblygames.gradle")
 }
 
 /**
  * URI for the GitHub Packr Maven repository.
  */
-val gitHubPackrMavenUri: URI = uri("https://maven.pkg.github.com/karlsabo/packr")
+val gitHubPackrMavenUri: URI = uri("https://maven.pkg.github.com/libgdx/packr")
 
 repositories {
    mavenCentral()
    jcenter()
    maven(uri("https://oss.sonatype.org/content/repositories/snapshots/"))
-   // TODO GitHub isn't respecting Maven coordinates and is given errors `Could not GET 'https://maven.pkg.github.com/karlsabo/packr/com/nimblygames/packr/packrLauncher-linux-x86-64/2.8.0-SNAPSHOT/maven-metadata.xml'. Received status code 400 from server: Bad Request`
+   // TODO GitHub isn't respecting Maven coordinates and is given errors `Could not GET 'https://maven.pkg.github.com/libgdx/packr/packrLauncher-linux-x86-64/2.8.0-SNAPSHOT/maven-metadata.xml'. Received status code 400 from server: Bad Request`
    //      maven(gitHubPackrMavenUri)
    for (repositoryIndex in 0..10) {
       if (project.hasProperty("maven.repository.url.$repositoryIndex") && project.findProperty("maven.repository.isdownload.$repositoryIndex")
@@ -92,21 +89,21 @@ dependencies {
    runtimeOnly("org.apache.logging.log4j:log4j-core:$log4jVersion")
 
    // Packr launcher executables
-   add(packrLauncherMavenRepositoryExecutables.name, "com.nimblygames.packr:packrLauncher-linux-x86-64:$version") {
+   add(packrLauncherMavenRepositoryExecutables.name, "com.libgdx.packr:packrLauncher-linux-x86-64:$version") {
       // Gradle won't download extension free files without this
       artifact {
          this.name = "packrLauncher-linux-x86-64"
          this.type = ""
       }
    }
-   add(packrLauncherMavenRepositoryExecutables.name, "com.nimblygames.packr:packrLauncher-macos:$version") {
+   add(packrLauncherMavenRepositoryExecutables.name, "com.libgdx.packr:packrLauncher-macos:$version") {
       // Gradle won't download extension free files without this
       artifact {
          this.name = "packrLauncher-macos"
          this.type = ""
       }
    }
-   add(packrLauncherMavenRepositoryExecutables.name, "com.nimblygames.packr:packrLauncher-windows-x86-64:$version")
+   add(packrLauncherMavenRepositoryExecutables.name, "com.libgdx.packr:packrLauncher-windows-x86-64:$version")
    add(packrLauncherExecutablesForCurrentOs.name, project(":PackrLauncher", "currentOsExecutables"))
 }
 
@@ -277,11 +274,11 @@ publishing {
          }
       }
       // TODO GitHub repository isn't working. It doesn't behave like other Maven repositories (Sonatype or Artifactory).
-      @Suppress("SimplifyBooleanWithConstants") if (false && hasPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")) {
+      @Suppress("SimplifyBooleanWithConstants") if (false && System.getenv("PACKR_GITHUB_MAVEN_USERNAME")!!.toBoolean()) {
          maven(gitHubPackrMavenUri) {
             credentials {
-               username = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")
-               password = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_TOKEN")
+               username = System.getenv("PACKR_GITHUB_MAVEN_USERNAME")
+               password = System.getenv("PACKR_GITHUB_MAVEN_TOKEN")
             }
          }
       }
@@ -302,8 +299,8 @@ publishing {
          version = project.version as String
          pom {
             name.set("Packr shadow jar")
-            description.set("A single executable jar for use from the command line. Packages your JAR, assets and a JVM for distribution on Windows, Linux and macOS, adding a native executable file to make it appear like a native app.")
-            url.set("https://nimblygames.com/")
+            description.set("An executable jar for use from the command line. Packages your JAR, assets and a JVM for distribution on Windows, Linux and macOS, adding a native executable file to make it appear like a native app.")
+            url.set("https://github.com/libgdx/packr")
             licenses {
                license {
                   name.set("The Apache License, Version 2.0")
@@ -318,9 +315,9 @@ publishing {
                }
             }
             scm {
-               connection.set("scm:git:https://github.com/karlsabo/packr")
-               developerConnection.set("scm:git:https://github.com/karlsabo/packr")
-               url.set("https://github.com/karlsabo/packr")
+               connection.set("scm:git:https://github.com/libgdx/packr")
+               developerConnection.set("scm:git:https://github.com/libgdx/packr")
+               url.set("https://github.com/libgdx/packr")
             }
          }
 
@@ -330,8 +327,8 @@ publishing {
          artifactId = project.name.toLowerCase()
          pom {
             name.set("Packr")
-            description.set("A normal jar with Maven dependencies for use as part of an application or build script. This can be useful for creating Packr configuration JSON files. Packages your JAR, assets and a JVM for distribution on Windows, Linux and macOS, adding a native executable file to make it appear like a native app.")
-            url.set("https://nimblygames.com/")
+            description.set("A jar with Maven dependencies for use as part of an application or build script. This can be useful for creating Packr configuration JSON files. Packages your JAR, assets and a JVM for distribution on Windows, Linux and macOS, adding a native executable file to make it appear like a native app.")
+            url.set("https://github.com/libgdx/packr")
             licenses {
                license {
                   name.set("The Apache License, Version 2.0")
@@ -346,9 +343,9 @@ publishing {
                }
             }
             scm {
-               connection.set("scm:git:https://github.com/karlsabo/packr")
-               developerConnection.set("scm:git:https://github.com/karlsabo/packr")
-               url.set("https://github.com/karlsabo/packr")
+               connection.set("scm:git:https://github.com/libgdx/packr")
+               developerConnection.set("scm:git:https://github.com/libgdx/packr")
+               url.set("https://github.com/libgdx/packr")
             }
          }
       }

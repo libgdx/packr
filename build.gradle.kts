@@ -16,7 +16,7 @@
  */
 
 
-group = "com.nimblygames.packr"
+group = "com.libgdx.packr"
 version = "2.8.0-SNAPSHOT"
 
 ext["macOsMinimumVersion"] = "10.10"

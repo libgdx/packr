@@ -17,8 +17,6 @@
 
 @file:Suppress("UnstableApiUsage")
 
-import com.nimblygames.gradle.getPropertyOrEnvVar
-import com.nimblygames.gradle.hasPropertyOrEnvVar
 import org.gradle.internal.jvm.Jvm
 import java.net.URI
 import java.nio.file.Path
@@ -34,7 +32,6 @@ plugins {
    `visual-studio`
    `maven-publish`
    signing
-   id("com.nimblygames.gradle")
 }
 
 repositories {
@@ -288,7 +285,7 @@ artifacts {
 /**
  * URI for the GitHub Packr Maven repository.
  */
-val gitHubPackrMavenUri: URI = uri("https://maven.pkg.github.com/karlsabo/packr")
+val gitHubPackrMavenUri: URI = uri("https://maven.pkg.github.com/libgdx/packr")
 
 /**
  * Is the packer launcher version a snapshot or release?
@@ -318,11 +315,11 @@ publishing {
        * TODO GitHub repository isn't working, it isn't respecting Maven coordinates or keeping maven-metadata.xml.
        *  It doesn't behave like other Maven repositories (Sonatype or Artifactory).
        */
-      @Suppress("SimplifyBooleanWithConstants") if (false && hasPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")) {
+      @Suppress("SimplifyBooleanWithConstants") if (false && System.getenv("PACKR_GITHUB_MAVEN_USERNAME")!!.toBoolean()) {
          maven(uri(gitHubPackrMavenUri)) {
             credentials {
-               username = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_USERNAME")
-               password = getPropertyOrEnvVar("PACKR_GITHUB_MAVEN_TOKEN")
+               username = System.getenv("PACKR_GITHUB_MAVEN_USERNAME")
+               password = System.getenv("PACKR_GITHUB_MAVEN_TOKEN")
             }
          }
       }
@@ -341,7 +338,7 @@ publishing {
                   }
                   name.set("Packr native launcher for $osName")
                   description.set("A native executable for launching a JVM app, making it appear like a native app.")
-                  url.set("https://nimblygames.com/")
+                  url.set("https://github.com/libgdx/packr")
                   licenses {
                      license {
                         name.set("The Apache License, Version 2.0")
@@ -356,9 +353,9 @@ publishing {
                      }
                   }
                   scm {
-                     connection.set("scm:git:https://github.com/karlsabo/packr")
-                     developerConnection.set("scm:git:https://github.com/karlsabo/packr")
-                     url.set("https://github.com/karlsabo/packr")
+                     connection.set("scm:git:https://github.com/libgdx/packr")
+                     developerConnection.set("scm:git:https://github.com/libgdx/packr")
+                     url.set("https://github.com/libgdx/packr")
                   }
                }
             }
