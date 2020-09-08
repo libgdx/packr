@@ -55,3 +55,16 @@
    * macOS x86 is no longer built because it requires and older version of Xcode and Apple makes it difficult to install on newer versions of macOS
 1. Remove windows32 platform
    * Windows x86 is no longer built because the Adopt OpenJDK 8u242 and 8u252 have crash failures.
+
+# Release 2.1-SNAPSHOT
+- Compiles with Java 8 now. It's 2018, folks!
+- Refactored I/O to use NIO and try-with-resources where appropriate. Removed dependency on Apache commons I/O.
+- Print usage (--help) if no command line arguments are given.
+- Added more validation checks to configuration parameters.
+- Fixed crash when classpath is a directory. (#90)
+- Added "cachejre" option to cache results of JRE extract & minimize steps.
+- Added "removelibs" option to specify JAR files which are subject for removal of platform libraries. If this parameter isn't used, it defaults to a copy of "classpath", which is the old behaviour.
+- Added NvOptimusEnablement and AmdPowerXpressRequestHighPerformance symbols. (#114)
+
+# Release 2.0-SNAPSHOT and before
+- Please check the Git log, or search the libGDX forums.
