@@ -3,7 +3,7 @@ stages:
   - build
   - publish
 
-publisWindowsExecutable:
+publishWindowsExecutable:
   stage: publish_launcher
   tags:
     - windows
