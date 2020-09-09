@@ -1,0 +1,343 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="text/css" http-equiv="Content-Style-Type">
+	<title>dropt (deliberately rudimentary options)</title>
+	<style type="text/css">
+		<!--
+		h1, h2, h3, h4, h5, h6, th, .heading, .caption, #header p {
+			font-family: Verdana, Arial, Helvetica, sans-serif;
+		}
+
+		body, p, td, ul, ol, address, cite, blockquote, .text {
+			font-family: Georgia, "Times New Roman", Times, serif;
+		}
+
+		tt, pre, code, kbd, samp, .fixed {
+			font-family: "Consolas", "Andale Mono", Andale, "Monotype.com", "Lucida Console", "Courier New", Courier, monospace;
+			font-size: smaller;
+		}
+
+		code, kbd {
+			white-space: nowrap;
+		}
+
+		address, cite, var, em, i {
+			font-style: italic;
+		}
+
+		th, strong, b {
+			font-weight: bold;
+		}
+
+		acronym, abbr, .slang {
+			text-decoration: none;
+			border-bottom: #00CC00 dotted 1px;
+			cursor: help;
+		}
+
+		a:link {
+			color: #0000FF;
+			background: transparent;
+		}
+
+		a:visited {
+			color: #9966FF;
+			background: transparent;
+		}
+
+		a:hover {
+			color: #6666FF;
+			background: transparent;
+		}
+
+		a:active {
+			color: #FF0000;
+			background: transparent;
+		}
+
+		a.unemphasized {
+			text-decoration: none;
+		}
+
+		/* not underlined */
+		a:hover.unemphasized {
+			text-decoration: underline;
+		}
+
+		a.unemphasized img {
+			border-style: none;
+		}
+
+		#header h1 {
+			margin: 0;
+		}
+
+		body {
+			background: #FFFFFF;
+			color: #000000;
+		}
+
+		#content {
+			margin-top: 1em;
+			margin-bottom: 1em;
+			border-top: black solid 1px;
+			border-bottom: black solid 1px;
+		}
+
+		#content li {
+			margin-top: 0.50em;
+			margin-bottom: 0.50em;
+		}
+
+		-->
+	</style>
+</head>
+
+<body>
+
+<div id="header">
+	<h1>dropt (deliberately rudimentary options)</h1>
+
+	<p>
+		dropt is yet another C library for parsing command-line options.
+	</p>
+</div><!-- header -->
+
+<div id="content">
+
+	<h2>Goals</h2>
+
+	<p>
+		Aren&rsquo;t there plenty of existing option-parsing libraries already? Yes,
+		there are, but none of the ones that I had seen had the ease of use I
+		wanted. The primary design goal for dropt is to have <strong>minimal
+		barriers to entry</strong>. Specifically, this includes:
+	</p>
+
+	<ul>
+		<li>
+			<strong>High portability.</strong> dropt is written in standard C99 with
+			compatibility code for most non-pathological C89 compilers. (<code>wchar_t</code>
+			support for the help facility is supported only on Windows platforms,
+			however.) dropt is written in C to make it easily consumable. C++ wrappers
+			also are provided as a convenience for C++ clients.
+		</li>
+		<li>(Hopefully) straightforward usage.</li>
+		<li>No global variables.</li>
+		<li>
+			<strong>Minimal dependencies.</strong> dropt has no dependencies other than the standard
+			C library. dropt also lets clients opt-in to use only the specific
+			features they want.
+		</li>
+		<li>
+			<strong>An unrestrictive license.</strong> dropt uses the
+			<a class="unemphasized" href="http://opensource.org/licenses/Zlib">zlib/libpng license</a>
+			and may be statically linked with existing code freely. This avoids
+			some of the hassles that sometimes come with dynamically-linked libraries
+			(such as ensuring that the compiler options used to build the library
+			match those used for the main binary).
+		</li>
+		<li>
+			<strong>(Approximate) POSIX compatibility.</strong> Existing applications that use
+			POSIX-style options hopefully should be able to use dropt without
+			breaking their command-line interface. (The notable difference is that
+			dropt by default does not allow options to be concatenated with their
+			arguments (e.g. <kbd>-oARGUMENT</kbd>). POSIX also discourages this but makes
+			exceptions for backwards compatibility reasons. dropt requires that
+			applications opt-in to this behavior.)
+		</li>
+		<li>
+			<strong>Flexibility.</strong> dropt is designed to be callback-based. This
+			allows it to handle arbitrary arguments to command-line options. All types
+			are considered equal. Even basic types such as integers or strings are
+			handled by callbacks; dropt provides standard handlers for them. Exposing
+			the handlers for basic types also allows custom handlers to leverage them.
+		</li>
+	</ul>
+
+	<p>
+		Secondary goals include being secure, performant, maintainable, and
+		extensible; minimizing memory usage; and gracefully failing if memory is
+		exhausted.
+	</p>
+
+
+	<h2>Features</h2>
+
+	<p>
+		dropt provides basic option-parsing features:
+	</p>
+
+	<ul>
+		<li>GNU-style long options (e.g. <kbd>--option</kbd>).</li>
+
+		<li>Grouping for short options (e.g. &ldquo;<kbd>-abc</kbd>&rdquo; is equivalent to &ldquo;<kbd>-a -b -c</kbd>&rdquo;).</li>
+		<li>
+			Automatically stops parsing when encountering a &ldquo;<kbd>--</kbd>&rdquo; token. This allows
+			programs to take arguments that start with &ldquo;<kbd>-</kbd>&rdquo; and not have them be
+			treated as options. Examples:
+
+			<ul>
+				<li><kbd>rm -- -rf</kbd></li>
+				<li><kbd>some_numeric_program -- -123</kbd></li>
+			</ul>
+		</li>
+		<li>
+			Unambiguous syntax for arguments to options. Arguments may always
+			be specified with &ldquo;<kbd>=</kbd>&rdquo; (e.g. <kbd>--option=1</kbd>,
+			<kbd>-x=1</kbd>).
+		</li>
+		<li>
+			Overridable option values. For example, &ldquo;<kbd>--option=1 --option=2</kbd>&rdquo; will use
+			the value 2. Boolean flags can be disabled by using <kbd>--flag=0</kbd>
+			(<kbd>--flag</kbd> by itself is syntactic sugar for <kbd>--flag=1</kbd>). This is useful to
+			override options specified by shell aliases. Note that clients that
+			specify custom handlers can implement different behaviors if desired.
+		</li>
+	</ul>
+
+	<p>
+		The implementation is intended to be minimalistic. What dropt does <em>not</em> do:
+	</p>
+
+	<ul>
+		<li>
+			Localization. dropt doesn&rsquo;t provide localization facilities, but it does
+			try not to stand in the way of programs that want to localize their help
+			text however they choose.
+		</li>
+		<li>
+			Tokenizing a single command-line string into an <code>argv</code> array. This is the
+			shell&rsquo;s responsibility. (On Windows, where <code>WinMain()</code> does not receive a
+			tokenized <kbd>argv</kbd> array, developers should use <code>CommandLineToArgvW</code> or
+			should use the <code>__argv</code> global from Microsoft&rsquo;s C runtime library.)
+		</li>
+		<li>
+			Command-line argument permutation. dropt always expects options to come
+			before non-options.
+		</li>
+		<li>
+			Handling of different option styles (e.g. <kbd>/option</kbd>, <kbd>-option</kbd>).
+			dropt is meant to encourage consistent command-line option interfaces.
+		</li>
+	</ul>
+
+
+	<h2>Usage</h2>
+
+	<p>
+		There&rsquo;s no formal documentation yet, but for now, see
+		<a href="http://www.taenarum.com/software/dropt/dropt_example.c"><kbd>dropt_example.c</kbd></a> or
+		<a href="http://www.taenarum.com/software/dropt/droptxx_example.cpp"><kbd>droptxx_example.cpp</kbd></a>.
+	</p>
+
+
+	<h2>Download</h2>
+
+	<ul>
+		<li><a href="http://www.taenarum.com/software/dropt/dropt-1.1.1.zip"><kbd>dropt-1.1.1.zip</kbd></a></li>
+		<li><a href="http://www.taenarum.com/software/dropt/dropt-1.1.1.tar.gz"><kbd>dropt-1.1.1.tar.gz</kbd></a></li>
+	</ul>
+
+
+	<h2 id="history">Version History</h2>
+
+	<ul id="historylist">
+		<li>
+			1.1.1 (2013-03-17)
+			<ul>
+				<li>Fixed a build issue with gcc with optimizations enabled.</li>
+				<li>Changed <code>dropt_error</code> to be an <code>unsigned int</code> type instead of an <code>enum</code> type to avoid potential comparison
+					warnings with custom error values.
+				</li>
+				<li>Fixed <code>dropt_misuse</code> to terminate in debug builds. (I accidentally disabled termination in dropt 1.1.0.)</li>
+				<li>Added a Makefile for clang.</li>
+				<li>Added an <kbd>INSTALL</kbd> file with build instructions.</li>
+				<li>Added a <kbd>droptxx_example.cpp</kbd> file as a C++ sample program.</li>
+				<li>Changed the directory layout a bit.</li>
+			</ul>
+		</li>
+		<li>
+			1.1.0 (2012-05-06)
+			<ul>
+				<li>For scalability, option lookup now uses binary search instead of a linear search.</li>
+				<li>Added some explicit safeguards against integer overflow attacks. (Previously overflow was safely handled implicitly, but now favor defensive
+					paranoia.)
+				</li>
+				<li>Fixed a null pointer dereference if no handler data was specified for <code>dropt_handle_verbose_bool</code>.</li>
+				<li>In <kbd>test_dropt.c</kbd>, fixed a sign-extension bug and a <code>printf</code> format specifier mismatch.</li>
+				<li>Made some other minor style adjustments.</li>
+			</ul>
+		</li>
+		<li>
+			1.0.4 (2010-09-12)
+			<ul>
+				<li>
+					The <code>DROPT_HANDLER_DECL</code> macro has been replaced with a <code>dropt_option_handler_decl</code> function <code>typedef</code>. I
+					apologize for breaking compatibility in a minor version update, but in this case the breakage should be minor, and it should be trivial to
+					fix sites that used the old macro:
+					<ul>
+						<li>Replace <code>DROPT_HANDLER_DECL(func);</code> with <code>dropt_option_handler_decl func;</code></li>
+						<li>Alternatively, re-create the macro: <code>#define DROPT_HANDLER_DECL(func) dropt_option_handler_decl func</code></li>
+					</ul>
+				</li>
+			</ul>
+		</li>
+		<li>
+			1.0.3 (2010-08-08)
+			<ul>
+				<li><code>dropt_handle_bool</code> and <code>dropt_handle_verbose_bool</code> now return <code>dropt_error_mismatch</code> instead of <code>dropt_error_insufficient_arguments</code>
+					if given empty string arguments.
+				</li>
+				<li>The error messages from <code>dropt_default_error_handler</code> now consistently do not end with periods.</li>
+			</ul>
+		</li>
+		<li>
+			1.0.2 (2010-07-28)
+			<ul>
+				<li><code>dropt_handle_bool</code> and <code>dropt_handle_verbose_bool</code> now return <code>dropt_error_mismatch</code> instead of <code>dropt_error_overflow</code>
+					if given very large numbers.
+				</li>
+				<li>Fixed the compilation of <kbd>test_dropt.c</kbd> when building with <code>_UNICODE=1</code>.</li>
+			</ul>
+		</li>
+		<li>
+			1.0.1 (2010-07-03)
+			<ul>
+				<li>Calling <code>dropt_ssgetstring</code> on a newly-opened <code>dropt_stringstream</code> returned garbage. Fixed. This would have affected
+					only clients that used <code>dropt_stringstream</code> directly.
+				</li>
+				<li>The <code>MIN</code> and <code>MAX</code> macros in <kbd>dropt_string.c</kbd> are now conditionally defined.</li>
+				<li><code>dropt_safe_malloc</code> and <code>dropt_safe_realloc</code> are now publicly declared in <kbd>dropt_string.h</kbd>.</li>
+				<li>Renamed <code>DROPT_MISUSE_PANIC</code> to <code>DROPT_MISUSE</code> since it&rsquo;s non-fatal in non-debug builds.</li>
+				<li><code>DEFAULT_STRINGSTREAM_BUFFER_SIZE</code> is now an <code>enum</code> constant instead of a preprocessor macro.</li>
+				<li>Modified <kbd>test_dropt.c</kbd>. Now tries harder to report line numbers on failure, and more tests continue executing upon failure. Added
+					a few more tests for <code>dropt_stringstream</code> functions. Rewrote one of the sample option handler callbacks to be more general.
+				</li>
+			</ul>
+		</li>
+		<li>
+			1.0 (2010-06-19)
+			<ul>
+				<li>Initial release.</li>
+			</ul>
+		</li>
+	</ul>
+
+</div><!-- content -->
+
+<div id="footer">
+
+	<address>Questions? Comments? Bugs? I welcome feedback. <a href="http://www.taenarum.com/contact.html">Contact me</a> or <a
+			href="http://www.taenarum.com/software/dropt/bugs/">file a bug</a>.
+	</address>
+
+	<p>
+		Copyright &copy; 2010&ndash;2013 <a href="http://www.taenarum.com/software/">James D. Lin</a>.
+	</p>
+</div><!-- footer -->
+
+</body>
+</html>

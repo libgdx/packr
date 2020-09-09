@@ -1,12 +1,6 @@
-/target
-.DS_STORE
-.project
-.classpath
-.settings
-native/build
-native/obj
-native/packr.xcodeproj/
-native/packr.sln
-native/packr.vcxproj*
-.idea/
-*.iml
+# Grade build directories
+.gradle
+build/
+
+# Jetbrains products
+/.idea/

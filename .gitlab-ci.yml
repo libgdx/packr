@@ -1,0 +1,49 @@
+stages:
+  - publish_launcher
+  - build
+  - publish
+
+publishWindowsExecutable:
+  stage: publish_launcher
+  tags:
+    - windows
+  script:
+    - cmd.exe "/c gradlew --no-daemon -i --no-build-cache clean PackrLauncher:publish"
+
+publishLinuxExecutable:
+  stage: publish_launcher
+  tags:
+    - ubuntu
+  script:
+    - ./gradlew --no-daemon -i --no-build-cache clean PackrLauncher:publish
+
+publishOsxExecutable:
+  stage: publish_launcher
+  tags:
+    - osx
+  script:
+    - ./gradlew --no-daemon -i --no-build-cache clean PackrLauncher:publish
+
+buildWindows:
+  stage: build
+  tags:
+    - windows
+  script:
+    - cmd.exe "/c gradlew --no-daemon -i --no-build-cache --refresh-dependencies clean build"
+
+buildMac:
+  stage: build
+  tags:
+    - osx
+  script:
+    - ./gradlew --no-daemon -i --no-build-cache --refresh-dependencies clean build
+
+publishLinux:
+  stage: publish
+  tags:
+    - ubuntu
+  script:
+    - ./gradlew --no-daemon -i --no-build-cache --refresh-dependencies clean build publish
+
+after_script:
+  - echo "End CI"

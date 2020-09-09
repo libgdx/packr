@@ -1,0 +1,44 @@
+To build dropt:
+
+For systems using gcc and GNU make:
+
+    make -f Makefile.gcc [OPTIONS] [TARGETS]
+
+
+For systems using Microsoft's C/C++ compiler (MSVC):
+
+    nmake /f Makefile.vcwin32 [OPTIONS] [TARGETS]
+
+
+Options:
+
+    DEBUG=1
+        Enables debug assertions and disables compiler optimizations.
+
+    DROPT_NO_STRING_BUFFERS=1
+        Disables dropt's string management functionality.  Enabling this
+        will disable dropt's help facility and will disable built-in error
+        messages.  Using this option isn't recommended, but it's provided
+        for anyone who either:
+
+        A. Requires strict C89 compatibility.
+        B. Is paranoid and doesn't trust dropt's string routines.
+
+    _UNICODE=1
+        Uses wchar_t strings. (Windows-only)
+
+    DYNAMIC_CRT=1
+        Links against Microsoft's C run-time library dynamically instead of
+        statically. (Windows-only)
+
+
+Targets:
+
+    all         Builds everything.
+    clean       Deletes built files.
+    example     Builds the example.
+    lib         Builds the dropt C static library.
+    libxx       Builds the dropt C++ static library.
+    test        Builds and runs the dropt unit tests.
+
+    The default target builds lib and libxx.
