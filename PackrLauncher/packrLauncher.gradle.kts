@@ -12,13 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 @file:Suppress("UnstableApiUsage")
 
+import com.libgdx.gradle.gitHubRepositoryForPackr
+import com.libgdx.gradle.isSnapshot
+import com.libgdx.gradle.packrPublishRepositories
 import org.gradle.internal.jvm.Jvm
-import java.net.URI
 import java.nio.file.Path
 
 group = rootProject.group
@@ -88,7 +89,7 @@ dependencies {
 /**
  * Stores a mapping from the registered publication names to the operating system family for generating the name in the published POM file.
  */
-val operatingSystemFamilyByPublicationName: MutableMap<String, OperatingSystemFamily> = mutableMapOf<String, OperatingSystemFamily>()
+val operatingSystemFamilyByPublicationName: MutableMap<String, OperatingSystemFamily> = mutableMapOf()
 
 /**
  * Linux x86 is no longer built because it's impossible to find a survey that shows anyone running x86 Linux.
@@ -121,17 +122,18 @@ application {
 
          operatingSystemFamilyByPublicationName[publicationName] = targetMachine.operatingSystemFamily
          publishing.publications.register<MavenPublication>(publicationName) {
-            val artifactFile: File = if (targetMachine.operatingSystemFamily.isMacOs) macOsLipoOutputFilePath.toFile() else executableFile.get().asFile
+            this.groupId = project.group as String
+            this.artifactId = publicationName
+            this.version = project.version as String
+
+            val artifactFile: File =
+                  if (targetMachine.operatingSystemFamily.isMacOs) macOsLipoOutputFilePath.toFile() else executableFile.get().asFile
             artifact(artifactFile) {
                if (targetMachine.operatingSystemFamily.isMacOs) {
                   builtBy(macOsLipo)
                } else {
                   builtBy(executableFileProducer)
                }
-
-               groupId = project.group as String
-               version = project.version as String
-               artifactId = publicationName
             }
          }
 
@@ -282,51 +284,17 @@ artifacts {
    add(configurations.register("currentOsExecutables").name, currentOsExecutableZip)
 }
 
-/**
- * URI for the GitHub Packr Maven repository.
- */
-val gitHubPackrMavenUri: URI = uri("https://maven.pkg.github.com/libgdx/packr")
-
-/**
- * Is the packer launcher version a snapshot or release?
- */
-val isSnapshot = project.version.toString().contains("SNAPSHOT")
-
 publishing {
    repositories {
-      for (repositoryIndex in 0..10) {
-         // @formatter:off
-            @Suppress("SpellCheckingInspection")
-            if (project.hasProperty("maven.repository.url.$repositoryIndex")
-                    && ((project.findProperty("maven.repository.ispublishsnapshot.$repositoryIndex").toString().toBoolean() && isSnapshot)
-                            || (project.findProperty("maven.repository.ispublishrelease.$repositoryIndex").toString().toBoolean() && !isSnapshot))) {
-                // @formatter:on
-               maven {
-                  url = uri(project.findProperty("maven.repository.url.$repositoryIndex") as String)
-                  credentials {
-                     username = project.findProperty("maven.repository.username.$repositoryIndex") as String
-                     password = project.findProperty("maven.repository.password.$repositoryIndex") as String
-                  }
-               }
-            }
-      }
-
-      /*
-       * TODO GitHub repository isn't working, it isn't respecting Maven coordinates or keeping maven-metadata.xml.
-       *  It doesn't behave like other Maven repositories (Sonatype or Artifactory).
-       */
-      @Suppress("SimplifyBooleanWithConstants") if (false && System.getenv("PACKR_GITHUB_MAVEN_USERNAME")!!.toBoolean()) {
-         maven(uri(gitHubPackrMavenUri)) {
-            credentials {
-               username = System.getenv("PACKR_GITHUB_MAVEN_USERNAME")
-               password = System.getenv("PACKR_GITHUB_MAVEN_TOKEN")
-            }
-         }
-      }
+      packrPublishRepositories(project)
+      gitHubRepositoryForPackr(project)
    }
    publications {
       configureEach {
          if (this is MavenPublication) {
+            this.groupId = project.group as String
+            this.version = project.version as String
+
             val publicationOperatingSystemFamily = operatingSystemFamilyByPublicationName[name]
             if (publicationOperatingSystemFamily != null) {
                pom {
