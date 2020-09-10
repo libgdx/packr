@@ -45,7 +45,7 @@ val Project.gitHubMavenToken: String?
  * Adds the GitHub Maven repository for [gitHubPackrMavenUri] only if the [gitHubMavenUsername] is non null.
  */
 fun RepositoryHandler.gitHubRepositoryForPackr(project: Project) {
-   if (project.gitHubMavenUsername != null) {
+   if (project.gitHubMavenToken != null) {
       val tokenLength = project.gitHubMavenToken?.length ?: 0
       project.logger.error("Adding GitHub repository $gitHubPackrMavenUri, username=`${project.gitHubMavenUsername}`, token=`${project.gitHubMavenToken?.substring(
             0..3)}...${project.gitHubMavenToken?.substring(tokenLength - 4, tokenLength - 1)}`")
