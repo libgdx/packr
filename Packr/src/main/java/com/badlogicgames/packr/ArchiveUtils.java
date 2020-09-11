@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.badlogicgames.packr;
@@ -34,6 +33,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 
 /**
@@ -85,7 +85,7 @@ public class ArchiveUtils {
 						  Files.createDirectories(entryExtractPath);
 					 } else {
 						  Files.createDirectories(entryExtractPath.getParent());
-						  Files.copy(archiveInputStream, entryExtractPath);
+						  Files.copy(archiveInputStream, entryExtractPath, StandardCopyOption.REPLACE_EXISTING);
 					 }
 				}
 		  }
