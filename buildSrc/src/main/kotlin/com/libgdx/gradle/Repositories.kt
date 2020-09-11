@@ -46,9 +46,6 @@ val Project.gitHubMavenToken: String?
  */
 fun RepositoryHandler.gitHubRepositoryForPackr(project: Project) {
    if (project.gitHubMavenToken != null) {
-      val tokenLength = project.gitHubMavenToken?.length ?: 0
-      project.logger.error("Adding GitHub repository $gitHubPackrMavenUri, username=`${project.gitHubMavenUsername}`, token=`${project.gitHubMavenToken?.substring(
-            0..3)}...${project.gitHubMavenToken?.substring(tokenLength - 4, tokenLength - 1)}`")
       maven {
          url = gitHubPackrMavenUri
          credentials {

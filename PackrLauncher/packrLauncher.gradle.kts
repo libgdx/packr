@@ -16,7 +16,6 @@
 
 @file:Suppress("UnstableApiUsage")
 
-import com.libgdx.gradle.gitHubRepositoryForPackr
 import com.libgdx.gradle.isSnapshot
 import com.libgdx.gradle.packrPublishRepositories
 import org.gradle.internal.jvm.Jvm
@@ -287,7 +286,12 @@ artifacts {
 publishing {
    repositories {
       packrPublishRepositories(project)
-      gitHubRepositoryForPackr(project)
+      /*
+       * Publishing to GitHub for the executables is causing issues:
+       * Could not GET 'https://maven.pkg.github.com/libgdx/packr/com/badlogicgames/packr/packrLauncher-linux-x86-64/3.0.0-SNAPSHOT/maven-metadata.xml'.
+       * Received status code 400 from server: Bad Request
+       */
+      //      gitHubRepositoryForPackr(project)
 
       // Inorder to build the packr.jar, executables must be available from all supported platforms.
       val ngToken: String? =
