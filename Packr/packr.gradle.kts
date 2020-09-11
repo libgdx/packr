@@ -33,11 +33,6 @@ plugins {
 }
 
 repositories {
-   mavenCentral()
-   jcenter()
-   maven(uri("https://oss.sonatype.org/content/repositories/snapshots/"))
-   gitHubRepositoryForPackr(project)
-
    for (repositoryIndex in 0..10) {
       if (project.hasProperty("maven.repository.url.$repositoryIndex") && project.findProperty("maven.repository.isdownload.$repositoryIndex")
             .toString()
@@ -53,6 +48,15 @@ repositories {
          }
       }
    }
+
+   mavenCentral()
+   maven(uri("https://oss.sonatype.org/content/repositories/snapshots/"))
+   jcenter()
+   gitHubRepositoryForPackr(project)
+
+   // temporary for CI publishing until oss.sonatype.org is available for com.libgdx.packr or com.badlogicgames.packr
+   maven("http://artifactory.nimblygames.com/artifactory/ng-public-snapshot/")
+   maven("http://artifactory.nimblygames.com/artifactory/ng-public-release/")
 }
 
 java {
@@ -184,7 +188,7 @@ val syncCurrentOsPackrLaunchers: TaskProvider<Sync> = tasks.register<Sync>("sync
 val packrLauncherDirectory: Path = buildDir.toPath().resolve("packrLauncher")
 
 /**
- * Creates a consolidated directory containing the latest locally build executables and filling in any missing ones with those downloaded from the Maven repository
+ * Creates a consolidated directory containing the latest locally built executables and filling in any missing ones with those downloaded from the Maven repository
  */
 val createPackrLauncherConsolidatedDirectory: TaskProvider<Task> = tasks.register("createPackrLauncherConsolidatedDirectory") {
    dependsOn(syncCurrentOsPackrLaunchers)
@@ -291,7 +295,6 @@ publishing {
                url.set("https://github.com/libgdx/packr")
             }
          }
-
       }
       register<MavenPublication>(project.name) {
          from(components["java"])
