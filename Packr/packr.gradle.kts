@@ -12,11 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import java.net.URI
+import com.libgdx.gradle.gitHubRepositoryForPackr
+import com.libgdx.gradle.isSnapshot
+import com.libgdx.gradle.packrPublishRepositories
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -31,17 +32,7 @@ plugins {
    signing
 }
 
-/**
- * URI for the GitHub Packr Maven repository.
- */
-val gitHubPackrMavenUri: URI = uri("https://maven.pkg.github.com/libgdx/packr")
-
 repositories {
-   mavenCentral()
-   jcenter()
-   maven(uri("https://oss.sonatype.org/content/repositories/snapshots/"))
-   // TODO GitHub isn't respecting Maven coordinates and is given errors `Could not GET 'https://maven.pkg.github.com/libgdx/packr/packrLauncher-linux-x86-64/2.8.0-SNAPSHOT/maven-metadata.xml'. Received status code 400 from server: Bad Request`
-   //      maven(gitHubPackrMavenUri)
    for (repositoryIndex in 0..10) {
       if (project.hasProperty("maven.repository.url.$repositoryIndex") && project.findProperty("maven.repository.isdownload.$repositoryIndex")
             .toString()
@@ -57,6 +48,15 @@ repositories {
          }
       }
    }
+
+   mavenCentral()
+   maven(uri("https://oss.sonatype.org/content/repositories/snapshots/"))
+   jcenter()
+   gitHubRepositoryForPackr(project)
+
+   // temporary for CI publishing until oss.sonatype.org is available for com.libgdx.packr or com.badlogicgames.packr
+   maven("http://artifactory.nimblygames.com/artifactory/ng-public-snapshot/")
+   maven("http://artifactory.nimblygames.com/artifactory/ng-public-release/")
 }
 
 java {
@@ -67,12 +67,14 @@ java {
 /**
  * The configuration for depending on the Packr Launcher executables
  */
-val packrLauncherMavenRepositoryExecutables = configurations.register("PackrLauncherExecutables")
+val packrLauncherMavenRepositoryExecutables: NamedDomainObjectProvider<Configuration> =
+      configurations.register("PackrLauncherExecutables")
 
 /**
  * Configuration for getting the latest build executables from PackrLauncher project
  */
-val packrLauncherExecutablesForCurrentOs = configurations.register("currentOsPackrLauncherExecutables")
+val packrLauncherExecutablesForCurrentOs: NamedDomainObjectProvider<Configuration> =
+      configurations.register("currentOsPackrLauncherExecutables")
 dependencies {
    //
    implementation("org.apache.commons:commons-compress:1.20")
@@ -119,7 +121,7 @@ java {
 /**
  * Sync the Packr launcher dependencies to the build directory for including into the Jar
  */
-val syncPackrLaunchers = tasks.register<Sync>("syncPackrLaunchers") {
+val syncPackrLaunchers: TaskProvider<Sync> = tasks.register<Sync>("syncPackrLaunchers") {
    dependsOn(packrLauncherMavenRepositoryExecutables)
 
    from(packrLauncherMavenRepositoryExecutables)
@@ -151,7 +153,7 @@ val syncPackrLaunchers = tasks.register<Sync>("syncPackrLaunchers") {
 /**
  * Sync the latest built binaries from the PackrLauncher project
  */
-val syncCurrentOsPackrLaunchers = tasks.register<Sync>("syncCurrentOsPackrLaunchers") {
+val syncCurrentOsPackrLaunchers: TaskProvider<Sync> = tasks.register<Sync>("syncCurrentOsPackrLaunchers") {
    dependsOn(packrLauncherExecutablesForCurrentOs)
 
    from(zipTree(packrLauncherExecutablesForCurrentOs.get().singleFile))
@@ -186,9 +188,9 @@ val syncCurrentOsPackrLaunchers = tasks.register<Sync>("syncCurrentOsPackrLaunch
 val packrLauncherDirectory: Path = buildDir.toPath().resolve("packrLauncher")
 
 /**
- * Creates a consolidated directory containing the latest locally build executables and filling in any missing ones with those downloaded from the Maven repository
+ * Creates a consolidated directory containing the latest locally built executables and filling in any missing ones with those downloaded from the Maven repository
  */
-val createPackrLauncherConsolidatedDirectory = tasks.register("createPackrLauncherConsolidatedDirectory") {
+val createPackrLauncherConsolidatedDirectory: TaskProvider<Task> = tasks.register("createPackrLauncherConsolidatedDirectory") {
    dependsOn(syncCurrentOsPackrLaunchers)
    dependsOn(syncPackrLaunchers)
 
@@ -244,44 +246,17 @@ tasks.withType(ShadowJar::class).configureEach {
 /**
  * Configuration for exporting the packr-all jar to other projects in Gradle
  */
-val packrAllConfiguration = configurations.register("packrAll")
+val packrAllConfiguration: NamedDomainObjectProvider<Configuration> = configurations.register("packrAll")
 artifacts {
    add(packrAllConfiguration.name, tasks.named<ShadowJar>("shadowJar").get()) {
       classifier = ""
    }
 }
 
-/**
- * Is the packer version a snapshot or release?
- */
-val isSnapshot = project.version.toString().contains("SNAPSHOT")
-
 publishing {
    repositories {
-      for (repositoryIndex in 0..10) {
-         // @formatter:off
-         if (project.hasProperty("maven.repository.url.$repositoryIndex")
-             && ((project.findProperty("maven.repository.ispublishsnapshot.$repositoryIndex").toString().toBoolean() && isSnapshot)
-                 || (project.findProperty("maven.repository.ispublishrelease.$repositoryIndex").toString().toBoolean() && !isSnapshot))) {
-            // @formatter:on
-            maven {
-               url = uri(project.findProperty("maven.repository.url.$repositoryIndex") as String)
-               credentials {
-                  username = project.findProperty("maven.repository.username.$repositoryIndex") as String
-                  password = project.findProperty("maven.repository.password.$repositoryIndex") as String
-               }
-            }
-         }
-      }
-      // TODO GitHub repository isn't working. It doesn't behave like other Maven repositories (Sonatype or Artifactory).
-      @Suppress("SimplifyBooleanWithConstants") if (false && System.getenv("PACKR_GITHUB_MAVEN_USERNAME")!!.toBoolean()) {
-         maven(gitHubPackrMavenUri) {
-            credentials {
-               username = System.getenv("PACKR_GITHUB_MAVEN_USERNAME")
-               password = System.getenv("PACKR_GITHUB_MAVEN_TOKEN")
-            }
-         }
-      }
+      packrPublishRepositories(project)
+      gitHubRepositoryForPackr(project)
    }
    publications {
       register<MavenPublication>("${project.name}-all") {
@@ -320,7 +295,6 @@ publishing {
                url.set("https://github.com/libgdx/packr")
             }
          }
-
       }
       register<MavenPublication>(project.name) {
          from(components["java"])
