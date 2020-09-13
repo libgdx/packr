@@ -42,7 +42,7 @@ java -jar packr-all.jar \
 | useZgcIfSupportedOs | When bundling a Java 14+ JRE, the launcher will check if the operating system supports the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) and use it. At the time of this writing, the supported operating systems are Linux, macOS, and Windows version 1803 (Windows 10 or Windows Server 2019) or later." |
 | resources (optional) | list of files and directories to be packaged next to the native executable |
 | minimizejre | minimize the JRE by removing directories and files as specified by an additional config file. Comes with a few config files out of the box. See below for details on the minimization config file. |
-| output | the output directory |
+| output | the output directory. This must be an existing empty directory or a path that does not exist. Packr will create the directory if it doesn't exist but will fail if the path is not a directory or is not an empty directory. |
 | cachejre (optional) | An optional directory to cache the result of JRE extraction and minimization. See below for details. |
 | icon (optional, OS X) | location of an AppBundle icon resource (.icns file) |
 | bundle (optional, OS X) | the bundle identifier of your Java application, e.g. "com.my.app" |

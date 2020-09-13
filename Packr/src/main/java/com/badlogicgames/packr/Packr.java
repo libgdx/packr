@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.badlogicgames.packr;
@@ -33,6 +32,7 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -162,7 +162,7 @@ public class Packr {
 
 		  PackrOutput output = new PackrOutput(config.outDir, config.outDir);
 
-		  cleanAndCreateOutputFolder(output);
+		  verifyEmptyOrCreateOutputFolder(output);
 
 		  output = buildMacBundle(output);
 
@@ -180,19 +180,27 @@ public class Packr {
 	 }
 
 	 /**
-	  * If the output directory already exists, delete it. Then create the directory.
+	  * Verifies that the output directory doesn't exist or is empty. For reproducible builds the output directory needs to be fully created by packr.
 	  *
-	  * @param output Deletes if it exists and then creates {@link PackrOutput#executableFolder}
+	  * @param output the directory to verify is empty or non existent and then creates {@link PackrOutput#executableFolder} if needed
 	  *
-	  * @throws IOException if an IO error occurs
+	  * @throws IOException if the output directory is not empty
 	  */
-	 private void cleanAndCreateOutputFolder (PackrOutput output) throws IOException {
-		  File folder = output.executableFolder;
-		  if (folder.exists()) {
-				System.out.println("Cleaning output directory '" + folder.getAbsolutePath() + "' ...");
-				PackrFileUtils.deleteDirectory(folder);
+	 void verifyEmptyOrCreateOutputFolder (PackrOutput output) throws IOException {
+		  Path outputPath = output.executableFolder.toPath();
+		  if (Files.exists(outputPath)) {
+				if (!Files.isDirectory(outputPath)) {
+					 System.err.println("Output directory \"" + outputPath + "\" must be a directory.");
+					 throw new IOException("Output directory \"" + outputPath + "\" is not a directory.");
+				}
+				try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(outputPath)) {
+					 if (dirStream.iterator().hasNext()) {
+						  System.err.println("Output directory \"" + outputPath + "\" must be empty.");
+						  throw new IOException("Output directory \"" + outputPath + "\" is not empty.");
+					 }
+				}
 		  }
-		  Files.createDirectories(folder.toPath());
+		  Files.createDirectories(outputPath);
 	 }
 
 	 /**
