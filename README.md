@@ -201,7 +201,7 @@ Minimization aside, packr can remove all dynamic libraries which do not match th
 | Linux | `*.dll`, `*.dylib` |
 | MacOS | `*.dll`, `*.so` |
 
-This step is optional. If you don't need it, just remove the configuration parameter to speed up packr.
+This step is optional. If you don't need it, just remove the configuration parameter to speed up packr. This step doesn't preserve the META-INF directory or files in the jar.
 
 # Caching
 Extracting and minimizing a JRE can take quite some time. If the `cachejre` option is used, the result of these operations is cached in the given folder, and can be reused in subsequent runs of packr.
