@@ -225,7 +225,9 @@ public class Packr {
 		  if (config.bundleIdentifier != null) {
 				values.put("${bundleIdentifier}", config.bundleIdentifier);
 		  } else {
-				values.put("${bundleIdentifier}", config.mainClass.substring(0, config.mainClass.lastIndexOf('.')));
+				final int lastDotIndex = config.mainClass.lastIndexOf('.');
+				final int classIndex = lastDotIndex >= 0 ? lastDotIndex : config.mainClass.length();
+				values.put("${bundleIdentifier}", config.mainClass.substring(0, classIndex));
 		  }
 
 		  // create folder structure
