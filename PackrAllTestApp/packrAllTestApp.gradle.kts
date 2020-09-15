@@ -22,9 +22,12 @@ import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS
 import org.apache.tools.ant.taskdefs.condition.Os.isFamily
 import org.gradle.internal.jvm.Jvm
 import java.io.ByteArrayOutputStream
+import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -158,6 +161,21 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
             else -> throw GradleException("Not sure how to test $path from ${project(":TestAppJreDist").name}")
          }
          createPackrContent(path, osFamily, packrOutputDirectory)
+
+         if (isFamily(FAMILY_UNIX)) {
+            Files.walkFileTree(packrOutputDirectory, object : SimpleFileVisitor<Path>() {
+               override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                  if (file.fileName.toString().equals("java")) {
+                     exec {
+                        executable = "chmod"
+                        args("+x")
+                        args(file.toAbsolutePath().toString())
+                     }
+                  }
+                  return super.visitFile(file, attrs)
+               }
+            })
+         }
 
          // Execute each generated packr bundle that is compatible with the current OS
          if (isFamily(osFamily) && !(isFamily(FAMILY_MAC) && Objects.equals(osFamily, FAMILY_UNIX))) {
