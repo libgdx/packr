@@ -18,33 +18,38 @@ package com.badlogicgames.packrtestapp;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
  * Simple hello world application for testing the packr launcher.
  */
 public class PackrAllTestApplication {
-    /**
-     * Main CLI entrance.
-     *
-     * @param args ignored
-     *
-     * @throws IOException if an IO error occurs
-     */
-    public static void main (String[] args) throws IOException {
-        System.out.println("Hello world!");
-        System.out.println("Running from java.version=" + System.getProperty("java.version"));
+	 /**
+	  * Main CLI entrance.
+	  *
+	  * @param args ignored
+	  *
+	  * @throws IOException if an IO error occurs
+	  */
+	 public static void main (String[] args) throws IOException, InterruptedException {
+		  System.out.println("Hello world!");
+		  System.out.println("Running from java.version=" + System.getProperty("java.version"));
 
-        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-            System.out.println(
-               "Received uncaught exception in thread.getName()=" + thread.getName() + ", Thread.currentThread().getName()=" + Thread.currentThread()
-                  .getName());
-            throwable.printStackTrace(System.out);
-        });
+		  Path javaExecutablePath = Paths.get(System.getProperty("java.home")).resolve("bin").resolve("java");
+		  new ProcessBuilder(javaExecutablePath.toString(), "-version").inheritIO().start().waitFor();
 
-        Files.lines(Paths.get("application-resources").resolve("fake-resource.txt"))
-           .forEach(resourceLine -> System.out.println("Loaded resource line: " + resourceLine));
+		  Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+				System.out.println(
+					"Received uncaught exception in thread.getName()=" + thread.getName() + ", Thread.currentThread().getName()=" + Thread.currentThread()
+						.getName());
+				throwable.printStackTrace(System.out);
+		  });
 
-        throw new RuntimeException("Testing uncaught exception handler. Thrown from the main thread, Thread.currentThread().getName()=" + Thread.currentThread().getName());
-    }
+		  Files.lines(Paths.get("application-resources").resolve("fake-resource.txt"))
+			  .forEach(resourceLine -> System.out.println("Loaded resource line: " + resourceLine));
+
+		  throw new RuntimeException(
+			  "Testing uncaught exception handler. Thrown from the main thread, Thread.currentThread().getName()=" + Thread.currentThread().getName());
+	 }
 }

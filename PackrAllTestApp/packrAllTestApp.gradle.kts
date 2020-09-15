@@ -22,9 +22,12 @@ import org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS
 import org.apache.tools.ant.taskdefs.condition.Os.isFamily
 import org.gradle.internal.jvm.Jvm
 import java.io.ByteArrayOutputStream
+import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -74,12 +77,12 @@ java {
 /**
  * Configuration for consuming all the artifacts produced by TestAppJreDist
  */
-val jdksAndJresFromJreDist = configurations.register("jdksAndJresFromJreDist")
+val jdksAndJresFromJreDist: NamedDomainObjectProvider<Configuration> = configurations.register("jdksAndJresFromJreDist")
 
 /**
  * The configuration for depending on the Packr Launcher executables
  */
-val packrAllArchive = configurations.register("packrAllArchive")
+val packrAllArchive: NamedDomainObjectProvider<Configuration> = configurations.register("packrAllArchive")
 dependencies {
    // test
    testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
@@ -159,10 +162,26 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
          }
          createPackrContent(path, osFamily, packrOutputDirectory)
 
+         if (isFamily(FAMILY_UNIX)) {
+            Files.walkFileTree(packrOutputDirectory, object : SimpleFileVisitor<Path>() {
+               override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                  if (file.fileName.toString() == "java") {
+                     exec {
+                        executable = "chmod"
+                        args("+x")
+                        args(file.toAbsolutePath().toString())
+                     }
+                  }
+                  return super.visitFile(file, attrs)
+               }
+            })
+         }
+
          // Execute each generated packr bundle that is compatible with the current OS
          if (isFamily(osFamily) && !(isFamily(FAMILY_MAC) && Objects.equals(osFamily, FAMILY_UNIX))) {
             logger.info("Executing packr in ${packrOutputDirectory.toAbsolutePath()}")
             val standardOutputCapture = ByteArrayOutputStream()
+            val errorOutputCapture = ByteArrayOutputStream()
             val execResult = exec {
                workingDir = packrOutputDirectory.toFile()
                environment("PATH", "")
@@ -180,10 +199,13 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
                args("--")
 
                standardOutput = standardOutputCapture
+               errorOutput = errorOutputCapture
                isIgnoreExitValue = true
             }
             val outputAsString = standardOutputCapture.toByteArray().toString(Charsets.UTF_8)
             logger.info("Captured standard output:\n$outputAsString")
+            val errorAsString = errorOutputCapture.toByteArray().toString(Charsets.UTF_8)
+            logger.info("Captured error output:\n$errorAsString")
 
             if (!outputAsString.contains("Hello world!")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't execute properly, output did not contain hello world")
@@ -194,8 +216,12 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
             if (!outputAsString.contains("Received uncaught exception")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't catch an unchecked exception with setDefaultUncaughtExceptionHandler")
             }
-            if (fileNameNoExtension.toLowerCase().contains("jdk14") && !outputAsString.contains("Using The Z Garbage Collector")) {
+            if (fileNameNoExtension.toLowerCase()
+                   .contains("jdk14") && !outputAsString.contains("Using The Z Garbage Collector")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't execute using the Z garbage collector")
+            }
+            if (!errorAsString.contains("Runtime Environment")) {
+               throw GradleException("Packr bundle in $packrOutputDirectory didn't print java information to error output.")
             }
             execResult.assertNormalExitValue()
          }
@@ -210,7 +236,7 @@ tasks.named("check") {
 /**
  * Gradle property specifying where the JDK archives directory is
  */
-val jdkArchiveProperty = findProperty("jdk.archive.directory") as String?
+val jdkArchiveProperty: String? = findProperty("jdk.archive.directory") as String?
 
 /**
  * Path to a directory containing any number of JDK archives to test.
@@ -271,8 +297,6 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       args("--resources")
       args(projectDir.toPath().resolve("application-resources").toAbsolutePath().toString())
 
-      args("--minimizejre")
-      args("soft")
       args("--mainclass")
       args("com.badlogicgames.packrtestapp.PackrAllTestApplication")
       args("--vmargs")
