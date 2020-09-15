@@ -163,6 +163,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
          if (isFamily(osFamily) && !(isFamily(FAMILY_MAC) && Objects.equals(osFamily, FAMILY_UNIX))) {
             logger.info("Executing packr in ${packrOutputDirectory.toAbsolutePath()}")
             val standardOutputCapture = ByteArrayOutputStream()
+            val errorOutputCapture = ByteArrayOutputStream()
             val execResult = exec {
                workingDir = packrOutputDirectory.toFile()
                environment("PATH", "")
@@ -180,10 +181,13 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
                args("--")
 
                standardOutput = standardOutputCapture
+               errorOutput = errorOutputCapture
                isIgnoreExitValue = true
             }
-            val outputAsString = standardOutputCapture.toByteArray().toString(Charsets.UTF_8)
+            val outputAsString = standardOutputCapture.toString(Charsets.UTF_8)
             logger.info("Captured standard output:\n$outputAsString")
+            val errorAsString = errorOutputCapture.toString(Charsets.UTF_8)
+            logger.info("Captured error output:\n$errorAsString")
 
             if (!outputAsString.contains("Hello world!")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't execute properly, output did not contain hello world")
@@ -194,8 +198,12 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
             if (!outputAsString.contains("Received uncaught exception")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't catch an unchecked exception with setDefaultUncaughtExceptionHandler")
             }
-            if (fileNameNoExtension.toLowerCase().contains("jdk14") && !outputAsString.contains("Using The Z Garbage Collector")) {
+            if (fileNameNoExtension.toLowerCase()
+                   .contains("jdk14") && !outputAsString.contains("Using The Z Garbage Collector")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't execute using the Z garbage collector")
+            }
+            if (!errorAsString.contains("Runtime Environment")) {
+               throw GradleException("Packr bundle in $packrOutputDirectory didn't print java information to error output.")
             }
             execResult.assertNormalExitValue()
          }
@@ -271,8 +279,6 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       args("--resources")
       args(projectDir.toPath().resolve("application-resources").toAbsolutePath().toString())
 
-      args("--minimizejre")
-      args("soft")
       args("--mainclass")
       args("com.badlogicgames.packrtestapp.PackrAllTestApplication")
       args("--vmargs")

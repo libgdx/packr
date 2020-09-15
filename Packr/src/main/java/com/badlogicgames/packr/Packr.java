@@ -52,6 +52,7 @@ import static com.badlogicgames.packr.ArchiveUtils.extractArchive;
  */
 public class Packr {
 
+	 public static final String JRE_RELATIVE_PATH_NAME = "jre";
 	 private PackrConfig config;
 	 private Predicate<File> removePlatformLibsFileFilter = f -> false;
 
@@ -408,7 +409,7 @@ public class Packr {
 					 throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
 				}
 
-				PackrFileUtils.copyDirectory(jre, new File(jreStoragePath, "jre"));
+				PackrFileUtils.copyDirectory(jre, new File(jreStoragePath, JRE_RELATIVE_PATH_NAME));
 				PackrFileUtils.deleteDirectory(tmp);
 
 				if (fetchFromRemote) {
@@ -424,6 +425,15 @@ public class Packr {
 				// this is the only copy done (and everything above is skipped)
 				PackrFileUtils.copyDirectory(jreStoragePath, output.resourcesFolder);
 		  }
+
+		  Files.walkFileTree(output.resourcesFolder.toPath().resolve(JRE_RELATIVE_PATH_NAME), new SimpleFileVisitor<Path>() {
+				@Override public FileVisitResult visitFile (Path file, BasicFileAttributes attrs) throws IOException {
+					 if (file.getFileName().toString().equals("jspawnhelper")) {
+						  PackrFileUtils.chmodX(file.toFile());
+					 }
+					 return super.visitFile(file, attrs);
+				}
+		  });
 	 }
 
 	 /**
