@@ -77,12 +77,12 @@ java {
 /**
  * Configuration for consuming all the artifacts produced by TestAppJreDist
  */
-val jdksAndJresFromJreDist = configurations.register("jdksAndJresFromJreDist")
+val jdksAndJresFromJreDist: NamedDomainObjectProvider<Configuration> = configurations.register("jdksAndJresFromJreDist")
 
 /**
  * The configuration for depending on the Packr Launcher executables
  */
-val packrAllArchive = configurations.register("packrAllArchive")
+val packrAllArchive: NamedDomainObjectProvider<Configuration> = configurations.register("packrAllArchive")
 dependencies {
    // test
    testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
@@ -165,7 +165,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
          if (isFamily(FAMILY_UNIX)) {
             Files.walkFileTree(packrOutputDirectory, object : SimpleFileVisitor<Path>() {
                override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-                  if (file.fileName.toString().equals("java")) {
+                  if (file.fileName.toString() == "java") {
                      exec {
                         executable = "chmod"
                         args("+x")
@@ -236,7 +236,7 @@ tasks.named("check") {
 /**
  * Gradle property specifying where the JDK archives directory is
  */
-val jdkArchiveProperty = findProperty("jdk.archive.directory") as String?
+val jdkArchiveProperty: String? = findProperty("jdk.archive.directory") as String?
 
 /**
  * Path to a directory containing any number of JDK archives to test.
