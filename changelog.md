@@ -4,6 +4,9 @@
 1. The packr-all Jar is available from GitHub packages <https://github.com/libgdx/packr/packages>.
 1. The output directory specified by `--output` must be an empty directory, or a path that does not exist.
    * Packr will no longer delete the output directory and then populate it.
+1. Packr will ensure that `jspawnhelper` has execute permissions in the bundled JRE.
+   * This resolves an issue on macOS where Runtime.exec and Process.start calls would fail with `java.io.IOException: Cannot run program "java": error=2, No such file or directory`.
+      * Reference: <https://stackoverflow.com/questions/53113127/java-runtime-exec-fails-to-run/55091040>
 # Release 2.7.0
 1. Fixed a Gradle script error where it was bundling the release builds with debug info on Linux and macOS.
    * For Linux this reduces the executable size from ~722K to ~95K.
