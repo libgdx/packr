@@ -202,9 +202,9 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
                errorOutput = errorOutputCapture
                isIgnoreExitValue = true
             }
-            val outputAsString = standardOutputCapture.toString(Charsets.UTF_8)
+            val outputAsString = standardOutputCapture.toByteArray().toString(Charsets.UTF_8)
             logger.info("Captured standard output:\n$outputAsString")
-            val errorAsString = errorOutputCapture.toString(Charsets.UTF_8)
+            val errorAsString = errorOutputCapture.toByteArray().toString(Charsets.UTF_8)
             logger.info("Captured error output:\n$errorAsString")
 
             if (!outputAsString.contains("Hello world!")) {
