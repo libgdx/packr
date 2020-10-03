@@ -21,25 +21,61 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.jar.JarArchiveEntry;
+import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarConstants;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.commons.compress.utils.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Utility functions for working with archives.
  */
-public class ArchiveUtils {
+@SuppressWarnings("OctalInteger") public class ArchiveUtils {
+	 public static final int DEFAULT_FILE_MODE = 00644;
+	 public static final int DEFAULT_DIRECTORY_MODE = 00755;
+	 public static final int DEFAULT_LINK_MODE = 00777;
+	 public static final int ZIP_LINK_FLAG = 0120000;
+	 public static final int OWNER_READ_BIT_MASK = 00400;
+	 public static final int OWNER_WRITE_BIT_MASK = 00200;
+	 public static final int OWNER_EXECUTE_BIT_MASK = 00100;
+	 public static final int GROUP_READ_BIT_MASK = 00040;
+	 public static final int GROUP_WRITE_BIT_MASK = 00020;
+	 public static final int GROUP_EXECUTE_BIT_MASK = 00010;
+	 public static final int OTHERS_READ_BIT_MASK = 00004;
+	 public static final int OTHERS_WRITE_BIT_MASK = 00002;
+	 public static final int OTHERS_EXECUTE_BIT_MASK = 00001;
+	 private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
 	 /**
 	  * No need for an instance, everything is static.
 	  */
@@ -65,7 +101,7 @@ public class ArchiveUtils {
 				try {
 					 compressorType = CompressorStreamFactory.detect(jdkInputStream);
 				} catch (CompressorException exception) {
-					 System.out.println("Didn't detect any compression for archive " + archivePath + ": " + exception.getMessage());
+					 LOG.debug("Didn't detect any compression for archive " + archivePath + ": " + exception.getMessage());
 				}
 				InputStream decompressedJdkInputStream = jdkInputStream;
 				if (compressorType != null) {
@@ -73,14 +109,89 @@ public class ArchiveUtils {
 						 CompressorStreamFactory.getSingleton().createCompressorInputStream(compressorType, jdkInputStream));
 				}
 
-				final ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(decompressedJdkInputStream);
-				ArchiveEntry entry;
-				while ((entry = archiveInputStream.getNextEntry()) != null) {
-					 if (!archiveInputStream.canReadEntryData(entry)) {
-						  System.out.println("Failed to read archive entry " + entry);
-						  continue;
+				switch (ArchiveStreamFactory.detect(decompressedJdkInputStream)) {
+				case ArchiveStreamFactory.ZIP:
+					 if (compressorType != null) {
+						  LOG.error("Cannot extract Zip archives that are wrapped in additional compression");
+					 } else {
+						  extractZipArchive(archivePath, extractToDirectory);
 					 }
-					 Path entryExtractPath = extractToDirectory.resolve(entry.getName());
+					 break;
+				case ArchiveStreamFactory.JAR:
+					 extractJarArchive(decompressedJdkInputStream, extractToDirectory);
+					 break;
+				case ArchiveStreamFactory.TAR:
+					 extractTarArchive(decompressedJdkInputStream, extractToDirectory);
+					 break;
+				default:
+					 LOG.error("No special handling for archive type " + archivePath + ". Permissions and links will not be properly handled.");
+					 extractGenericArchive(decompressedJdkInputStream, extractToDirectory);
+					 break;
+				}
+		  }
+	 }
+
+	 /**
+	  * Extracts an archive using {@link ArchiveStreamFactory#createArchiveInputStream(InputStream)} with no special handling of symbolic links or file
+	  * permissions.
+	  *
+	  * @param inputStream the archive input stream
+	  * @param extractToDirectory the directory to extract the archive into
+	  *
+	  * @throws ArchiveException if an archive error occurs
+	  * @throws IOException if an IO error occurs
+	  */
+	 private static void extractGenericArchive (InputStream inputStream, Path extractToDirectory) throws ArchiveException, IOException {
+		  final ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(inputStream);
+
+		  ArchiveEntry entry;
+		  while ((entry = archiveInputStream.getNextEntry()) != null) {
+				if (!archiveInputStream.canReadEntryData(entry)) {
+					 LOG.error("Failed to read archive entry " + entry);
+					 continue;
+				}
+
+				Path entryExtractPath = extractToDirectory.resolve(getEntryAsPath(entry));
+				if (entry.isDirectory()) {
+					 Files.createDirectories(entryExtractPath);
+				} else {
+					 Files.createDirectories(entryExtractPath.getParent());
+					 Files.copy(archiveInputStream, entryExtractPath, StandardCopyOption.REPLACE_EXISTING);
+				}
+				Files.setLastModifiedTime(entryExtractPath, FileTime.fromMillis(entry.getLastModifiedDate().getTime()));
+		  }
+	 }
+
+	 /**
+	  * Extracts a TAR archive. If the current platform supports POSIX permissions, the archive entry permissions are applied to the create file or directory.
+	  * Symbolic and "hard" links are also support.
+	  *
+	  * @param inputStream the archive input stream
+	  * @param extractToDirectory the directory to extract the archive into
+	  *
+	  * @throws IOException if an IO error occurs
+	  */
+	 private static void extractTarArchive (InputStream inputStream, Path extractToDirectory) throws IOException {
+		  final TarArchiveInputStream archiveInputStream = new TarArchiveInputStream(inputStream);
+
+		  TarArchiveEntry entry;
+		  while ((entry = archiveInputStream.getNextTarEntry()) != null) {
+				if (!archiveInputStream.canReadEntryData(entry)) {
+					 LOG.error("Failed to read archive entry " + entry);
+					 continue;
+				}
+
+				Path entryExtractPath = extractToDirectory.resolve(getEntryAsPath(entry));
+
+				if (entry.isLink()) {
+					 Path linkTarget = Paths.get(entry.getLinkName());
+					 Files.deleteIfExists(entryExtractPath);
+					 Files.createLink(entryExtractPath, linkTarget);
+				} else if (entry.isSymbolicLink()) {
+					 Path linkTarget = Paths.get(entry.getLinkName());
+					 Files.deleteIfExists(entryExtractPath);
+					 Files.createSymbolicLink(entryExtractPath, linkTarget);
+				} else {
 					 if (entry.isDirectory()) {
 						  Files.createDirectories(entryExtractPath);
 					 } else {
@@ -88,8 +199,148 @@ public class ArchiveUtils {
 						  Files.copy(archiveInputStream, entryExtractPath, StandardCopyOption.REPLACE_EXISTING);
 					 }
 				}
+				setLastModifiedTime(entryExtractPath, FileTime.fromMillis(entry.getLastModifiedDate().getTime()));
+				Set<PosixFilePermission> permissions = getPosixFilePermissions(entry.getMode());
+				setPosixPermissions(entryExtractPath, permissions);
 		  }
+	 }
 
+	 /**
+	  * Converts a bit masked integer into a set of {@link PosixFilePermission}s.
+	  *
+	  * @param mode the permissions bit mask
+	  *
+	  * @return a set of permission enums based on {@code mode}
+	  *
+	  * @see #OWNER_READ_BIT_MASK
+	  */
+	 private static Set<PosixFilePermission> getPosixFilePermissions (final int mode) {
+		  Set<PosixFilePermission> permissions = new HashSet<>();
+		  if ((mode & OWNER_READ_BIT_MASK) != 0) {
+				permissions.add(PosixFilePermission.OWNER_READ);
+		  } else if ((mode & OWNER_WRITE_BIT_MASK) != 0) {
+				permissions.add(PosixFilePermission.OWNER_WRITE);
+		  } else if ((mode & OWNER_EXECUTE_BIT_MASK) != 0) {
+				permissions.add(PosixFilePermission.OWNER_EXECUTE);
+		  } else if ((mode & GROUP_READ_BIT_MASK) != 0) {
+				permissions.add(PosixFilePermission.GROUP_READ);
+		  } else if ((mode & GROUP_WRITE_BIT_MASK) != 0) {
+				permissions.add(PosixFilePermission.GROUP_WRITE);
+		  } else if ((mode & GROUP_EXECUTE_BIT_MASK) != 0) {
+				permissions.add(PosixFilePermission.GROUP_EXECUTE);
+		  } else if ((mode & OTHERS_READ_BIT_MASK) != 0) {
+				permissions.add(PosixFilePermission.OTHERS_READ);
+		  } else if ((mode & OTHERS_WRITE_BIT_MASK) != 0) {
+				permissions.add(PosixFilePermission.OTHERS_WRITE);
+		  } else if ((mode & OTHERS_EXECUTE_BIT_MASK) != 0) {
+				permissions.add(PosixFilePermission.OTHERS_EXECUTE);
+		  }
+		  return permissions;
+	 }
+
+	 /**
+	  * If the current platform supports POSIX permissions, they are applied to {@code path}.
+	  *
+	  * @param path the path to apply {@code permissions} on if the current platform supports POSIX permissions
+	  * @param permissions the permissions to apply to {@code path} if the current platform supports POSIX permissions
+	  *
+	  * @throws IOException if an IO error occurs
+	  */
+	 private static void setPosixPermissions (Path path, Set<PosixFilePermission> permissions) throws IOException {
+		  final PosixFileAttributeView posixFileAttributeView = Files.getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+		  if (posixFileAttributeView != null) {
+				posixFileAttributeView.setPermissions(permissions);
+		  }
+	 }
+
+	 /**
+	  * Extracts a JAR archive. If the current platform supports POSIX permissions, the archive entry permissions are applied to the created file or directory.
+	  * Symbolic links are also supported.
+	  *
+	  * @param inputStream the archive input stream
+	  * @param extractToDirectory the directory to extract the archive into
+	  *
+	  * @throws IOException if an IO error occurs
+	  */
+	 private static void extractJarArchive (InputStream inputStream, Path extractToDirectory) throws IOException {
+		  final JarArchiveInputStream archiveInputStream = new JarArchiveInputStream(inputStream);
+
+		  JarArchiveEntry entry;
+		  while ((entry = archiveInputStream.getNextJarEntry()) != null) {
+				if (!archiveInputStream.canReadEntryData(entry)) {
+					 LOG.error("Failed to read archive entry " + entry);
+					 continue;
+				}
+				extractZipEntry(extractToDirectory, archiveInputStream, entry);
+		  }
+	 }
+
+	 /**
+	  * Extracts a {@link ZipArchiveEntry}, creating files and directories that match the date modified, POSIX permissions, and symbolic link properties of the
+	  * archive entry.
+	  *
+	  * @param extractToDirectory the directory to extract to
+	  * @param archiveInputStream the archive input stream
+	  * @param entry the entry to extract
+	  *
+	  * @throws IOException if an IO error occurs
+	  */
+	 private static void extractZipEntry (Path extractToDirectory, InputStream archiveInputStream, ZipArchiveEntry entry) throws IOException {
+		  Path entryExtractPath = extractToDirectory.resolve(getEntryAsPath(entry));
+
+		  if (entry.isUnixSymlink()) {
+				final byte[] contentBuffer = new byte[8192];
+				final int contentLength = IOUtils.readFully(archiveInputStream, contentBuffer);
+				Path linkTarget = Paths.get(new String(contentBuffer, 0, contentLength, StandardCharsets.UTF_8));
+				Files.deleteIfExists(entryExtractPath);
+				Files.createSymbolicLink(entryExtractPath, linkTarget);
+		  } else {
+				if (entry.isDirectory()) {
+					 Files.createDirectories(entryExtractPath);
+				} else {
+					 Files.createDirectories(entryExtractPath.getParent());
+					 Files.copy(archiveInputStream, entryExtractPath, StandardCopyOption.REPLACE_EXISTING);
+				}
+		  }
+		  LOG.info("entryExtractPath=" + entryExtractPath + ", entry.getName()=" + entry.getName() + ", extractToDirectory=" + extractToDirectory);
+		  setLastModifiedTime(entryExtractPath, entry.getLastModifiedTime());
+		  Set<PosixFilePermission> permissions = getPosixFilePermissions(entry.getUnixMode());
+		  setPosixPermissions(entryExtractPath, permissions);
+	 }
+
+	 private static void setLastModifiedTime (Path path, FileTime lastModifiedTime) throws IOException {
+		  BasicFileAttributeView pathAttributeView = Files.getFileAttributeView(path, BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+		  final BasicFileAttributes fileAttributes = pathAttributeView.readAttributes();
+		  pathAttributeView.setTimes(lastModifiedTime, fileAttributes.lastAccessTime(), fileAttributes.creationTime());
+	 }
+
+	 private static Path getEntryAsPath (ArchiveEntry entry) throws IOException {
+		  Path entryAsPath = Paths.get(entry.getName());
+		  if (entryAsPath.isAbsolute()) {
+				throw new IOException("Archive contained an absolute path as an entry");
+		  }
+		  return entryAsPath;
+	 }
+
+	 /**
+	  * Extracts a Zip archive. If the current platform supports POSIX permissions, the archive entry permissions are applied to the created file or directory.
+	  * Symbolic links are also supported.
+	  *
+	  * @param archivePath the Zip archive path
+	  * @param extractToDirectory the directory to extract the archive into
+	  *
+	  * @throws IOException if an IO error occurs
+	  */
+	 private static void extractZipArchive (Path archivePath, Path extractToDirectory) throws IOException {
+		  try (final ZipFile zipFile = new ZipFile(archivePath.toFile())) {
+				Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+				while (entries.hasMoreElements()) {
+					 ZipArchiveEntry entry = entries.nextElement();
+					 try (InputStream entryInputStream = zipFile.getInputStream(entry)) {
+						  extractZipEntry(extractToDirectory, entryInputStream, entry);
+					 }
+				}
+		  }
 	 }
 
 	 /**
@@ -109,14 +360,16 @@ public class ArchiveUtils {
 
 				Files.walkFileTree(directoryToArchive, new SimpleFileVisitor<Path>() {
 					 @Override public FileVisitResult visitFile (Path file, BasicFileAttributes attrs) throws IOException {
-						  ArchiveEntry entry = archiveOutputStream.createArchiveEntry(file.toFile(), getEntryName(file, directoryToArchive));
-						  archiveOutputStream.putArchiveEntry(entry);
-						  Files.copy(file, archiveOutputStream);
+						  createAndPutArchiveEntry(archiveType, archiveOutputStream, directoryToArchive, file);
 						  archiveOutputStream.closeArchiveEntry();
 						  return FileVisitResult.CONTINUE;
 					 }
 
 					 @Override public FileVisitResult preVisitDirectory (Path dir, BasicFileAttributes attrs) throws IOException {
+						  if (Files.isSameFile(dir, directoryToArchive)) {
+								return FileVisitResult.CONTINUE;
+						  }
+
 						  ArchiveEntry entry = archiveOutputStream.createArchiveEntry(dir.toFile(), getEntryName(dir, directoryToArchive));
 						  archiveOutputStream.putArchiveEntry(entry);
 						  archiveOutputStream.closeArchiveEntry();
@@ -128,6 +381,79 @@ public class ArchiveUtils {
 		  }
 	 }
 
+	 private static void createAndPutArchiveEntry (ArchiveType archiveType, ArchiveOutputStream archiveOutputStream, Path directoryToArchive,
+		 Path filePathToArchive) throws IOException {
+		  switch (archiveType) {
+		  case ZIP: {
+				ZipArchiveEntry entry = new ZipArchiveEntry(filePathToArchive.toFile(), getEntryName(filePathToArchive, directoryToArchive));
+				entry.setUnixMode(getUnixMode(filePathToArchive));
+				final boolean isSymbolicLink = Files.isSymbolicLink(filePathToArchive);
+				if (isSymbolicLink) {
+					 entry.setUnixMode(entry.getUnixMode() | ZIP_LINK_FLAG);
+				}
+				archiveOutputStream.putArchiveEntry(entry);
+				if (isSymbolicLink) {
+					 archiveOutputStream.write(directoryToArchive.relativize(filePathToArchive.toRealPath()).toString().getBytes(StandardCharsets.UTF_8));
+				} else {
+					 Files.copy(filePathToArchive, archiveOutputStream);
+				}
+				break;
+		  }
+		  case TAR: {
+				final boolean isSymbolicLink = Files.isSymbolicLink(filePathToArchive);
+				TarArchiveEntry entry;
+				if (isSymbolicLink) {
+					 entry = new TarArchiveEntry(getEntryName(filePathToArchive, directoryToArchive), TarConstants.LF_SYMLINK);
+					 entry.setLinkName(directoryToArchive.relativize(filePathToArchive.toRealPath()).toString());
+				} else {
+					 entry = new TarArchiveEntry(filePathToArchive.toFile(), getEntryName(filePathToArchive, directoryToArchive));
+				}
+
+				entry.setMode(getUnixMode(filePathToArchive));
+				archiveOutputStream.putArchiveEntry(entry);
+
+				if (!isSymbolicLink) {
+					 Files.copy(filePathToArchive, archiveOutputStream);
+				}
+				break;
+		  }
+		  }
+	 }
+
+	 private static int getUnixMode (Path file) throws IOException {
+		  PosixFileAttributeView fileAttributeView = Files.getFileAttributeView(file, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+		  if (fileAttributeView == null) {
+				if (Files.isSymbolicLink(file)) {
+					 return DEFAULT_LINK_MODE;
+				} else if (Files.isDirectory(file)) {
+					 return DEFAULT_DIRECTORY_MODE;
+				}
+				return DEFAULT_FILE_MODE;
+		  }
+		  int mode = 0;
+		  Set<PosixFilePermission> permissions = fileAttributeView.readAttributes().permissions();
+		  if (permissions.contains(PosixFilePermission.OWNER_READ)) {
+				mode |= OWNER_READ_BIT_MASK;
+		  } else if (permissions.contains(PosixFilePermission.OWNER_WRITE)) {
+				mode |= OWNER_WRITE_BIT_MASK;
+		  } else if (permissions.contains(PosixFilePermission.OWNER_EXECUTE)) {
+				mode |= OWNER_EXECUTE_BIT_MASK;
+		  } else if (permissions.contains(PosixFilePermission.GROUP_READ)) {
+				mode |= GROUP_READ_BIT_MASK;
+		  } else if (permissions.contains(PosixFilePermission.GROUP_WRITE)) {
+				mode |= GROUP_WRITE_BIT_MASK;
+		  } else if (permissions.contains(PosixFilePermission.GROUP_EXECUTE)) {
+				mode |= GROUP_EXECUTE_BIT_MASK;
+		  } else if (permissions.contains(PosixFilePermission.OTHERS_READ)) {
+				mode |= OTHERS_READ_BIT_MASK;
+		  } else if (permissions.contains(PosixFilePermission.OTHERS_WRITE)) {
+				mode |= OTHERS_WRITE_BIT_MASK;
+		  } else if (permissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
+				mode |= OTHERS_EXECUTE_BIT_MASK;
+		  }
+		  return mode;
+	 }
+
 	 /**
 	  * Creates a relative entry name and replaces all backslashes with forward slash.
 	  *
@@ -137,7 +463,9 @@ public class ArchiveUtils {
 	  * @return the entry name ({@code path} relative to {@code rootDirectory} with backslashes replaced)
 	  */
 	 private static String getEntryName (Path path, Path rootDirectory) {
-		  return rootDirectory.relativize(path).toString().replaceAll("\\\\", "/");
+		  String entryName = rootDirectory.relativize(path).toString().replaceAll("\\\\", "/");
+		  LOG.error("Creating entry name from path=" + path + ", rootDirectory=" + rootDirectory + ", entryName=" + entryName);
+		  return entryName;
 	 }
 
 	 /**
@@ -145,9 +473,14 @@ public class ArchiveUtils {
 	  */
 	 public enum ArchiveType {
 		  /**
-			* A zip archive.
+			* A Zip archive.
 			*/
-		  ZIP(ArchiveStreamFactory.ZIP);
+		  ZIP(ArchiveStreamFactory.ZIP),
+
+		  /**
+			* A TAR archive.
+			*/
+		  TAR(ArchiveStreamFactory.TAR);
 
 		  private final String commonsCompressName;
 
