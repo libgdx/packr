@@ -21,6 +21,7 @@ import com.lexicalscope.jewel.cli.CliFactory;
 import com.lexicalscope.jewel.cli.ValidationFailure;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.utils.FileNameUtils;
 import org.apache.commons.compress.utils.IOUtils;
 
 import java.io.File;
@@ -428,7 +429,14 @@ public class Packr {
 
 		  Files.walkFileTree(output.resourcesFolder.toPath().resolve(JRE_RELATIVE_PATH_NAME), new SimpleFileVisitor<Path>() {
 				@Override public FileVisitResult visitFile (Path file, BasicFileAttributes attrs) throws IOException {
-					 if (file.getFileName().toString().equals("jspawnhelper")) {
+					 final String parentFilename = file.getParent().getFileName().toString();
+					 final String filename = file.getFileName().toString();
+					 final String filenameExtension = FileNameUtils.getExtension(filename);
+
+					 final boolean isInBinOrLibDirectory = parentFilename.equalsIgnoreCase("bin") || parentFilename.equalsIgnoreCase("lib");
+					 final boolean isExecutableFile = filenameExtension.trim().length() == 0 || filenameExtension.equalsIgnoreCase("exe");
+
+					 if (isInBinOrLibDirectory && isExecutableFile) {
 						  PackrFileUtils.chmodX(file.toFile());
 					 }
 					 return super.visitFile(file, attrs);
