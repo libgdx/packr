@@ -200,9 +200,37 @@ import java.util.Set;
 					 }
 				}
 				setLastModifiedTime(entryExtractPath, FileTime.fromMillis(entry.getLastModifiedDate().getTime()));
-				Set<PosixFilePermission> permissions = getPosixFilePermissions(entry.getMode());
+				Set<PosixFilePermission> permissions = getPosixFilePermissions(entry);
 				setPosixPermissions(entryExtractPath, permissions);
 		  }
+	 }
+
+	 private static Set<PosixFilePermission> getPosixFilePermissions (final TarArchiveEntry entry) {
+		  int mode = entry.getMode();
+		  if (mode == 0) {
+				if (entry.isSymbolicLink()) {
+					 mode = DEFAULT_LINK_MODE;
+				} else if (entry.isDirectory()) {
+					 mode = DEFAULT_DIRECTORY_MODE;
+				} else {
+					 mode = DEFAULT_FILE_MODE;
+				}
+		  }
+		  return getPosixFilePermissions(mode);
+	 }
+
+	 private static Set<PosixFilePermission> getPosixFilePermissions (final ZipArchiveEntry entry) {
+		  int mode = entry.getUnixMode();
+		  if (mode == 0) {
+				if (entry.isUnixSymlink()) {
+					 mode = DEFAULT_LINK_MODE;
+				} else if (entry.isDirectory()) {
+					 mode = DEFAULT_DIRECTORY_MODE;
+				} else {
+					 mode = DEFAULT_FILE_MODE;
+				}
+		  }
+		  return getPosixFilePermissions(mode);
 	 }
 
 	 /**
@@ -304,7 +332,7 @@ import java.util.Set;
 		  }
 		  LOG.info("entryExtractPath=" + entryExtractPath + ", entry.getName()=" + entry.getName() + ", extractToDirectory=" + extractToDirectory);
 		  setLastModifiedTime(entryExtractPath, entry.getLastModifiedTime());
-		  Set<PosixFilePermission> permissions = getPosixFilePermissions(entry.getUnixMode());
+		  Set<PosixFilePermission> permissions = getPosixFilePermissions(entry);
 		  setPosixPermissions(entryExtractPath, permissions);
 	 }
 
@@ -451,6 +479,7 @@ import java.util.Set;
 		  } else if (permissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
 				mode |= OTHERS_EXECUTE_BIT_MASK;
 		  }
+		  LOG.debug("Unix mode of file=" + file + ", mode=" + mode);
 		  return mode;
 	 }
 
