@@ -38,19 +38,12 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static com.badlogicgames.packr.ArchiveUtils.ArchiveType.TAR;
 import static com.badlogicgames.packr.ArchiveUtils.ArchiveType.ZIP;
-import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
-import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
-import static java.nio.file.attribute.PosixFilePermission.OTHERS_EXECUTE;
-import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
-import static java.nio.file.attribute.PosixFilePermission.OTHERS_WRITE;
-import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
-import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
-import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
+import static java.nio.file.attribute.PosixFilePermission.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -75,7 +68,8 @@ class ArchiveUtilsTest {
 		  createAndExtractSimpleArchive(tempDir, TAR);
 	 }
 
-	 private void createAndExtractSimpleArchive (Path tempDir, ArchiveType archiveType) throws IOException, ArchiveException, CompressorException {
+	 private void createAndExtractSimpleArchive (Path tempDir, ArchiveType archiveType)
+		 throws IOException, ArchiveException, CompressorException {
 		  Path someDirectory = Files.createDirectories(tempDir.resolve("some-directory"));
 		  String someFilename = "some-file.txt";
 		  Files.write(someDirectory.resolve(someFilename), "Hello world\n".getBytes(StandardCharsets.UTF_8));
@@ -105,7 +99,8 @@ class ArchiveUtilsTest {
 		  createAndExtractArchiveWithSymbolicLink(tempDir, TAR);
 	 }
 
-	 private void createAndExtractArchiveWithSymbolicLink (Path tempDir, ArchiveType archiveType) throws IOException, ArchiveException, CompressorException {
+	 private void createAndExtractArchiveWithSymbolicLink (Path tempDir, ArchiveType archiveType)
+		 throws IOException, ArchiveException, CompressorException {
 		  assumeCreatedSymbolicLink(tempDir);
 
 		  Path someDirectory = Files.createDirectories(tempDir.resolve("some-directory"));
@@ -129,7 +124,8 @@ class ArchiveUtilsTest {
 			  "Extracted file contents should have matched original");
 		  assertTrue(Files.isSymbolicLink(extractionDirectory.resolve(someSymbolicLinkFilename)),
 			  "Symbolic link wasn't created when extracting some-symbolic-link.txt.");
-		  assertTrue(Files.isSameFile(extractionDirectory.resolve(someFilename), extractionDirectory.resolve(someSymbolicLinkFilename)));
+		  assertTrue(
+			  Files.isSameFile(extractionDirectory.resolve(someFilename), extractionDirectory.resolve(someSymbolicLinkFilename)));
 		  assertEquals(new String(Files.readAllBytes(extractionDirectory.resolve(someFilename)), StandardCharsets.UTF_8),
 			  new String(Files.readAllBytes(extractionDirectory.resolve(someSymbolicLinkFilename)), StandardCharsets.UTF_8),
 			  "Extracted file contents should have matched original");
@@ -155,7 +151,8 @@ class ArchiveUtilsTest {
 	 /**
 	  * Adds the same entry to a Zip file to ensure that extraction handles duplicates properly.
 	  */
-	 @Test public void testArchiveDuplicateEntry (@TempDir Path tempDir) throws IOException, ArchiveException, CompressorException {
+	 @Test public void testArchiveDuplicateEntry (@TempDir Path tempDir)
+		 throws IOException, ArchiveException, CompressorException {
 		  String someFilename = "some-file.txt";
 		  Path someFilePath = tempDir.resolve(someFilename);
 		  Files.write(someFilePath, "Hello world\n".getBytes(StandardCharsets.UTF_8));
@@ -163,7 +160,8 @@ class ArchiveUtilsTest {
 
 		  // Create an archive, add entry, update file, add same entry
 		  try (OutputStream fileOutputStream = new BufferedOutputStream(Files.newOutputStream(archiveZip));
-			  ArchiveOutputStream archiveOutputStream = new ArchiveStreamFactory().createArchiveOutputStream(ZIP.getCommonsCompressName(), fileOutputStream)) {
+			  ArchiveOutputStream archiveOutputStream = new ArchiveStreamFactory()
+				  .createArchiveOutputStream(ZIP.getCommonsCompressName(), fileOutputStream)) {
 
 				// Create an entry for some file
 				ArchiveEntry entry = archiveOutputStream.createArchiveEntry(someFilePath.toFile(), someFilename);
@@ -202,7 +200,8 @@ class ArchiveUtilsTest {
 	  * }
 	  * </pre>
 	  */
-	 @Test public void testExternalTarExtraction (@TempDir Path tempDir) throws IOException, ArchiveException, CompressorException {
+	 @Test public void testExternalTarExtraction (@TempDir Path tempDir)
+		 throws IOException, ArchiveException, CompressorException {
 		  assumeCreatedSymbolicLink(tempDir);
 
 		  Path archiveFilePath = tempDir.resolve("archive-file.tar");
@@ -217,12 +216,13 @@ class ArchiveUtilsTest {
 
 		  assertTrue(Files.exists(someDir), "some-dir wasn't extracted from the Tar");
 		  assertTrue(Files.isDirectory(someDir), "some-dir wasn't extracted as a directory");
-		  assertPosixPermissions(someDir, OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, GROUP_EXECUTE, OTHERS_EXECUTE);
+		  assertPosixPermissions(someDir, OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, GROUP_EXECUTE, OTHERS_READ,
+			  OTHERS_EXECUTE);
 
 		  assertTrue(Files.exists(symlinkToSomeFile), "symlink-to-some-file.txt wasn't extracted from the Tar");
 		  assertTrue(Files.isSymbolicLink(symlinkToSomeFile), "symlink-to-some-file.txt wasn't extracted as a symbolic link");
-		  assertPosixPermissions(someDir, OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, GROUP_EXECUTE, GROUP_EXECUTE, OTHERS_READ, OTHERS_WRITE,
-			  OTHERS_EXECUTE);
+		  assertPosixPermissions(symlinkToSomeFile, OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, GROUP_WRITE, GROUP_EXECUTE,
+			  OTHERS_READ, OTHERS_WRITE, OTHERS_EXECUTE);
 
 		  assertTrue(Files.exists(someFile), "some-file.txt wasn't extracted from the Tar");
 		  assertTrue(Files.isRegularFile(someFile), "some-file.txt wasn't extracted as a file");
@@ -230,15 +230,18 @@ class ArchiveUtilsTest {
 
 		  assertTrue(Files.exists(someScript), "some-script.sh wasn't extracted from the Tar");
 		  assertTrue(Files.isRegularFile(someScript), "some-script.sh wasn't extracted as a file");
-		  assertPosixPermissions(someScript, OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, GROUP_EXECUTE, OTHERS_READ, OTHERS_EXECUTE);
+		  assertPosixPermissions(someScript, OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, GROUP_EXECUTE, OTHERS_READ,
+			  OTHERS_EXECUTE);
 	 }
 
 	 private void assertPosixPermissions (Path path, PosixFilePermission... permissions) throws IOException {
-		  final PosixFileAttributeView fileAttributeView = Files.getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+		  final PosixFileAttributeView fileAttributeView = Files
+			  .getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
 		  if (fileAttributeView == null) {
 				return;
 		  }
-		  Set<PosixFilePermission> permissionSet = new HashSet<>(Arrays.asList(permissions));
-		  assertEquals(fileAttributeView.readAttributes().permissions(), permissionSet, "Path permissions don't match expected.");
+		  Set<PosixFilePermission> permissionSet = new LinkedHashSet<>(Arrays.asList(permissions));
+		  assertEquals(permissionSet, fileAttributeView.readAttributes().permissions(),
+			  "Permissions for path=" + path + ", don't match expected.");
 	 }
 }
