@@ -32,9 +32,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
@@ -120,6 +123,20 @@ class ArchiveUtilsTest {
 		  Path someSymbolicLink = someDirectory.resolve(someSymbolicLinkFilename);
 		  Files.createSymbolicLink(someSymbolicLink, someFilePath);
 
+		  LOG.info("================ archive directory ==================");
+		  Files.walkFileTree(someDirectory, new SimpleFileVisitor<Path>() {
+				@Override public FileVisitResult visitFile (Path file, BasicFileAttributes attrs) throws IOException {
+					 LOG.info("FILE: " + file);
+					 return super.visitFile(file, attrs);
+				}
+
+				@Override public FileVisitResult preVisitDirectory (Path dir, BasicFileAttributes attrs) throws IOException {
+					 LOG.info("DIR:  " + dir);
+					 return super.preVisitDirectory(dir, attrs);
+				}
+		  });
+		  LOG.info("================ end archive directory ==================");
+
 		  Path archiveZip = tempDir.resolve("archive");
 		  ArchiveUtils.createArchive(archiveType, someDirectory, archiveZip);
 
@@ -127,13 +144,29 @@ class ArchiveUtilsTest {
 		  Files.createDirectories(extractionDirectory);
 		  ArchiveUtils.extractArchive(archiveZip, extractionDirectory);
 
+		  LOG.info("================ extract directory ==================");
+		  Files.walkFileTree(extractionDirectory, new SimpleFileVisitor<Path>() {
+				@Override public FileVisitResult visitFile (Path file, BasicFileAttributes attrs) throws IOException {
+					 LOG.info("FILE: " + file);
+					 return super.visitFile(file, attrs);
+				}
+
+				@Override public FileVisitResult preVisitDirectory (Path dir, BasicFileAttributes attrs) throws IOException {
+					 LOG.info("DIR:  " + dir);
+					 return super.preVisitDirectory(dir, attrs);
+				}
+		  });
+		  LOG.info("================ end extract directory ==================");
+
 		  assertEquals(new String(Files.readAllBytes(someFilePath), StandardCharsets.UTF_8),
 			  new String(Files.readAllBytes(extractionDirectory.resolve(someFilename)), StandardCharsets.UTF_8),
 			  "Extracted file contents should have matched original");
-		  assertTrue(Files.exists(extractionDirectory.resolve(someSymbolicLinkFilename)),
+		  assertTrue(Files.exists(extractionDirectory.resolve(someSymbolicLinkFilename), LinkOption.NOFOLLOW_LINKS),
 			  "Symbolic link wasn't created when extracting some-symbolic-link.txt" + ".");
 		  assertTrue(Files.isSymbolicLink(extractionDirectory.resolve(someSymbolicLinkFilename)),
 			  "Path some-symbolic-link.txt should be a symbolic link but it isn't.");
+		  LOG.info("real path of some-symbolic-link.txt=" + extractionDirectory.resolve(someSymbolicLinkFilename).toRealPath());
+
 		  assertEquals(new String(Files.readAllBytes(extractionDirectory.resolve(someFilename)), StandardCharsets.UTF_8),
 			  new String(Files.readAllBytes(extractionDirectory.resolve(someSymbolicLinkFilename)), StandardCharsets.UTF_8),
 			  "Extracted file 'some-file.txt' and the symbolic link 'some-symbolic-link.txt' contents should have matched.");

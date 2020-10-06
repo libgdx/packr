@@ -413,8 +413,7 @@ import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.L
 								return FileVisitResult.CONTINUE;
 						  }
 
-						  ArchiveEntry entry = archiveOutputStream
-							  .createArchiveEntry(dir.toFile(), getEntryName(dir, directoryToArchive));
+						  ArchiveEntry entry = archiveOutputStream.createArchiveEntry(dir.toFile(), getRelativePathString(dir, directoryToArchive));
 						  archiveOutputStream.putArchiveEntry(entry);
 						  archiveOutputStream.closeArchiveEntry();
 						  return FileVisitResult.CONTINUE;
@@ -429,8 +428,7 @@ import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.L
 		 Path directoryToArchive, Path filePathToArchive) throws IOException {
 		  switch (archiveType) {
 		  case ZIP: {
-				ZipArchiveEntry entry = new ZipArchiveEntry(filePathToArchive.toFile(),
-					getEntryName(filePathToArchive, directoryToArchive));
+				ZipArchiveEntry entry = new ZipArchiveEntry(filePathToArchive.toFile(), getRelativePathString(filePathToArchive, directoryToArchive));
 				entry.setUnixMode(getUnixMode(filePathToArchive));
 				final boolean isSymbolicLink = Files.isSymbolicLink(filePathToArchive);
 				if (isSymbolicLink) {
@@ -438,8 +436,7 @@ import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.L
 				}
 				archiveOutputStream.putArchiveEntry(entry);
 				if (isSymbolicLink) {
-					 archiveOutputStream.write(
-						 directoryToArchive.relativize(filePathToArchive.toRealPath()).toString().getBytes(StandardCharsets.UTF_8));
+					 archiveOutputStream.write(getRelativePathString(filePathToArchive.toRealPath(), directoryToArchive).getBytes(StandardCharsets.UTF_8));
 				} else {
 					 Files.copy(filePathToArchive, archiveOutputStream);
 				}
@@ -449,10 +446,10 @@ import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.L
 				final boolean isSymbolicLink = Files.isSymbolicLink(filePathToArchive);
 				TarArchiveEntry entry;
 				if (isSymbolicLink) {
-					 entry = new TarArchiveEntry(getEntryName(filePathToArchive, directoryToArchive), TarConstants.LF_SYMLINK);
-					 entry.setLinkName(directoryToArchive.relativize(filePathToArchive.toRealPath()).toString());
+					 entry = new TarArchiveEntry(getRelativePathString(filePathToArchive, directoryToArchive), TarConstants.LF_SYMLINK);
+					 entry.setLinkName(getRelativePathString(filePathToArchive.toRealPath(), directoryToArchive));
 				} else {
-					 entry = new TarArchiveEntry(filePathToArchive.toFile(), getEntryName(filePathToArchive, directoryToArchive));
+					 entry = new TarArchiveEntry(filePathToArchive.toFile(), getRelativePathString(filePathToArchive, directoryToArchive));
 				}
 
 				entry.setMode(getUnixMode(filePathToArchive));
@@ -510,20 +507,20 @@ import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.L
 	 }
 
 	 /**
-	  * Creates a relative entry name and replaces all backslashes with forward slash.
+	  * Creates a relative path string and replaces all backslashes with forward slash.
 	  *
 	  * @param path the path to make relative to {@code rootDirectory}
 	  * @param rootDirectory the root directory to use to generate the relative entry name
 	  *
 	  * @return the entry name ({@code path} relative to {@code rootDirectory} with backslashes replaced)
 	  */
-	 private static String getEntryName (Path path, Path rootDirectory) throws IOException {
+	 private static String getRelativePathString (Path path, Path rootDirectory) throws IOException {
 		  final Path rootDirectoryRealPath = rootDirectory.toRealPath(NOFOLLOW_LINKS);
 		  final Path pathRealPath = path.toRealPath(NOFOLLOW_LINKS);
 		  LOG.debug("Creating relative path for pathRealPath=" + pathRealPath + " using rootDirectoryRealPath=" + rootDirectoryRealPath + ".");
-		  String entryName = rootDirectoryRealPath.relativize(pathRealPath).toString().replaceAll("\\\\", "/");
-		  LOG.error("Creating entry name from path=" + path + ", rootDirectory=" + rootDirectory + ", entryName=" + entryName);
-		  return entryName;
+		  String relativePathString = rootDirectoryRealPath.relativize(pathRealPath).toString().replaceAll("\\\\", "/");
+		  LOG.error("Creating relative path from path=" + path + ", rootDirectory=" + rootDirectory + ", relativePathString=" + relativePathString);
+		  return relativePathString;
 	 }
 
 	 /**
