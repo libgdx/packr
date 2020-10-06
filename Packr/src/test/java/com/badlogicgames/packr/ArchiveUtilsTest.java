@@ -130,14 +130,19 @@ class ArchiveUtilsTest {
 		  assertEquals(new String(Files.readAllBytes(someFilePath), StandardCharsets.UTF_8),
 			  new String(Files.readAllBytes(extractionDirectory.resolve(someFilename)), StandardCharsets.UTF_8),
 			  "Extracted file contents should have matched original");
-		  assertTrue(Files.exists(extractionDirectory.resolve(someSymbolicLinkFilename)), "Symbolic link wasn't created when extracting some-symbolic-link.txt"
-			  + ".");
+		  assertTrue(Files.exists(extractionDirectory.resolve(someSymbolicLinkFilename)),
+			  "Symbolic link wasn't created when extracting some-symbolic-link.txt" + ".");
 		  assertTrue(Files.isSymbolicLink(extractionDirectory.resolve(someSymbolicLinkFilename)),
 			  "Path some-symbolic-link.txt should be a symbolic link but it isn't.");
-		  assertTrue(Files.isSameFile(extractionDirectory.resolve(someFilename), extractionDirectory.resolve(someSymbolicLinkFilename)));
 		  assertEquals(new String(Files.readAllBytes(extractionDirectory.resolve(someFilename)), StandardCharsets.UTF_8),
 			  new String(Files.readAllBytes(extractionDirectory.resolve(someSymbolicLinkFilename)), StandardCharsets.UTF_8),
-			  "Extracted file contents should have matched original");
+			  "Extracted file 'some-file.txt' and the symbolic link 'some-symbolic-link.txt' contents should have matched.");
+		  assertTrue(Files.isSameFile(extractionDirectory.resolve(someFilename).toRealPath(),
+			  extractionDirectory.resolve(someSymbolicLinkFilename).toRealPath()),
+			  "The real path of the link=" + extractionDirectory.resolve(someSymbolicLinkFilename) + ", realpath=" + extractionDirectory
+				  .resolve(someSymbolicLinkFilename).toRealPath() + " should have pointed to path=" + extractionDirectory.resolve(someFilename).toRealPath());
+		  assertTrue(Files.isSameFile(extractionDirectory.resolve(someFilename), extractionDirectory.resolve(someSymbolicLinkFilename)),
+			  "The extracted file some-file.txt and the symbolic link some-symbolic-link.txt should be the same file.");
 	 }
 
 	 private void assumeCreatedSymbolicLink (Path tempDir) throws IOException {
