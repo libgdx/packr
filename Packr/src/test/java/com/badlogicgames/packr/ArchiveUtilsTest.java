@@ -48,10 +48,8 @@ import static com.badlogicgames.packr.ArchiveUtils.ArchiveType.TAR;
 import static com.badlogicgames.packr.ArchiveUtils.ArchiveType.ZIP;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
-import static java.nio.file.attribute.PosixFilePermission.GROUP_WRITE;
 import static java.nio.file.attribute.PosixFilePermission.OTHERS_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
-import static java.nio.file.attribute.PosixFilePermission.OTHERS_WRITE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
@@ -267,8 +265,7 @@ class ArchiveUtilsTest {
 
 		  assertTrue(Files.exists(symlinkToSomeFile), "symlink-to-some-file.txt wasn't extracted from the Tar");
 		  assertTrue(Files.isSymbolicLink(symlinkToSomeFile), "symlink-to-some-file.txt wasn't extracted as a symbolic link");
-		  assertPosixPermissions(symlinkToSomeFile, OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, GROUP_WRITE, GROUP_EXECUTE,
-			  OTHERS_READ, OTHERS_WRITE, OTHERS_EXECUTE);
+		  // symbolic links have different permissions on macOS and Linux so don't check them
 
 		  assertTrue(Files.exists(someFile), "some-file.txt wasn't extracted from the Tar");
 		  assertTrue(Files.isRegularFile(someFile), "some-file.txt wasn't extracted as a file");
