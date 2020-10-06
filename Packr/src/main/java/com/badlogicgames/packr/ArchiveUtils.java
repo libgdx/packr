@@ -16,11 +16,16 @@
 
 package com.badlogicgames.packr;
 
-import org.apache.commons.compress.archivers.*;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.jar.JarArchiveEntry;
 import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarConstants;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
@@ -30,14 +35,30 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+
+import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
+import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_GNU;
 
 /**
  * Utility functions for working with archives.
@@ -265,8 +286,7 @@ import java.util.Set;
 		  if (Files.isSymbolicLink(path)) {
 				return;
 		  }
-		  final PosixFileAttributeView posixFileAttributeView = Files
-			  .getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+		  final PosixFileAttributeView posixFileAttributeView = Files.getFileAttributeView(path, PosixFileAttributeView.class, NOFOLLOW_LINKS);
 		  if (posixFileAttributeView != null) {
 				posixFileAttributeView.setPermissions(permissions);
 		  }
@@ -329,8 +349,7 @@ import java.util.Set;
 		  if (Files.isSymbolicLink(path)) {
 				return;
 		  }
-		  BasicFileAttributeView pathAttributeView = Files
-			  .getFileAttributeView(path, BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+		  BasicFileAttributeView pathAttributeView = Files.getFileAttributeView(path, BasicFileAttributeView.class, NOFOLLOW_LINKS);
 		  final BasicFileAttributes fileAttributes = pathAttributeView.readAttributes();
 		  pathAttributeView.setTimes(lastModifiedTime, fileAttributes.lastAccessTime(), fileAttributes.creationTime());
 	 }
@@ -377,6 +396,10 @@ import java.util.Set;
 		  try (OutputStream fileOutputStream = new BufferedOutputStream(Files.newOutputStream(archiveFile));
 			  ArchiveOutputStream archiveOutputStream = new ArchiveStreamFactory()
 				  .createArchiveOutputStream(archiveType.getCommonsCompressName(), fileOutputStream)) {
+
+				if (archiveType == ArchiveType.TAR) {
+					 ((TarArchiveOutputStream)archiveOutputStream).setLongFileMode(LONGFILE_GNU);
+				}
 
 				Files.walkFileTree(directoryToArchive, new SimpleFileVisitor<Path>() {
 					 @Override public FileVisitResult visitFile (Path file, BasicFileAttributes attrs) throws IOException {
@@ -444,8 +467,7 @@ import java.util.Set;
 	 }
 
 	 private static int getUnixMode (Path file) throws IOException {
-		  PosixFileAttributeView fileAttributeView = Files
-			  .getFileAttributeView(file, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
+		  PosixFileAttributeView fileAttributeView = Files.getFileAttributeView(file, PosixFileAttributeView.class, NOFOLLOW_LINKS);
 		  if (fileAttributeView == null) {
 				if (Files.isSymbolicLink(file)) {
 					 return DEFAULT_LINK_MODE;
@@ -490,12 +512,16 @@ import java.util.Set;
 	 /**
 	  * Creates a relative entry name and replaces all backslashes with forward slash.
 	  *
-	  * @param path          the path to make relative to {@code rootDirectory}
+	  * @param path the path to make relative to {@code rootDirectory}
 	  * @param rootDirectory the root directory to use to generate the relative entry name
+	  *
 	  * @return the entry name ({@code path} relative to {@code rootDirectory} with backslashes replaced)
 	  */
-	 private static String getEntryName (Path path, Path rootDirectory) {
-		  String entryName = rootDirectory.relativize(path).toString().replaceAll("\\\\", "/");
+	 private static String getEntryName (Path path, Path rootDirectory) throws IOException {
+		  final Path rootDirectoryRealPath = rootDirectory.toRealPath(NOFOLLOW_LINKS);
+		  final Path pathRealPath = path.toRealPath(NOFOLLOW_LINKS);
+		  LOG.debug("Creating relative path for pathRealPath=" + pathRealPath + " using rootDirectoryRealPath=" + rootDirectoryRealPath + ".");
+		  String entryName = rootDirectoryRealPath.relativize(pathRealPath).toString().replaceAll("\\\\", "/");
 		  LOG.error("Creating entry name from path=" + path + ", rootDirectory=" + rootDirectory + ", entryName=" + entryName);
 		  return entryName;
 	 }

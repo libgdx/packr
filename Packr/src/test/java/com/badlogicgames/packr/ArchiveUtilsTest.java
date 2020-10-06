@@ -43,7 +43,15 @@ import java.util.Set;
 
 import static com.badlogicgames.packr.ArchiveUtils.ArchiveType.TAR;
 import static com.badlogicgames.packr.ArchiveUtils.ArchiveType.ZIP;
-import static java.nio.file.attribute.PosixFilePermission.*;
+import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
+import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
+import static java.nio.file.attribute.PosixFilePermission.GROUP_WRITE;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_EXECUTE;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_WRITE;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -122,10 +130,11 @@ class ArchiveUtilsTest {
 		  assertEquals(new String(Files.readAllBytes(someFilePath), StandardCharsets.UTF_8),
 			  new String(Files.readAllBytes(extractionDirectory.resolve(someFilename)), StandardCharsets.UTF_8),
 			  "Extracted file contents should have matched original");
+		  assertTrue(Files.exists(extractionDirectory.resolve(someSymbolicLinkFilename)), "Symbolic link wasn't created when extracting some-symbolic-link.txt"
+			  + ".");
 		  assertTrue(Files.isSymbolicLink(extractionDirectory.resolve(someSymbolicLinkFilename)),
-			  "Symbolic link wasn't created when extracting some-symbolic-link.txt.");
-		  assertTrue(
-			  Files.isSameFile(extractionDirectory.resolve(someFilename), extractionDirectory.resolve(someSymbolicLinkFilename)));
+			  "Path some-symbolic-link.txt should be a symbolic link but it isn't.");
+		  assertTrue(Files.isSameFile(extractionDirectory.resolve(someFilename), extractionDirectory.resolve(someSymbolicLinkFilename)));
 		  assertEquals(new String(Files.readAllBytes(extractionDirectory.resolve(someFilename)), StandardCharsets.UTF_8),
 			  new String(Files.readAllBytes(extractionDirectory.resolve(someSymbolicLinkFilename)), StandardCharsets.UTF_8),
 			  "Extracted file contents should have matched original");
@@ -137,7 +146,6 @@ class ArchiveUtilsTest {
 		  Files.createFile(targetOfTestLink);
 		  boolean createdLink = false;
 		  try {
-
 				Files.createSymbolicLink(linkPath, targetOfTestLink);
 				createdLink = true;
 		  } catch (Throwable throwable) {
