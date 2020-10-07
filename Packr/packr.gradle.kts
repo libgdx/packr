@@ -257,6 +257,28 @@ publishing {
    repositories {
       packrPublishRepositories(project)
       gitHubRepositoryForPackr(project)
+
+      // Until publishing to oss.sonatype.org is possible, publish to artifactory.nimblygames.com
+      val ngToken: String? =
+            findProperty("NG_ARTIFACT_REPOSITORY_TOKEN") as String? ?: System.getenv("NG_ARTIFACT_REPOSITORY_TOKEN")
+      if (ngToken != null) {
+         val ngUsername = findProperty("NG_ARTIFACT_REPOSITORY_USER") as String? ?: System.getenv("NG_ARTIFACT_REPOSITORY_USER")
+         if (isSnapshot) {
+            maven("http://artifactory.nimblygames.com/artifactory/ng-public-snapshot/") {
+               credentials {
+                  username = ngUsername
+                  password = ngToken
+               }
+            }
+         } else {
+            maven("http://artifactory.nimblygames.com/artifactory/ng-public-release/") {
+               credentials {
+                  username = ngUsername
+                  password = ngToken
+               }
+            }
+         }
+      }
    }
    publications {
       register<MavenPublication>("${project.name}-all") {

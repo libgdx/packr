@@ -9,6 +9,9 @@
       * Reference: <https://stackoverflow.com/questions/53113127/java-runtime-exec-fails-to-run/55091040>
 1. Updated ArchiveUtils to support POSIX permissions and symbolic links.
    * This resolves an issue with repackaged JREs losing execute permissions.
+1. Alternative Maven repositories until oss.sonatype.org (Maven central) publishing is possible.
+   * Snapshots: http://artifactory.nimblygames.com/artifactory/ng-public-snapshot/
+   * Releases: http://artifactory.nimblygames.com/artifactory/ng-public-release/
 # Release 2.7.0
 1. Fixed a Gradle script error where it was bundling the release builds with debug info on Linux and macOS.
    * For Linux this reduces the executable size from ~722K to ~95K.
