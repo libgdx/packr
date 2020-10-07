@@ -12,12 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 import com.google.common.hash.Hashing
 import com.google.common.io.BaseEncoding
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.gradle.api.tasks.bundling.Compression.GZIP
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.file.Files
@@ -336,25 +336,27 @@ extractJdkTasks.forEach { extractJdkTask ->
 }
 
 /**
- * Directory to store the zip files of all the jlink processed JREs for the current platform.
+ * Directory to store the tar files of all the jlink processed JREs for the current platform.
  */
-val jlinkZipOutputDirectoryPath: Path = buildDir.toPath().resolve("jlink-zip-output")
+val jlinkTarOutputDirectoryPath: Path = buildDir.toPath().resolve("jlink-tar-output")
 
 /*
- * Zip up every jlink created JRE.
+ * Tar up every jlink created JRE.
  */
 jlinkTasks.forEach { jlinkTask ->
-   val zipJlinkJreTask = tasks.register<Zip>("zip${jlinkTask.name.capitalize()}") {
+   val tarJlinkJreTask = tasks.register<Tar>("tar${jlinkTask.name.capitalize()}") {
       dependsOn(jlinkTask)
+
+      compression = GZIP
 
       val jlinkOutputDirectoryFile = jlinkTask.get().outputs.files.singleFile
 
       from(jlinkOutputDirectoryFile)
-      archiveFileName.set(jlinkOutputDirectoryFile.name.replace("jdk_", "jlink-jre_") + ".zip")
-      destinationDirectory.set(jlinkZipOutputDirectoryPath.toFile())
+      archiveFileName.set(jlinkOutputDirectoryFile.name.replace("jdk_", "jlink-jre_") + ".tar.gz")
+      destinationDirectory.set(jlinkTarOutputDirectoryPath.toFile())
    }
-   artifacts.add(jdksAndCurrentPlatformJlinkedJres.name, zipJlinkJreTask)
-   tasks.named("check").configure { dependsOn(zipJlinkJreTask) }
+   artifacts.add(jdksAndCurrentPlatformJlinkedJres.name, tarJlinkJreTask)
+   tasks.named("check").configure { dependsOn(tarJlinkJreTask) }
 }
 
 /**

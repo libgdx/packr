@@ -7,6 +7,8 @@
 1. Packr will ensure that `jspawnhelper` has execute permissions in the bundled JRE.
    * This resolves an issue on macOS where Runtime.exec and Process.start calls would fail with `java.io.IOException: Cannot run program "java": error=2, No such file or directory`.
       * Reference: <https://stackoverflow.com/questions/53113127/java-runtime-exec-fails-to-run/55091040>
+1. Updated ArchiveUtils to support POSIX permissions and symbolic links.
+   * This resolves an issue with repackaged JREs losing execute permissions.
 # Release 2.7.0
 1. Fixed a Gradle script error where it was bundling the release builds with debug info on Linux and macOS.
    * For Linux this reduces the executable size from ~722K to ~95K.
