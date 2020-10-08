@@ -101,7 +101,7 @@ repositories {
 
    // The following repositories are available until artifacts can be published to Maven Central
    maven(uri("http://artifactory.nimblygames.com/artifactory/ng-public-snapshot/"))
-   maven(uri("http://artifactory.nimblygames.com/artifactory/ng-public-release//"))
+   maven(uri("http://artifactory.nimblygames.com/artifactory/ng-public-release/"))
 }
 dependencies {
    imlementation("com.badlogicgames.packr:packr:3.0.0-SNAPSHOT")
