@@ -104,7 +104,7 @@ repositories {
    maven(uri("http://artifactory.nimblygames.com/artifactory/ng-public-release/"))
 }
 dependencies {
-   imlementation("com.badlogicgames.packr:packr:3.0.0-SNAPSHOT")
+   imlementation("com.badlogicgames.packr:packr:3.0.0")
 }
 ```
 
