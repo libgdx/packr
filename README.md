@@ -84,7 +84,7 @@ You can then invoke the tool like this:
 java -jar packr-all.jar my-packr-config.json
 ```
 
-It is possible to combine a JSON configuration and the command line. For single options, the command line parameter overrides the equivalent JSON option. For multi-options (e.g. `classpath` or `vmargs`), the options are merged.
+It is possible to combine a JSON configuration, and the command line. For single options, the command line parameter overrides the equivalent JSON option. For multi-options (e.g. `classpath` or `vmargs`), the options are merged.
 
 This is an example which overrides the output folder and adds another VM argument. Note that the config file name is delimited by `--` because the option prior to it, `--vmargs`, allows multiple arguments:
 
@@ -147,13 +147,33 @@ The following entitlements when signing the PackrLauncher executable are known t
 </plist> 
 ```
 
-If all the bundled dylibs are signed, less entitlements might be possible. When using Java 8, `com.apple.security.cs.allow-unsigned-executable-memory`, and `com.apple.security.cs.disable-executable-page-protection` were not needed.
+If all the bundled dylibs are signed, fewer entitlements might be possible. When using Java 8, `com.apple.security.cs.allow-unsigned-executable-memory`, and `com.apple.security.cs.disable-executable-page-protection` were not needed.
+
+### Example macOS code signing and notarization command line steps
+These steps assume you have an Apple developer account, have saved your Apple code signing certificate into Keychain and have generated an API token for your Apple developer account, allowing you to pass your username and token as command line arguments. The example commands also assume you saved the API token in your Keychain allowing these commands to run in an automated way, e.g., your CI pipeline can execute all these commands.
+1. `codesign --sign <keychain id for certiticate> --verbose=10 --timestamp --force --options runtime --entitlements <path-to-entitlements-file> <path to exe or shared lib>`
+   * You have to codesign every executable and shared library, --deep is for ["emergency repairs"](https://developer.apple.com/library/archive/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-TNTAG404).
+2. `/usr/bin/ditto -c -k --keepParent <app path> <app path>.zip`
+   * ditto is a commandline zip tool, any tool that creates a zip file from a directory can be used.
+3. `xcrun altool --notarize-app --verbose --primary-bundle-id com.mydomain.myproduct --username '<username>' --password "@keychain:<api token ID for username>" --file <app path>.zip`
+   * If this step fails, it will exit with a non-zero return code and provide good output as to why it failed. E.g., "You must first sign the relevant contracts online."
+
+**Optional steps, you can choose to wait for an email notification**
+1. `xcrun altool --notarization-history 0 -u <username> -p "@keychain:<api token ID for username>" --output-format xml`
+   * This command grabs the history for the **last** call to `xcrun altool --notarize-app`, this will obviously fail if you're running multiple `xcrun altool --notarize-app` processes in parallel. You'll have to come up with a better way to parse the history.
+2. Parse the XML output for the last request UUID, regex: `<string>(.*?)</string>`
+3. In a loop, every minute check the notarization status.
+   * `xcrun altool --notarization-info <parsed uuid> -u <username> -p "@keychain:<api token ID for username>"`
+4. Parse the output for the status, regex: `.*?Status:\s+(.*?)$`
+5. When the status no longer matches `in progress` exit the loop.
+6. If the `Status` did not end up as `success` the output will provide a description of what went wrong.
+7. `xcrun stapler staple --verbose <app path>`
 
 # Minimization
 Unless you're stuck with using Java 8, it's best to create a minimized JRE using [jlink](https://docs.oracle.com/en/java/javase/11/tools/jlink.html). See [TestAppJreDist/testAppJreDist.gradle.kts](./TestAppJreDist/testAppJreDist.gradle.kts) for an example Gradle build script which generates JREs from downloaded JDKs.
 
 ## JRE
-A standard OpenJDK 8 JRE is about 91MiB unpacked. Packr helps you cut down on that size, thus also reducing the download size of your app.
+A standard OpenJDK 8 JRE is about 91 MiB unpacked. Packr helps you cut down on that size, thus also reducing the download size of your app.
 
 To minimize the JRE that is bundled with your app, you have to specify a minimization configuration file via the `minimizejre` flag you supply to Packr. A minimization configuration is a JSON file containing paths to files and directories within the JRE to be removed.
 
@@ -196,7 +216,7 @@ As an example, have a look at the `soft` profile configuration:
 
 This configuration will unpack `rt.jar`, remove all the listed packages and classes in `com.sun.*` and `sun.*`, then repack `rt.jar` again. By default, the JRE uses zero-compression on its JAR files to make application startup a little faster, so this step will reduce the size of `rt.jar` substantially.
 
-Then, rhino.jar (about 1.1MB) and, in case of a Windows JRE, all executable files in `jre/bin/` and the folder `jre/bin/client/` will be removed.
+Then, rhino.jar (about 1.1 MiB) and, in the JRE for Windows case, all executable files in `jre/bin/` and the folder `jre/bin/client/` will be removed.
 
 Packr comes with two such configurations out of the box, [`soft`](./Packr/src/main/resources/minimize/soft). The `hard` profile removes a few more files, and repacks some additional JAR files.
 
@@ -212,7 +232,7 @@ Minimization aside, packr can remove all dynamic libraries which do not match th
 This step is optional. If you don't need it, just remove the configuration parameter to speed up packr. This step doesn't preserve the META-INF directory or files in the jar.
 
 # Caching
-Extracting and minimizing a JRE can take quite some time. If the `cachejre` option is used, the result of these operations is cached in the given folder, and can be reused in subsequent runs of packr.
+Extracting and minimizing a JRE can take quite some time. When using the `cachejre` option, the result of these operations are cached in the given folder, and can be reused in subsequent runs of packr.
 
 As of now, packr doesn't do any elaborate checks to validate the content of this cache folder. So if you update the JDK, or change the minimize profile, you need to empty or remove this folder manually to force a change.
 
