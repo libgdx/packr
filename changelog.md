@@ -1,3 +1,6 @@
+# Unreleased 3.0.1
+1. Fixed logging levels in ArchiveUtils
+   * There was trace output logging at error level.
 # Release 3.0.0
 1. Refactored code to fit better into libGdx/packr parent repository.
 1. Fixed an issue where extracting an archive with duplicate entries would fail.
