@@ -502,7 +502,7 @@ import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.L
 		  if (permissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
 				mode |= OTHERS_EXECUTE_BIT_MASK;
 		  }
-		  LOG.debug("Unix mode of file=" + file + ", mode=" + Integer.toOctalString(mode) + ", permissions=" + permissions);
+		  LOG.trace("Unix mode of file=" + file + ", mode=" + Integer.toOctalString(mode) + ", permissions=" + permissions);
 		  return mode;
 	 }
 
@@ -516,7 +516,7 @@ import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.L
 	  */
 	 private static String getRelativePathString (Path path, Path rootDirectory) {
 		  String relativePathString = rootDirectory.relativize(path).toString().replaceAll("\\\\", "/");
-		  LOG.error("Creating relative path from path=" + path + ", rootDirectory=" + rootDirectory + ", relativePathString=" + relativePathString);
+		  LOG.trace("Creating relative path from path=" + path + ", rootDirectory=" + rootDirectory + ", relativePathString=" + relativePathString);
 		  return relativePathString;
 	 }
 
