@@ -1,5 +1,6 @@
 # Unreleased 3.0.1
 1. Updated tests to use the latest versions of AdoptOpenJDK 8, 11, and 15.
+1. Added loading for msvcp* DLLs on Windows.
 1. Fixed loading msvcr* DLLs on Windows.
 1. Fixed logging levels in ArchiveUtils
    * There was trace output logging at error level.
