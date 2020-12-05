@@ -1,3 +1,8 @@
+# Unreleased 3.1.0
+1. Updated tests to use the latest versions of AdoptOpenJDK 8, 11, and 15.
+1. Fixed loading msvcr* DLLs on Windows.
+1. Fixed logging levels in ArchiveUtils.
+   * There was trace output logging at error level.
 # Release 3.0.0
 1. Refactored code to fit better into libGdx/packr parent repository.
 1. Fixed an issue where extracting an archive with duplicate entries would fail.

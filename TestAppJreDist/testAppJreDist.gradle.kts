@@ -109,40 +109,40 @@ data class JvmRemoteArchiveInformation(
  */
 @Suppress("SpellCheckingInspection") val jvmRemoteArchiveInformationList = listOf(
       // Linux x86-64 Java 8
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09/OpenJDK8U-jre_x64_linux_hotspot_8u252b09.tar.gz").toURL(),
-            "a93be303ed62398dba9acb0376fb3caf8f488fcde80dc62d0a8e46256b3adfb1"),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u275-b01/OpenJDK8U-jdk_x64_linux_hotspot_8u275b01.tar.gz").toURL(),
+            "06fb04075ed503013beb12ab87963b2ca36abe9e397a0c298a57c1d822467c29"),
 
       // Linux x86-64 Java 11
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_linux_hotspot_11.0.7_10.tar.gz").toURL(),
-            "ee60304d782c9d5654bf1a6b3f38c683921c1711045e1db94525a51b7024a2ca"),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_linux_hotspot_11.0.9.1_1.tar.gz").toURL(),
+            "e388fd7f3f2503856d0b04fde6e151cbaa91a1df3bcebf1deddfc3729d677ca3"),
 
-      // Linux x86-64 Java 14
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7/OpenJDK14U-jdk_x64_linux_hotspot_14.0.1_7.tar.gz").toURL(),
-            "9ddf9b35996fbd784a53fff3e0d59920a7d5acf1a82d4c8d70906957ac146cd1"),
+      // Linux x86-64 Java 15
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.1%2B9/OpenJDK15U-jdk_x64_linux_hotspot_15.0.1_9.tar.gz").toURL(),
+            "61045ecb9434e3320dbc2c597715f9884586b7a18a56d29851b4d4a4d48a2a5e"),
 
       // macOS x86-64 Java 8
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jre_x64_mac_hotspot_8u252b09.tar.gz").toURL(),
-            "f8206f0fef194c598de6b206a4773b2e517154913ea0e26c5726091562a034c8"),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u275-b01/OpenJDK8U-jdk_x64_mac_hotspot_8u275b01.tar.gz").toURL(),
+            "4afd2b3d21b625392fe4501e9445d1125498e6e7fb78042495c04e7cfc1b5e69"),
 
       // macOs x86-64 Java 11
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_mac_hotspot_11.0.7_10.tar.gz").toURL(),
-            "0ab1e15e8bd1916423960e91b932d2b17f4c15b02dbdf9fa30e9423280d9e5cc"),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_mac_hotspot_11.0.9.1_1.tar.gz").toURL(),
+            "96bc469f9b02a3b84382a0685b0bd7935e1ad1bd82a0aab9befb5b42a17cbd77"),
 
-      // macOs x86-64 Java 14
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7/OpenJDK14U-jdk_x64_mac_hotspot_14.0.1_7.tar.gz").toURL(),
-            "b11cb192312530bcd84607631203d0c1727e672af12813078e6b525e3cce862d"),
+      // macOs x86-64 Java 15
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.1%2B9.1/OpenJDK15U-jdk_x64_mac_hotspot_15.0.1_9.tar.gz").toURL(),
+            "b8c2e2ad31f3d6676ea665d9505b06df15e23741847556612b40e3ee329fc046"),
 
       // Windows x86-64 Java 8
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u252-b09.1/OpenJDK8U-jre_x64_windows_hotspot_8u252b09.zip").toURL(),
-            "582f58290c66d6fb7e437a92a91695d25386e2497f684715e6e1b8702a69a804"),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u275-b01/OpenJDK8U-jdk_x64_windows_hotspot_8u275b01.zip").toURL(),
+            "cfce82307ef498a98155a44ca472873174094aa148ce33ca40b029a0d9bf8bee"),
 
       // Windows x86-64 Java 11
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.7%2B10.2/OpenJDK11U-jdk_x64_windows_hotspot_11.0.7_10.zip").toURL(),
-            "61e99ff902e02c83b6c48172968593ee05ae183a39e5ef13a44bd4bf7eb2ce8b"),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_windows_hotspot_11.0.9.1_1.zip").toURL(),
+            "fea633dc37f007cb6b1e1af1874da63ad3d5e31817e583048287c67010dce5c8"),
 
-      // Windows x86-64 Java 14
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk14-binaries/releases/download/jdk-14.0.1%2B7.1/OpenJDK14U-jdk_x64_windows_hotspot_14.0.1_7.zip").toURL(),
-            "935e9121ddc83e5ac82ff73bd7a4b94f25824c7a66964ef7cb3b57098ae05599"))
+      // Windows x86-64 Java 15
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.1%2B9/OpenJDK15U-jdk_x64_windows_hotspot_15.0.1_9.zip").toURL(),
+            "0cd7e61b0a37186902062a822caa0e14662b676c245b7ebe541f115f3c45681a"))
 
 /**
  * The directory where JDKs processed with jlink are stored.
@@ -163,6 +163,9 @@ fun getJvmVersion(jdkFilename: String): JavaVersion {
       }
       jdkFilenameLowercase.contains("openjdk14u") -> {
          JavaVersion.VERSION_14
+      }
+      jdkFilenameLowercase.contains("openjdk15u") -> {
+         JavaVersion.VERSION_15
       }
       else -> throw GradleException("Unknown Java version for JDK $jdkFilename")
    }
