@@ -287,7 +287,7 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, Create
             }
 
             bool loadedRuntimeDll = loadRuntimeLibrary(TEXT("jre\\bin\\msvcr*.dll"));
-            loadedRuntimeDll = loadRuntimeLibrary(TEXT("jre\\bin\\vcruntime*.dll"));
+            loadedRuntimeDll |= loadRuntimeLibrary(TEXT("jre\\bin\\vcruntime*.dll"));
 
             if(loadedRuntimeDll){
                 hinstLib = LoadLibrary(jvmDLLPath);
