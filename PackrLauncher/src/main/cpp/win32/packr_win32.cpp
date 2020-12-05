@@ -238,7 +238,7 @@ int wmain(int argc, wchar_t **argv) {
 bool loadRuntimeLibrary(const PTCHAR runtimeLibraryPattern){
     WIN32_FIND_DATA FindFileData;
     HANDLE hFind = nullptr;
-    TCHAR msvcrPath[MAX_PATH];
+    TCHAR libraryPath[MAX_PATH];
 
     wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
 
@@ -254,13 +254,13 @@ bool loadRuntimeLibrary(const PTCHAR runtimeLibraryPattern){
         if (verbose) {
             cout << "Found " << converter.to_bytes(runtimeLibraryPattern) << " file " << converter.to_bytes(FindFileData.cFileName) << endl;
         }
-        wcscpy(msvcrPath, TEXT("jre\\bin\\"));
-        wcscat(msvcrPath, FindFileData.cFileName);
-        HINSTANCE hinstVCR = LoadLibrary(msvcrPath);
+        wcscpy(libraryPath, TEXT("jre\\bin\\"));
+        wcscat(libraryPath, FindFileData.cFileName);
+        HINSTANCE hinstVCR = LoadLibrary(libraryPath);
         if (hinstVCR != nullptr) {
             loadedRuntimeDll = true;
             if (verbose) {
-                cout << "Loaded library " << converter.to_bytes(msvcrPath) << endl;
+                cout << "Loaded library " << converter.to_bytes(libraryPath) << endl;
             }
         } else {
             if (verbose) {
@@ -281,12 +281,13 @@ bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, Create
         }
         if (errorCode == 126) {
             // "The specified module could not be found."
-            // load msvcr*.dll from the bundled JRE, then try again
+            // load msvc*.dll from the bundled JRE, then try again
             if (verbose) {
                 cout << "Failed to load jvm.dll. Trying to load Microsoft runtime libraries" << endl;
             }
 
             bool loadedRuntimeDll = loadRuntimeLibrary(TEXT("jre\\bin\\msvcr*.dll"));
+            loadedRuntimeDll |= loadRuntimeLibrary(TEXT("jre\\bin\\msvcp*.dll"));
             loadedRuntimeDll |= loadRuntimeLibrary(TEXT("jre\\bin\\vcruntime*.dll"));
 
             if(loadedRuntimeDll){
