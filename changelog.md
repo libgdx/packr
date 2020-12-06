@@ -1,4 +1,4 @@
-# Unreleased 3.0.1
+# Release 3.0.1
 1. Updated tests to use the latest versions of AdoptOpenJDK 8, 11, and 15.
 1. Changed DLL loading on Windows to search in the JRE bin and server directories.
    * This should make packr more robust to Windows runtime DLL changes.
