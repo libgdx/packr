@@ -32,6 +32,8 @@
 
 #define RETURN_SUCCESS (0x00000000)
 
+#define FULL_PATH_SIZE 32000
+
 typedef LONG NT_STATUS;
 
 typedef NT_STATUS (WINAPI *RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
@@ -224,96 +226,60 @@ int CALLBACK WinMain(
 
 int wmain(int argc, wchar_t **argv) {
     SetConsoleOutputCP(CP_UTF8);
-    registerSignalHandlers();
-    clearEnvironment();
-    if (!setCmdLineArguments(argc, argv)) {
-        return EXIT_FAILURE;
-    }
+   registerSignalHandlers();
+   clearEnvironment();
+   if (!setCmdLineArguments(argc, argv)) {
+      return EXIT_FAILURE;
+   }
 
-    launchJavaVM(defaultLaunchVMDelegate);
+   launchJavaVM(defaultLaunchVMDelegate);
 
-    return 0;
+   return 0;
 }
 
-bool loadRuntimeLibrary(const PTCHAR runtimeLibraryPattern){
-    WIN32_FIND_DATA FindFileData;
-    HANDLE hFind = nullptr;
-    TCHAR libraryPath[MAX_PATH];
-
-    wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
-
-    bool loadedRuntimeDll = false;
-    hFind = FindFirstFile(runtimeLibraryPattern, &FindFileData);
-    if (hFind == INVALID_HANDLE_VALUE) {
-        if (verbose) {
-            cout << "Couldn't find " << converter.to_bytes(runtimeLibraryPattern) << " file." << "FindFirstFile failed " << GetLastError() << "."
-                 << endl;
-        }
-    } else {
-        FindClose(hFind);
-        if (verbose) {
-            cout << "Found " << converter.to_bytes(runtimeLibraryPattern) << " file " << converter.to_bytes(FindFileData.cFileName) << endl;
-        }
-        wcscpy(libraryPath, TEXT("jre\\bin\\"));
-        wcscat(libraryPath, FindFileData.cFileName);
-        HINSTANCE hinstVCR = LoadLibrary(libraryPath);
-        if (hinstVCR != nullptr) {
-            loadedRuntimeDll = true;
-            if (verbose) {
-                cout << "Loaded library " << converter.to_bytes(libraryPath) << endl;
-            }
-        } else {
-            if (verbose) {
-                cout << "Failed to load library " << converter.to_bytes(FindFileData.cFileName) << endl;
-            }
-        }
-    }
-    return loadedRuntimeDll;
+void addDllDirectory(LPCWSTR directory) {
+   wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+   TCHAR directoryFullPath[FULL_PATH_SIZE] = TEXT("");
+   if (GetFullPathName(directory, FULL_PATH_SIZE, directoryFullPath, nullptr) == 0) {
+      printLastError(TEXT("get the JRE bin absolute path"));
+   } else {
+      if (AddDllDirectory(directoryFullPath) == nullptr) {
+         printLastError(TEXT("add DLL search directory"));
+      } else if (verbose) {
+         cout << "Added DLL search directory " << converter.to_bytes(directoryFullPath) << endl;
+      }
+   }
 }
 
 bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, CreateJavaVM *createJavaVM) {
-    LPCTSTR jvmDLLPath = TEXT("jre\\bin\\server\\jvm.dll");
-    HINSTANCE hinstLib = LoadLibrary(jvmDLLPath);
-    if (hinstLib == nullptr) {
-        DWORD errorCode = GetLastError();
-        if (verbose) {
-            cout << "Last error code " << errorCode << endl;
-        }
-        if (errorCode == 126) {
-            // "The specified module could not be found."
-            // load msvc*.dll from the bundled JRE, then try again
-            if (verbose) {
-                cout << "Failed to load jvm.dll. Trying to load Microsoft runtime libraries" << endl;
-            }
+   addDllDirectory(TEXT("jre\\bin"));
+   addDllDirectory(TEXT("jre\\bin\\server"));
 
-            bool loadedRuntimeDll = loadRuntimeLibrary(TEXT("jre\\bin\\msvcr*.dll"));
-            loadedRuntimeDll |= loadRuntimeLibrary(TEXT("jre\\bin\\msvcp*.dll"));
-            loadedRuntimeDll |= loadRuntimeLibrary(TEXT("jre\\bin\\vcruntime*.dll"));
+   TCHAR jvmDllFullPath[FULL_PATH_SIZE] = TEXT("");
+   if (GetFullPathName(TEXT("jre\\bin\\server\\jvm.dll"), FULL_PATH_SIZE, jvmDllFullPath, nullptr) == 0) {
+      printLastError(TEXT("get the jvm.dll absolute path"));
+      return false;
+   }
+   HINSTANCE hinstLib = LoadLibraryEx(jvmDllFullPath, nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 
-            if(loadedRuntimeDll){
-                hinstLib = LoadLibrary(jvmDLLPath);
-            }
-        }
-    }
+   if (hinstLib == nullptr) {
+      printLastError(TEXT("load jvm.dll"));
+      return false;
+   }
 
-    if (hinstLib == nullptr) {
-        printLastError(TEXT("load jvm.dll"));
-        return false;
-    }
+   *getDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs) GetProcAddress(hinstLib, "JNI_GetDefaultJavaVMInitArgs");
+   if (*getDefaultJavaVMInitArgs == nullptr) {
+      printLastError(TEXT("obtain JNI_GetDefaultJavaVMInitArgs address"));
+      return false;
+   }
 
-    *getDefaultJavaVMInitArgs = (GetDefaultJavaVMInitArgs) GetProcAddress(hinstLib, "JNI_GetDefaultJavaVMInitArgs");
-    if (*getDefaultJavaVMInitArgs == nullptr) {
-        printLastError(TEXT("obtain JNI_GetDefaultJavaVMInitArgs address"));
-        return false;
-    }
+   *createJavaVM = (CreateJavaVM) GetProcAddress(hinstLib, "JNI_CreateJavaVM");
+   if (*createJavaVM == nullptr) {
+      printLastError(TEXT("obtain JNI_CreateJavaVM address"));
+      return false;
+   }
 
-    *createJavaVM = (CreateJavaVM) GetProcAddress(hinstLib, "JNI_CreateJavaVM");
-    if (*createJavaVM == nullptr) {
-        printLastError(TEXT("obtain JNI_CreateJavaVM address"));
-        return false;
-    }
-
-    return true;
+   return true;
 }
 
 const dropt_char *getExecutablePath(const dropt_char *argv0) {
