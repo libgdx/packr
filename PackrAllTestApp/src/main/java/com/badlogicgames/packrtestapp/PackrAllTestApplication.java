@@ -16,10 +16,13 @@
 
 package com.badlogicgames.packrtestapp;
 
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 /**
  * Simple hello world application for testing the packr launcher.
@@ -33,6 +36,13 @@ public class PackrAllTestApplication {
 	  * @throws IOException if an IO error occurs
 	  */
 	 public static void main (String[] args) throws IOException, InterruptedException {
+		  JFrame myFrame = new JFrame("Hello");
+		  myFrame.getContentPane().add(new JLabel("Hello world!"));
+		  myFrame.pack();
+		  myFrame.setLocationRelativeTo(null);
+		  myFrame.setVisible(false);
+		  myFrame.dispose();
+
 		  System.out.println("Hello world!");
 		  System.out.println("Running from java.version=" + System.getProperty("java.version"));
 
@@ -46,8 +56,9 @@ public class PackrAllTestApplication {
 				throwable.printStackTrace(System.out);
 		  });
 
-		  Files.lines(Paths.get("application-resources").resolve("fake-resource.txt"))
-			  .forEach(resourceLine -> System.out.println("Loaded resource line: " + resourceLine));
+		  try (Stream<String> lineStream = Files.lines(Paths.get("application-resources").resolve("fake-resource.txt"))) {
+				lineStream.forEach(resourceLine -> System.out.println("Loaded resource line: " + resourceLine));
+		  }
 
 		  throw new RuntimeException(
 			  "Testing uncaught exception handler. Thrown from the main thread, Thread.currentThread().getName()=" + Thread.currentThread().getName());

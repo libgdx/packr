@@ -216,6 +216,9 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
             if (!outputAsString.contains("Received uncaught exception")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't catch an unchecked exception with setDefaultUncaughtExceptionHandler")
             }
+            if (!outputAsString.contains("Testing uncaught exception handler.")) {
+               throw GradleException("Packr bundle in $packrOutputDirectory didn't throw \"Testing uncaught exception handler.\"")
+            }
             if (fileNameNoExtension.toLowerCase()
                    .contains("jdk14") && !outputAsString.contains("Using The Z Garbage Collector")) {
                throw GradleException("Packr bundle in $packrOutputDirectory didn't execute using the Z garbage collector")
