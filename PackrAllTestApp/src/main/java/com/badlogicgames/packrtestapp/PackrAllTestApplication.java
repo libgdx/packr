@@ -16,8 +16,7 @@
 
 package com.badlogicgames.packrtestapp;
 
-import javax.swing.JFrame;
-import javax.swing.JLabel;
+import java.awt.Toolkit;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,12 +35,7 @@ public class PackrAllTestApplication {
 	  * @throws IOException if an IO error occurs
 	  */
 	 public static void main (String[] args) throws IOException, InterruptedException {
-		  JFrame myFrame = new JFrame("Hello");
-		  myFrame.getContentPane().add(new JLabel("Hello world!"));
-		  myFrame.pack();
-		  myFrame.setLocationRelativeTo(null);
-		  myFrame.setVisible(false);
-		  myFrame.dispose();
+		  System.out.println("ScreenSize=" + Toolkit.getDefaultToolkit().getScreenSize());
 
 		  System.out.println("Hello world!");
 		  System.out.println("Running from java.version=" + System.getProperty("java.version"));
@@ -50,8 +44,8 @@ public class PackrAllTestApplication {
 		  new ProcessBuilder(javaExecutablePath.toString(), "-version").inheritIO().start().waitFor();
 
 		  Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-				System.out.println(
-					"Received uncaught exception in thread.getName()=" + thread.getName() + ", Thread.currentThread().getName()=" + Thread.currentThread()
+				System.out
+					.println("Received uncaught exception in thread.getName()=" + thread.getName() + ", Thread.currentThread().getName()=" + Thread.currentThread()
 						.getName());
 				throwable.printStackTrace(System.out);
 		  });
