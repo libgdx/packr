@@ -35,7 +35,7 @@ public class PackrAllTestApplication {
 	  * @throws IOException if an IO error occurs
 	  */
 	 public static void main (String[] args) throws IOException, InterruptedException {
-		  System.out.println("ScreenSize=" + Toolkit.getDefaultToolkit().getScreenSize());
+		  System.out.println("EventQueue=" + Toolkit.getDefaultToolkit().getSystemEventQueue());
 
 		  System.out.println("Hello world!");
 		  System.out.println("Running from java.version=" + System.getProperty("java.version"));

@@ -309,6 +309,8 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       args("--vmargs")
       args("Dsun.java2d.noddraw=true")
       args("--vmargs")
+      args("Djava.awt.headless=true")
+      args("--vmargs")
       args("XstartOnFirstThread")
       if (jdkPath.fileName.toString().toLowerCase().contains("jdk14")) {
          args("--useZgcIfSupportedOs")
