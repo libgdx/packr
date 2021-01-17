@@ -55,8 +55,8 @@ repositories {
    gitHubRepositoryForPackr(project)
 
    // temporary for CI publishing until oss.sonatype.org is available for com.libgdx.packr or com.badlogicgames.packr
-   maven("http://artifactory.nimblygames.com/artifactory/ng-public-snapshot/")
-   maven("http://artifactory.nimblygames.com/artifactory/ng-public-release/")
+   maven("https://artifactory.nimblygames.com/artifactory/ng-public-snapshot/")
+   maven("https://artifactory.nimblygames.com/artifactory/ng-public-release/")
 }
 
 java {
@@ -264,14 +264,14 @@ publishing {
       if (ngToken != null) {
          val ngUsername = findProperty("NG_ARTIFACT_REPOSITORY_USER") as String? ?: System.getenv("NG_ARTIFACT_REPOSITORY_USER")
          if (isSnapshot) {
-            maven("http://artifactory.nimblygames.com/artifactory/ng-public-snapshot/") {
+            maven("https://artifactory.nimblygames.com/artifactory/ng-public-snapshot/") {
                credentials {
                   username = ngUsername
                   password = ngToken
                }
             }
          } else {
-            maven("http://artifactory.nimblygames.com/artifactory/ng-public-release/") {
+            maven("https://artifactory.nimblygames.com/artifactory/ng-public-release/") {
                credentials {
                   username = ngUsername
                   password = ngToken
