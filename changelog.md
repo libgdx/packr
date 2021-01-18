@@ -1,3 +1,6 @@
+# Release 3.0.2
+1. Preemptively load all DLLs in the jre/bin directory on Windows.
+   * This resolves an issue on Windows where the awt.dll cannot find the Microsoft runtime libraries (MSVCP140.dll).
 # Release 3.0.1
 1. Updated tests to use the latest versions of AdoptOpenJDK 8, 11, and 15.
 1. Changed DLL loading on Windows to search in the JRE bin and server directories.
