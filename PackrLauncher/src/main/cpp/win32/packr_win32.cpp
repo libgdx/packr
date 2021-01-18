@@ -251,9 +251,43 @@ void addDllDirectory(LPCWSTR directory) {
    }
 }
 
+/**
+ * Loads every library found using the pattern {@code libraryPattern}.
+ * @param libraryPattern the search pattern to use to locate shared libaries to load
+ */
+void loadLibraries(const PTCHAR libraryPattern) {
+   WIN32_FIND_DATA FindFileData;
+   HANDLE hFind = nullptr;
+   TCHAR libraryPath[MAX_PATH];
+
+   wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+
+   hFind = FindFirstFile(libraryPattern, &FindFileData);
+   if (hFind == INVALID_HANDLE_VALUE) {
+      if (verbose) {
+         cout << "Couldn't find " << converter.to_bytes(libraryPattern) << " file." << "FindFirstFile failed " << GetLastError() << "." << endl;
+      }
+      return;
+   }
+   do {
+      if (LoadLibraryEx(FindFileData.cFileName, nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS) == nullptr) {
+         if (verbose) {
+            cout << "Failed to load DLL " << converter.to_bytes(FindFileData.cFileName) << "." << endl;
+         }
+      } else if (verbose) {
+         cout << "Loaded DLL " << converter.to_bytes(FindFileData.cFileName) << "." << endl;
+      }
+   } while (FindNextFile(hFind, &FindFileData));
+
+   FindClose(hFind);
+}
+
 bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, CreateJavaVM *createJavaVM) {
    addDllDirectory(TEXT("jre\\bin"));
    addDllDirectory(TEXT("jre\\bin\\server"));
+
+   // Load every shared library in jre/bin because awt.dll doesn't load its dependent libraries using the correct search paths
+   loadLibraries(TEXT("jre\\bin\\*.dll"));
 
    TCHAR jvmDllFullPath[FULL_PATH_SIZE] = TEXT("");
    if (GetFullPathName(TEXT("jre\\bin\\server\\jvm.dll"), FULL_PATH_SIZE, jvmDllFullPath, nullptr) == 0) {

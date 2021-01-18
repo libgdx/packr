@@ -332,6 +332,8 @@ extractJdkTasks.forEach { extractJdkTask ->
             args(jlinkPath.toAbsolutePath().toString())
             args("--add-modules")
             args("java.base")
+            args("--add-modules")
+            args("java.desktop")
          }
       }
    }
