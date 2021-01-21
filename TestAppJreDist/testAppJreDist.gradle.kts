@@ -116,6 +116,10 @@ data class JvmRemoteArchiveInformation(
       JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_linux_hotspot_11.0.9.1_1.tar.gz").toURL(),
             "e388fd7f3f2503856d0b04fde6e151cbaa91a1df3bcebf1deddfc3729d677ca3"),
 
+      // Linux x86-64 Java 11 JRE
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jre_x64_linux_hotspot_11.0.9.1_1.tar.gz").toURL(),
+            "73ce5ce03d2efb097b561ae894903cdab06b8d58fbc2697a5abe44ccd8ecc2e5"),
+
       // Linux x86-64 Java 15
       JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.1%2B9/OpenJDK15U-jdk_x64_linux_hotspot_15.0.1_9.tar.gz").toURL(),
             "61045ecb9434e3320dbc2c597715f9884586b7a18a56d29851b4d4a4d48a2a5e"),
@@ -255,11 +259,15 @@ val jdksExtractionPath: Path = buildDir.toPath().resolve("jdks-extracted")
 downloadJvmTasks.forEach { downloadTaskProvider ->
    val jvmArchiveFilePath = downloadTaskProvider.get().outputs.files.singleFile.toPath()
 
-   // If the JVM is Java 8 or doesn't match the current platform simply pass on the archive as because jlink cannot create a JRE for it
+   /*
+    * If the JVM is Java 8, already a JRE, or doesn't match the current platform, pass the archive as is. Java 8 or a JRE don't
+    * jlink, and jlink has to run on the matching platform
+    */
    // @formatter:off
-   if (getJvmVersion(jvmArchiveFilePath.fileName.toString()) == JavaVersion.VERSION_1_8
-       || (Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(jvmArchiveFilePath.fileName.toString()) != Os.FAMILY_MAC)
-       || (!Os.isFamily(Os.FAMILY_MAC) && !Os.isFamily(getJdkOsFamily(jvmArchiveFilePath.fileName.toString())))) {
+   if (getJvmVersion(jvmArchiveFilePath.fileName.toString()) == JavaVersion.VERSION_1_8 || (Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(
+            jvmArchiveFilePath.fileName.toString()) != Os.FAMILY_MAC) || (!Os.isFamily(Os.FAMILY_MAC) && !Os.isFamily(
+            getJdkOsFamily(jvmArchiveFilePath.fileName.toString()))) || jvmArchiveFilePath.fileName.toString()
+          .contains("-jre_")) {
       // @formatter:on
       artifacts.add(jdksAndCurrentPlatformJlinkedJres.name, jvmArchiveFilePath.toFile()) {
          builtBy(downloadTaskProvider.get())

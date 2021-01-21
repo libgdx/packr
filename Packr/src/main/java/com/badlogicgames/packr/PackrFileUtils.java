@@ -44,8 +44,6 @@ class PackrFileUtils {
 
 	 /**
 	  * Copies directories, preserving file attributes.
-	  * <p>
-	  * The {@link org.zeroturnaround.zip.commons.FileUtilsV2_2#copyDirectory(File, File)} function does not preserve file attributes.
 	  *
 	  * @param sourceDirectory the directory to copy from
 	  * @param targetDirectory the directory to copy into
@@ -60,15 +58,26 @@ class PackrFileUtils {
 				@Override public FileVisitResult preVisitDirectory (Path dir, BasicFileAttributes attrs) throws IOException {
 					 Path relative = sourcePath.relativize(dir);
 					 Path target = targetPath.resolve(relative);
-					 File folder = target.toFile();
-					 Files.createDirectories(folder.toPath());
+					 Files.createDirectories(target);
 					 return FileVisitResult.CONTINUE;
 				}
 
 				@Override public FileVisitResult visitFile (Path file, BasicFileAttributes attrs) throws IOException {
-					 Path relative = sourcePath.relativize(file);
-					 Path target = targetPath.resolve(relative);
-					 Files.copy(file, target, StandardCopyOption.COPY_ATTRIBUTES);
+					 // symbolic links
+					 if (attrs.isSymbolicLink()) {
+						  final Path linkTargetPath = Files.readSymbolicLink(file);
+						  final Path linkTargetRelativePath;
+						  if (linkTargetPath.isAbsolute()) {
+								linkTargetRelativePath = sourcePath.relativize(linkTargetPath);
+						  } else {
+								linkTargetRelativePath = linkTargetPath;
+						  }
+						  Files.createSymbolicLink(targetPath.resolve(sourcePath.relativize(file)), linkTargetRelativePath);
+					 } else {
+						  Path relative = sourcePath.relativize(file);
+						  Path target = targetPath.resolve(relative);
+						  Files.copy(file, target, StandardCopyOption.COPY_ATTRIBUTES);
+					 }
 					 return FileVisitResult.CONTINUE;
 				}
 		  });
