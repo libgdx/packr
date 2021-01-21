@@ -213,8 +213,8 @@ jvmRemoteArchiveInformationList.forEach { (jvmArchiveUrl, jvmArchiveSha256) ->
    val jvmDownloadFilename = getFilenameFromJdkUrl(jvmArchiveUrl)
 
    // Skip platforms that aren't the current running platform
-   if ((Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(jvmDownloadFilename) != Os.FAMILY_MAC) || (!Os.isFamily(Os.FAMILY_MAC) && !Os.isFamily(getJdkOsFamily(
-            jvmDownloadFilename)))) {
+   if ((Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(jvmDownloadFilename) != Os.FAMILY_MAC) || (!Os.isFamily(Os.FAMILY_MAC) && !Os.isFamily(
+            getJdkOsFamily(jvmDownloadFilename)))) {
       return@forEach
    }
 
@@ -261,7 +261,7 @@ downloadJvmTasks.forEach { downloadTaskProvider ->
 
    /*
     * If the JVM is Java 8, already a JRE, or doesn't match the current platform, pass the archive as is. Java 8 or a JRE don't
-    * jlink, and jlink has to run on the matching platform
+    * have jlink, and jlink has to run on the matching platform
     */
    // @formatter:off
    if (getJvmVersion(jvmArchiveFilePath.fileName.toString()) == JavaVersion.VERSION_1_8 || (Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(
@@ -294,7 +294,9 @@ downloadJvmTasks.forEach { downloadTaskProvider ->
  */
 fun findJlinkExecutable(jdkToJlinkDirectory: Path): Path? {
    return Files.walk(jdkToJlinkDirectory).use { pathStream ->
-      pathStream.filter { path -> path.fileName.toString().startsWith("jlink") && path.parent.fileName.toString() == "bin" }.findFirst().orElse(null)
+      pathStream.filter { path -> path.fileName.toString().startsWith("jlink") && path.parent.fileName.toString() == "bin" }
+         .findFirst()
+         .orElse(null)
    }
 }
 
