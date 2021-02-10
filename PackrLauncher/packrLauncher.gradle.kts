@@ -216,6 +216,9 @@ application {
             binaryCompileTask.includes(file("/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers"))
          }
 
+         if (targetMachine.operatingSystemFamily.isLinux) {
+            binaryLinkTask.linkerArgs.add("-lpthread")
+         }
          binaryLinkTask.linkerArgs.add("-ldl")
          binaryLinkTask.linkerArgs.add("-no-pie")
          binaryLinkTask.linkerArgs.add("-fno-pie")
