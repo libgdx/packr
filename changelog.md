@@ -1,4 +1,4 @@
-# Unreleased 3.0.3
+# Released 3.0.3
 1. Fixed symbolic link issue for Linux and macOS JREs.
 1. Fixed pthread not being available on Linux.
 # Released 3.0.2
