@@ -1,3 +1,5 @@
+# Unreleased 3.0.3
+1. Fixed symbolic link issue for Linux and macOS JREs.
 # Released 3.0.2
 1. Preemptively load all DLLs in the jre/bin directory on Windows.
    * This resolves an issue on Windows where the awt.dll cannot find the Microsoft runtime libraries (MSVCP140.dll).
