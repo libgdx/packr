@@ -21,35 +21,33 @@ Invoking packr from the command line may look like the following. For a more com
 ```bash
 java -jar packr-all.jar \
      --platform mac \
-     --jdk OpenJDK14U-jdk_x64_mac_hotspot_14.0.1_7.tar.gz \
+     --jdk OpenJDK11U-jre_x64_mac_hotspot_11.0.10_9.tar.gz \
      --useZgcIfSupportedOs \
      --executable myapp \
      --classpath myapp.jar \
-     --removelibs myapp.jar \
      --mainclass com.my.app.MainClass \
      --vmargs Xmx1G \
      --resources src/main/resources path/to/other/assets \
-     --minimizejre soft \
      --output out-mac
 ```
 
 | Parameter | Meaning |
 | --- | --- |
 | platform | one of "windows64",  "linux64", "mac" |
-| jdk | Directory, zip file, tar.gz file, or URL to an archive file of an OpenJDK 8 or Oracle JDK 8 build containing a JRE. Adopt OpenJDK 8, 11, and 14 are tested against <https://adoptopenjdk.net/releases.html>. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script|
+| jdk | Directory, zip file, tar.gz file, or URL to an archive file of a JRE or Java 8 JDK with a JRE folder in it. Adopt OpenJDK 8, 11, and 15 are tested against <https://adoptopenjdk.net/releases.html>. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script.|
 | executable | name of the native executable, without extension such as ".exe" |
 | classpath | file locations of the JAR files to package |
 | removelibs (optional) | file locations of JAR files to remove native libraries which do not match the target platform. See below for details. |
 | mainclass | the fully qualified name of the main class, using dots to delimit package names |
-| vmargs | list of arguments for the JVM, without leading dashes, e.g. "Xmx1G" |
-| useZgcIfSupportedOs | When bundling a Java 14+ JRE, the launcher will check if the operating system supports the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) and use it. At the time of this writing, the supported operating systems are Linux, macOS, and Windows version 1803 (Windows 10 or Windows Server 2019) or later." |
+| vmargs (optional) | list of arguments for the JVM, without leading dashes, e.g. "Xmx1G" |
+| useZgcIfSupportedOs (optional) | When bundling a Java 14+ JRE, the launcher will check if the operating system supports the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) and use it. At the time of this writing, the supported operating systems are Linux, macOS, and Windows version 1803 (Windows 10 or Windows Server 2019) or later." |
 | resources (optional) | list of files and directories to be packaged next to the native executable |
-| minimizejre | minimize the JRE by removing directories and files as specified by an additional config file. Comes with a few config files out of the box. See below for details on the minimization config file. |
+| minimizejre (optional) | Only use on Java 8 or lower. Minimize the JRE by removing directories and files as specified by an additional config file. Comes with a few config files out of the box. See below for details on the minimization config file. |
 | output | the output directory. This must be an existing empty directory or a path that does not exist. Packr will create the directory if it doesn't exist but will fail if the path is not a directory or is not an empty directory. |
 | cachejre (optional) | An optional directory to cache the result of JRE extraction and minimization. See below for details. |
 | icon (optional, OS X) | location of an AppBundle icon resource (.icns file) |
 | bundle (optional, OS X) | the bundle identifier of your Java application, e.g. "com.my.app" |
-| verbose | prints more status information during processing, which can be useful for debugging |
+| verbose (optional) | prints more status information during processing, which can be useful for debugging |
 | help | shows the command line interface help |
 
 Alternatively, you can put all the command line arguments into a JSON file which might look like this:
@@ -104,7 +102,7 @@ repositories {
    maven(uri("http://artifactory.nimblygames.com/artifactory/ng-public-release/"))
 }
 dependencies {
-   implementation("com.badlogicgames.packr:packr:3.0.2")
+   implementation("com.badlogicgames.packr:packr:3.0.3")
 }
 ```
 
@@ -150,20 +148,20 @@ The following entitlements when signing the PackrLauncher executable are known t
 If all the bundled dylibs are signed, fewer entitlements might be possible. When using Java 8, `com.apple.security.cs.allow-unsigned-executable-memory`, and `com.apple.security.cs.disable-executable-page-protection` were not needed.
 
 ### Example macOS code signing and notarization command line steps
-These steps assume you have an Apple developer account, have saved your Apple code signing certificate into Keychain and have generated an API token for your Apple developer account, allowing you to pass your username and token as command line arguments. The example commands also assume you saved the API token in your Keychain allowing these commands to run in an automated way, e.g., your CI pipeline can execute all these commands.
+These steps assume you have an Apple developer account, have saved your Apple code signing certificate into Keychain and have generated an [app-specific password](https://support.apple.com/en-us/HT204397) for your Apple developer account, allowing you to pass your username and token as command line arguments. The example commands also assume you saved the app-specific password in your Keychain allowing these commands to run in an automated way, e.g., your CI pipeline can execute all these commands.
 1. `codesign --sign <keychain id for certiticate> --verbose=10 --timestamp --force --options runtime --entitlements <path-to-entitlements-file> <path to exe or shared lib>`
    * You have to codesign every executable and shared library, --deep is for ["emergency repairs"](https://developer.apple.com/library/archive/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-TNTAG404).
 2. `/usr/bin/ditto -c -k --keepParent <app path> <app path>.zip`
    * ditto is a commandline zip tool, any tool that creates a zip file from a directory can be used.
-3. `xcrun altool --notarize-app --verbose --primary-bundle-id com.mydomain.myproduct --username '<username>' --password "@keychain:<api token ID for username>" --file <app path>.zip`
+3. `xcrun altool --notarize-app --verbose --primary-bundle-id com.mydomain.myproduct --username '<username>' --password "@keychain:<app-specific password>" --file <app path>.zip`
    * If this step fails, it will exit with a non-zero return code and provide good output as to why it failed. E.g., "You must first sign the relevant contracts online."
 
 **Optional steps, you can choose to wait for an email notification**
-1. `xcrun altool --notarization-history 0 -u <username> -p "@keychain:<api token ID for username>" --output-format xml`
+1. `xcrun altool --notarization-history 0 -u <username> -p "@keychain:<app-specific password>" --output-format xml`
    * This command grabs the history for the **last** call to `xcrun altool --notarize-app`, this will obviously fail if you're running multiple `xcrun altool --notarize-app` processes in parallel. You'll have to come up with a better way to parse the history.
 2. Parse the XML output for the last request UUID, regex: `<string>(.*?)</string>`
 3. In a loop, every minute check the notarization status.
-   * `xcrun altool --notarization-info <parsed uuid> -u <username> -p "@keychain:<api token ID for username>"`
+   * `xcrun altool --notarization-info <parsed uuid> -u <username> -p "@keychain:<app-specific password>"`
 4. Parse the output for the status, regex: `.*?Status:\s+(.*?)$`
 5. When the status no longer matches `in progress` exit the loop.
 6. If the `Status` did not end up as `success` the output will provide a description of what went wrong.
@@ -307,7 +305,7 @@ This is an example Hello world style application that bundles itself using packr
 This project downloads JDKS 8, 11, and 14 and runs jlink on the 11 and 14 versions to create minimal JREs for use by PackrAllTestApp.
 
 ## Limitations
-* Only Adopt OpenJDKs 8, 11, and 14 are tested (other JDKs probably work)
+* Only Adopt OpenJDKs 8, 11, and 15 are tested (other JDKs probably work)
 * Icons aren't set yet on Windows and Linux, you need to do that manually.
 * Minimum platform requirement on MacOS is OS X 10.10 (Only 10.15 macOS Catalina is actively tested, there are users that report 10.14 works).
 * JRE minimization is very conservative. Depending on your app, you can carve out stuff from a JRE yourself, disable minimization and pass your custom JRE to packr. If you're using Java 11+ you should create a JRE using [jlink](https://docs.oracle.com/en/java/javase/11/tools/jlink.html).

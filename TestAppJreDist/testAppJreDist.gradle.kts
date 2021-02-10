@@ -113,8 +113,12 @@ data class JvmRemoteArchiveInformation(
             "06fb04075ed503013beb12ab87963b2ca36abe9e397a0c298a57c1d822467c29"),
 
       // Linux x86-64 Java 11
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_linux_hotspot_11.0.9.1_1.tar.gz").toURL(),
-            "e388fd7f3f2503856d0b04fde6e151cbaa91a1df3bcebf1deddfc3729d677ca3"),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.10%2B9/OpenJDK11U-jdk_x64_linux_hotspot_11.0.10_9.tar.gz").toURL(),
+            "ae78aa45f84642545c01e8ef786dfd700d2226f8b12881c844d6a1f71789cb99"),
+
+      // Linux x86-64 Java 11 JRE
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.10%2B9/OpenJDK11U-jre_x64_linux_hotspot_11.0.10_9.tar.gz").toURL(),
+            "25fdcf9427095ac27c8bdfc82096ad2e615693a3f6ea06c700fca7ffb271131a"),
 
       // Linux x86-64 Java 15
       JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.1%2B9/OpenJDK15U-jdk_x64_linux_hotspot_15.0.1_9.tar.gz").toURL(),
@@ -125,8 +129,12 @@ data class JvmRemoteArchiveInformation(
             "4afd2b3d21b625392fe4501e9445d1125498e6e7fb78042495c04e7cfc1b5e69"),
 
       // macOs x86-64 Java 11
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_mac_hotspot_11.0.9.1_1.tar.gz").toURL(),
-            "96bc469f9b02a3b84382a0685b0bd7935e1ad1bd82a0aab9befb5b42a17cbd77"),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.10%2B9/OpenJDK11U-jdk_x64_mac_hotspot_11.0.10_9.tar.gz").toURL(),
+            "ee7c98c9d79689aca6e717965747b8bf4eec5413e89d5444cc2bd6dbd59e3811"),
+
+      // macOs x86-64 Java 11 JRE
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.10%2B9/OpenJDK11U-jre_x64_mac_hotspot_11.0.10_9.tar.gz").toURL(),
+            "215e94323d7c74fe31e5383261e3bfc8e9ca3dc03212738c48d29868b02fe875"),
 
       // macOs x86-64 Java 15
       JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.1%2B9.1/OpenJDK15U-jdk_x64_mac_hotspot_15.0.1_9.tar.gz").toURL(),
@@ -137,8 +145,12 @@ data class JvmRemoteArchiveInformation(
             "cfce82307ef498a98155a44ca472873174094aa148ce33ca40b029a0d9bf8bee"),
 
       // Windows x86-64 Java 11
-      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_windows_hotspot_11.0.9.1_1.zip").toURL(),
-            "fea633dc37f007cb6b1e1af1874da63ad3d5e31817e583048287c67010dce5c8"),
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.10%2B9/OpenJDK11U-jdk_x64_windows_hotspot_11.0.10_9.zip").toURL(),
+            "d92722551cb6ff9b8a63c12a92d7ccacfd4c17e9159f6c7eb427a3a776049af8"),
+
+      // Windows x86-64 Java 11 JRE
+      JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.10%2B9/OpenJDK11U-jre_x64_windows_hotspot_11.0.10_9.zip").toURL(),
+            "bab0d47f4764520a96890d00ef5f27d3eb350f77e8dd15e6adf560993fb12595"),
 
       // Windows x86-64 Java 15
       JvmRemoteArchiveInformation(uri("https://github.com/AdoptOpenJDK/openjdk15-binaries/releases/download/jdk-15.0.1%2B9/OpenJDK15U-jdk_x64_windows_hotspot_15.0.1_9.zip").toURL(),
@@ -209,8 +221,8 @@ jvmRemoteArchiveInformationList.forEach { (jvmArchiveUrl, jvmArchiveSha256) ->
    val jvmDownloadFilename = getFilenameFromJdkUrl(jvmArchiveUrl)
 
    // Skip platforms that aren't the current running platform
-   if ((Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(jvmDownloadFilename) != Os.FAMILY_MAC) || (!Os.isFamily(Os.FAMILY_MAC) && !Os.isFamily(getJdkOsFamily(
-            jvmDownloadFilename)))) {
+   if ((Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(jvmDownloadFilename) != Os.FAMILY_MAC) || (!Os.isFamily(Os.FAMILY_MAC) && !Os.isFamily(
+            getJdkOsFamily(jvmDownloadFilename)))) {
       return@forEach
    }
 
@@ -255,11 +267,15 @@ val jdksExtractionPath: Path = buildDir.toPath().resolve("jdks-extracted")
 downloadJvmTasks.forEach { downloadTaskProvider ->
    val jvmArchiveFilePath = downloadTaskProvider.get().outputs.files.singleFile.toPath()
 
-   // If the JVM is Java 8 or doesn't match the current platform simply pass on the archive as because jlink cannot create a JRE for it
+   /*
+    * If the JVM is Java 8, already a JRE, or doesn't match the current platform, pass the archive as is. Java 8 or a JRE don't
+    * have jlink, and jlink has to run on the matching platform
+    */
    // @formatter:off
-   if (getJvmVersion(jvmArchiveFilePath.fileName.toString()) == JavaVersion.VERSION_1_8
-       || (Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(jvmArchiveFilePath.fileName.toString()) != Os.FAMILY_MAC)
-       || (!Os.isFamily(Os.FAMILY_MAC) && !Os.isFamily(getJdkOsFamily(jvmArchiveFilePath.fileName.toString())))) {
+   if (getJvmVersion(jvmArchiveFilePath.fileName.toString()) == JavaVersion.VERSION_1_8 || (Os.isFamily(Os.FAMILY_MAC) && getJdkOsFamily(
+            jvmArchiveFilePath.fileName.toString()) != Os.FAMILY_MAC) || (!Os.isFamily(Os.FAMILY_MAC) && !Os.isFamily(
+            getJdkOsFamily(jvmArchiveFilePath.fileName.toString()))) || jvmArchiveFilePath.fileName.toString()
+          .contains("-jre_")) {
       // @formatter:on
       artifacts.add(jdksAndCurrentPlatformJlinkedJres.name, jvmArchiveFilePath.toFile()) {
          builtBy(downloadTaskProvider.get())
@@ -286,7 +302,9 @@ downloadJvmTasks.forEach { downloadTaskProvider ->
  */
 fun findJlinkExecutable(jdkToJlinkDirectory: Path): Path? {
    return Files.walk(jdkToJlinkDirectory).use { pathStream ->
-      pathStream.filter { path -> path.fileName.toString().startsWith("jlink") && path.parent.fileName.toString() == "bin" }.findFirst().orElse(null)
+      pathStream.filter { path -> path.fileName.toString().startsWith("jlink") && path.parent.fileName.toString() == "bin" }
+         .findFirst()
+         .orElse(null)
    }
 }
 
