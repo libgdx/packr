@@ -235,7 +235,7 @@ Extracting and minimizing a JRE can take quite some time. When using the `cachej
 As of now, packr doesn't do any elaborate checks to validate the content of this cache folder. So if you update the JDK, or change the minimize profile, you need to empty or remove this folder manually to force a change.
 
 # Output
-##Windows
+## Windows
 When packing for Windows, the following folder structure will be generated
 ```
 outdir/
@@ -245,7 +245,7 @@ outdir/
    jre/
 ```
 
-##Linux
+## Linux
 ```
 outdir/
    executable
@@ -254,7 +254,7 @@ outdir/
    jre/
 ```
 
-##Mac OS X
+## Mac OS X
 ```
 outdir/
    Contents/
