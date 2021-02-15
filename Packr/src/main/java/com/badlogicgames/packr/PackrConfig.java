@@ -51,6 +51,7 @@ import java.util.List;
 	 public String bundleIdentifier;
 	 public boolean verbose;
 	 public boolean useZgcIfSupportedOs;
+	 public String jrePath;
 
 	 @SuppressWarnings("unused") public PackrConfig () {
 		  super();
@@ -130,6 +131,8 @@ import java.util.List;
 		  if (commandLine.useZgcIfSupportedOs()) {
 				useZgcIfSupportedOs = true;
 		  }
+
+		  jrePath = commandLine.jrePath();
 	 }
 
 	 private void readConfigJson (File configJson) throws IOException {
