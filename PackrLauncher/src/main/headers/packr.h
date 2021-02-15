@@ -41,7 +41,7 @@ extern "C" {
 	extern const char __CLASS_PATH_DELIM;
 
 	/* platform-dependent functions */
-	bool loadJNIFunctions(GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM);
+	bool loadJNIFunctions(const std::string& jrePath, GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM);
 	const dropt_char* getExecutablePath(const dropt_char* argv0);
 
 	bool changeWorkingDir(const dropt_char* directory);

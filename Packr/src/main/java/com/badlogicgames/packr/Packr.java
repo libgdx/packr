@@ -53,7 +53,6 @@ import static com.badlogicgames.packr.ArchiveUtils.extractArchive;
  */
 public class Packr {
 
-	 public static final String JRE_RELATIVE_PATH_NAME = "jre";
 	 private PackrConfig config;
 	 private Predicate<File> removePlatformLibsFileFilter = f -> false;
 
@@ -312,6 +311,7 @@ public class Packr {
 	 private void writeConfig (PackrOutput output) throws IOException {
 		  StringBuilder builder = new StringBuilder();
 		  builder.append("{\n");
+		  builder.append("  \"jrePath\": \"").append(config.jrePath).append("\",\n");
 		  builder.append("  \"classPath\": [");
 
 		  String delimiter = "\n";
@@ -410,7 +410,7 @@ public class Packr {
 					 throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
 				}
 
-				PackrFileUtils.copyDirectory(jre, new File(jreStoragePath, JRE_RELATIVE_PATH_NAME));
+				PackrFileUtils.copyDirectory(jre, new File(jreStoragePath, config.jrePath));
 				PackrFileUtils.deleteDirectory(tmp);
 
 				if (fetchFromRemote) {
@@ -427,7 +427,7 @@ public class Packr {
 				PackrFileUtils.copyDirectory(jreStoragePath, output.resourcesFolder);
 		  }
 
-		  Files.walkFileTree(output.resourcesFolder.toPath().resolve(JRE_RELATIVE_PATH_NAME), new SimpleFileVisitor<Path>() {
+		  Files.walkFileTree(output.resourcesFolder.toPath().resolve(config.jrePath), new SimpleFileVisitor<Path>() {
 				@Override public FileVisitResult visitFile (Path file, BasicFileAttributes attrs) throws IOException {
 					 final String parentFilename = file.getParent().getFileName().toString();
 					 final String filename = file.getFileName().toString();

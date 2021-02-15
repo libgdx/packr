@@ -497,7 +497,15 @@ void launchJavaVM(const LaunchJavaVMCallback &callback) {
     GetDefaultJavaVMInitArgs getDefaultJavaVMInitArgs = nullptr;
     CreateJavaVM createJavaVM = nullptr;
 
-    if (!loadJNIFunctions(&getDefaultJavaVMInitArgs, &createJavaVM)) {
+    const string originalJrePath = hasJsonValue(jsonRoot, "jrePath", sajson::TYPE_STRING) ?
+        getJsonValue(jsonRoot, "jrePath").as_string() : "jre";
+    string trimmedJrePath = originalJrePath;
+    // Removes trailing slash.
+    if ('/' == trimmedJrePath.back())
+        trimmedJrePath.pop_back();
+    const string jrePath = trimmedJrePath;
+
+    if (!loadJNIFunctions(jrePath, &getDefaultJavaVMInitArgs, &createJavaVM)) {
         cerr << "Error: failed to load VM runtime library!" << endl;
         exit(EXIT_FAILURE);
     }

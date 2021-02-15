@@ -27,6 +27,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <codecvt>
+#include <algorithm> // For string character replacement std::replace.
 
 #include <packr.h>
 
@@ -255,7 +256,7 @@ void addDllDirectory(LPCWSTR directory) {
  * Loads every library found using the pattern {@code libraryPattern}.
  * @param libraryPattern the search pattern to use to locate shared libaries to load
  */
-void loadLibraries(const PTCHAR libraryPattern) {
+void loadLibraries(const TCHAR* libraryPattern) {
    WIN32_FIND_DATA FindFileData;
    HANDLE hFind = nullptr;
    TCHAR libraryPath[MAX_PATH];
@@ -282,15 +283,35 @@ void loadLibraries(const PTCHAR libraryPattern) {
    FindClose(hFind);
 }
 
-bool loadJNIFunctions(GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, CreateJavaVM *createJavaVM) {
-   addDllDirectory(TEXT("jre\\bin"));
-   addDllDirectory(TEXT("jre\\bin\\server"));
+LPCWSTR stringToLpcwstr(const std::string& s) {
+   std::wstring stemp = std::wstring(s.begin(), s.end());
+   LPCWSTR sw = stemp.c_str();
+   return sw;
+}
+
+const TCHAR* stringToTcharPointer(const std::string& s) {
+    const TCHAR* pstring = nullptr;
+    #ifdef UNICODE
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+        std::wstring wstr = converter.from_bytes(s);
+        pstring = wstr.data();
+    #else
+        pstring = s.data();
+    #endif
+    return pstring;
+}
+
+bool loadJNIFunctions(const std::string& jrePath, GetDefaultJavaVMInitArgs *getDefaultJavaVMInitArgs, CreateJavaVM *createJavaVM) {
+   std::string backslashedJrePath = jrePath;
+   std::replace(backslashedJrePath.begin(), backslashedJrePath.end(), '/', '\\');
+   addDllDirectory(stringToLpcwstr(backslashedJrePath + "\\bin"));
+   addDllDirectory(stringToLpcwstr(backslashedJrePath + "\\bin\\server"));
 
    // Load every shared library in jre/bin because awt.dll doesn't load its dependent libraries using the correct search paths
-   loadLibraries(TEXT("jre\\bin\\*.dll"));
+   loadLibraries(stringToTcharPointer(backslashedJrePath + "\\bin\\*.dll"));
 
    TCHAR jvmDllFullPath[FULL_PATH_SIZE] = TEXT("");
-   if (GetFullPathName(TEXT("jre\\bin\\server\\jvm.dll"), FULL_PATH_SIZE, jvmDllFullPath, nullptr) == 0) {
+   if (GetFullPathName(stringToLpcwstr(backslashedJrePath + "\\bin\\server\\jvm.dll"), FULL_PATH_SIZE, jvmDllFullPath, nullptr) == 0) {
       printLastError(TEXT("get the jvm.dll absolute path"));
       return false;
    }

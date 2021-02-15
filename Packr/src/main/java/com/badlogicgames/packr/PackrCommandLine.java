@@ -73,4 +73,7 @@ public interface PackrCommandLine {
 		 defaultToNull = true) String bundleIdentifier ();
 
 	 @Option(description = "use ZGC if the operating system supports it", longName = "useZgcIfSupportedOs") boolean useZgcIfSupportedOs ();
+
+	 @Option(description = "path to bundled JRE (path separator must be forward slash /)",
+			longName = "jrePath", defaultValue = "jre") String jrePath ();
 }
