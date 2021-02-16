@@ -30,6 +30,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -340,7 +341,7 @@ public class Packr {
 		  builder.append("  ]\n");
 		  builder.append("}");
 
-		  try (Writer writer = new FileWriter(new File(output.resourcesFolder, "config.json"))) {
+		  try (Writer writer = new OutputStreamWriter(new FileOutputStream(new File(output.resourcesFolder, "config.json")), StandardCharsets.UTF_8)) {
 				writer.write(builder.toString());
 		  }
 	 }

@@ -26,8 +26,9 @@
 #include <memory>
 #include <cstring>
 
-#ifdef UNICODE
+#include <locale>
 #include <codecvt>
+#ifdef UNICODE
 #define stringCompare wcscmp
 #define findLastCharacter wcsrchr
 #else
@@ -496,15 +497,27 @@ void launchJavaVM(const LaunchJavaVMCallback &callback) {
 
     GetDefaultJavaVMInitArgs getDefaultJavaVMInitArgs = nullptr;
     CreateJavaVM createJavaVM = nullptr;
-
-    const string originalJrePath = hasJsonValue(jsonRoot, "jrePath", sajson::TYPE_STRING) ?
-        getJsonValue(jsonRoot, "jrePath").as_string() : "jre";
-    string trimmedJrePath = originalJrePath;
-    // Removes trailing slash.
-    if ('/' == trimmedJrePath.back())
-        trimmedJrePath.pop_back();
-    const string jrePath = trimmedJrePath;
-
+    wstring trimmedJrePathWstring;
+    string trimmedJrePathString;
+    const dropt_char* jrePath = nullptr;
+    if (hasJsonValue(jsonRoot, "jrePath", sajson::TYPE_STRING)) {
+        const string originalJrePathString = getJsonValue(jsonRoot, "jrePath").as_string();
+        wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+        wstring originalJrePathWstring = converter.from_bytes(originalJrePathString);
+        trimmedJrePathWstring = originalJrePathWstring;
+        // Removes trailing slash.
+        if (L'/' == trimmedJrePathWstring.back())
+            trimmedJrePathWstring.pop_back();
+#ifdef UNICODE
+        jrePath = trimmedJrePathWstring.c_str();
+#else
+        trimmedJrePathString = converter.to_bytes(trimmedJrePathWstring);
+        jrePath = trimmedJrePathString.c_str();
+#endif
+    }
+    else {
+        jrePath = DROPT_TEXT_LITERAL("jre");
+    }
     if (!loadJNIFunctions(jrePath, &getDefaultJavaVMInitArgs, &createJavaVM)) {
         cerr << "Error: failed to load VM runtime library!" << endl;
         exit(EXIT_FAILURE);
