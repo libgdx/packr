@@ -41,21 +41,22 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-bool loadJNIFunctions(const std::string& jrePath, GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM) {
+bool loadJNIFunctions(const dropt_char* jrePath, GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM) {
 
     void* handle;
     struct stat buffer;
+    std::string jrePathString(jrePath);
 
-    if (handle == NULL && stat((jrePath + "/lib/server/libjvm.so").c_str(), &buffer) == 0) {
-        handle = dlopen((jrePath + "/lib/server/libjvm.so").c_str(), RTLD_LAZY);
+    if (handle == NULL && stat((jrePathString + "/lib/server/libjvm.so").c_str(), &buffer) == 0) {
+        handle = dlopen((jrePathString + "/lib/server/libjvm.so").c_str(), RTLD_LAZY);
     }
 
-    if (handle == NULL && stat((jrePath + "/lib/amd64/server/libjvm.so").c_str(), &buffer) == 0) {
-        handle = dlopen((jrePath + "/lib/amd64/server/libjvm.so").c_str(), RTLD_LAZY);
+    if (handle == NULL && stat((jrePathString + "/lib/amd64/server/libjvm.so").c_str(), &buffer) == 0) {
+        handle = dlopen((jrePathString + "/lib/amd64/server/libjvm.so").c_str(), RTLD_LAZY);
     }
 
-    if (handle == NULL && stat((jrePath + "/lib/i386/server/libjvm.so").c_str(), &buffer) == 0) {
-        handle = dlopen((jrePath + "/lib/i386/server/libjvm.so").c_str(), RTLD_LAZY);
+    if (handle == NULL && stat((jrePathString + "/lib/i386/server/libjvm.so").c_str(), &buffer) == 0) {
+        handle = dlopen((jrePathString + "/lib/i386/server/libjvm.so").c_str(), RTLD_LAZY);
     }
 
     if (handle == NULL) {
