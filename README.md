@@ -36,6 +36,7 @@ java -jar packr-all.jar \
 | platform | one of "windows64",  "linux64", "mac" |
 | jdk | Directory, zip file, tar.gz file, or URL to an archive file of a JRE or Java 8 JDK with a JRE folder in it. Adopt OpenJDK 8, 11, and 15 are tested against <https://adoptopenjdk.net/releases.html>. You can also specify a directory to an unpacked JDK distribution. E.g. using ${java.home} in a build script.|
 | executable | name of the native executable, without extension such as ".exe" |
+| jrePath (optional) | path to the bundled JRE. By default, the JRE will be placed in a folder called "jre". |
 | classpath | file locations of the JAR files to package |
 | removelibs (optional) | file locations of JAR files to remove native libraries which do not match the target platform. See below for details. |
 | mainclass | the fully qualified name of the main class, using dots to delimit package names |
