@@ -1,3 +1,5 @@
+# Unreleased 3.1.0
+1. Added an option to specify the JRE directory in the configuration file.
 # Released 3.0.3
 1. Fixed symbolic link issue for Linux and macOS JREs.
 1. Fixed pthread not being available on Linux.
