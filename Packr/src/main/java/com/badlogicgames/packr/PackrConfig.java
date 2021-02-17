@@ -151,6 +151,9 @@ import java.util.List;
 		  if (json.get("classpath") != null) {
 				classpath = toStringArray(json.get("classpath").asArray());
 		  }
+		 if (json.get("jrePath") != null) {
+			 	jrePath = json.get("jrePath").asString();
+		 }
 		  if (json.get("removelibs") != null) {
 				removePlatformLibs = toStringArray(json.get("removelibs").asArray());
 		  }
