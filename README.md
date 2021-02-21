@@ -24,7 +24,7 @@ java -jar packr-all.jar \
      --jdk OpenJDK11U-jre_x64_mac_hotspot_11.0.10_9.tar.gz \
      --useZgcIfSupportedOs \
      --executable myapp \
-     --classpath myapp.jar \
+     --classpath myjar.jar \
      --mainclass com.my.app.MainClass \
      --vmargs Xmx1G \
      --resources src/main/resources path/to/other/assets \
@@ -59,10 +59,10 @@ Alternatively, you can put all the command line arguments into a JSON file which
     "jdk": "/Users/badlogic/Downloads/OpenJDK8U-jdk_x64_mac_hotspot_8u252b09.tar.gz",
     "executable": "myapp",
     "classpath": [
-        "myapp.jar"
+        "myjar.jar"
     ],
     "removelibs": [
-        "myapp.jar"
+        "myjar.jar"
     ],
     "mainclass": "com.my.app.MainClass",
     "vmargs": [
@@ -240,18 +240,18 @@ As of now, packr doesn't do any elaborate checks to validate the content of this
 When packing for Windows, the following folder structure will be generated
 ```
 outdir/
-   executable.exe
-   yourjar.jar
-   config.json
+   myapp.exe
+   myjar.jar
+   myapp.json
    jre/
 ```
 
 ## Linux
 ```
 outdir/
-   executable
-   yourjar.jar
-   config.json
+   myapp
+   myjar.jar
+   myapp.json
    jre/
 ```
 
@@ -261,10 +261,10 @@ outdir/
    Contents/
       Info.plist
       MacOS/
-         executable
+         myapp
       Resources/
-         yourjar.jar
-         config.json
+         myjar.jar
+         myapp.json
          jre/
          icons.icns [if config.icon is set]
 ```

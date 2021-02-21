@@ -1,5 +1,9 @@
 # Unreleased 3.1.0
 1. Added an option to specify the JRE directory in the configuration file.
+2. Changed the default config file name from `config.json` to `<app name>.json` 
+where `app name` is the value of the `--executable` field passed to `packr-all.jar`.  
+If the executable name is `myapp` (or `myapp.exe` on Windows) then the default config 
+file name will be `myapp.json` instead of `config.json`. 
 # Released 3.0.3
 1. Fixed symbolic link issue for Linux and macOS JREs.
 1. Fixed pthread not being available on Linux.
