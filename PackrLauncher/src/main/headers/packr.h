@@ -43,7 +43,6 @@ extern "C" {
 	/* platform-dependent functions */
 	bool loadJNIFunctions(const dropt_char* jrePath, GetDefaultJavaVMInitArgs* getDefaultJavaVMInitArgs, CreateJavaVM* createJavaVM);
 	const dropt_char* getExecutablePath(const dropt_char* argv0);
-	const dropt_char* getDefaultConfigurationPath(const dropt_char* executableName);
 
 	bool changeWorkingDir(const dropt_char* directory);
 

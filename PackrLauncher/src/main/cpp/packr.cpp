@@ -191,7 +191,6 @@ static int loadStaticMethod(JNIEnv *env, const vector<string> &classPath, const 
 }
 
 static sajson::document readConfigurationFile(const string &fileName) {
-    string content;
 #ifdef UNICODE
     wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     wstring fileNameWstring = converter.from_bytes(fileName);
@@ -200,7 +199,7 @@ static sajson::document readConfigurationFile(const string &fileName) {
 #else
     ifstream in(fileName.c_str(), std::ios::in | std::ios::binary);
 #endif
-    content = string((istreambuf_iterator<char>(in)), (istreambuf_iterator<char>()));
+    string content = string((istreambuf_iterator<char>(in)), (istreambuf_iterator<char>()));
     sajson::document json = sajson::parse(sajson::literal(content.c_str()));
     return json;
 }
@@ -321,19 +320,38 @@ string getExecutableName(const dropt_char *executablePath) {
 #endif
 }
 
+/**
+ * Strips ".exe" suffix from the executable name and appends ".json".
+ * @param executableName the UTF-8 encoded executable name
+ * @return UTF-8 encoded configuration path
+ */
+string getDefaultConfigurationPath(string& executableName) {
+    wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+    wstring executableNameWstring = converter.from_bytes(executableName);
+    wstring exeSuffix = wstring(L".exe");
+    bool hasExeSuffix = executableNameWstring.size() >= exeSuffix.size() &&
+        executableNameWstring.compare(executableNameWstring.size() - exeSuffix.size(),
+            exeSuffix.size(), exeSuffix) == 0;
+    wstring appName;
+    if (hasExeSuffix)
+        appName = executableNameWstring.substr(0, executableNameWstring.size() - exeSuffix.size());
+    else
+        appName = executableNameWstring;
+    wstring defaultConfigurationPath = appName + L".json";
+    return converter.to_bytes(defaultConfigurationPath);
+}
+
 bool setCmdLineArguments(int argc, dropt_char **argv) {
     const dropt_char *executablePath = getExecutablePath(argv[0]);
     workingDir = getExecutableDirectory(executablePath);
     executableName = getExecutableName(executablePath);
-    const dropt_char* defaultConfigurationPath;
-    string defaultConfigurationPathString;
+    string defaultConfigurationPath = getDefaultConfigurationPath(executableName);
+    const dropt_char* defaultConfigurationPathDroptChar;
 #ifdef UNICODE
     wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    defaultConfigurationPath = getDefaultConfigurationPath(converter.from_bytes(executableName).c_str());
-    defaultConfigurationPathString = converter.to_bytes(defaultConfigurationPath);
+    defaultConfigurationPathDroptChar = converter.from_bytes(defaultConfigurationPath).c_str();
 #else
-    defaultConfigurationPath = getDefaultConfigurationPath(executableName.c_str());
-    defaultConfigurationPathString = string(defaultConfigurationPath);
+    defaultConfigurationPathDroptChar = defaultConfigurationPath.c_str();
 #endif
 
     dropt_bool showHelp = 0;
@@ -376,7 +394,7 @@ bool setCmdLineArguments(int argc, dropt_char **argv) {
                               {'\0',
                                DROPT_TEXT_LITERAL("config"),
                                DROPT_TEXT_LITERAL("Specifies the configuration file."),
-                               defaultConfigurationPath,
+                               defaultConfigurationPathDroptChar,
                                dropt_handle_string,
                                &config,
                                dropt_attr_optional_val},
@@ -443,23 +461,23 @@ bool setCmdLineArguments(int argc, dropt_char **argv) {
                     configurationPath = string(config);
 #endif
                     if (verbose) {
-                        cout << "Using custom configuration file " << config << " ..." << endl;
+                        cout << "Using custom configuration file " << configurationPath << " ..." << endl;
                     }
                 }
                 else {
                     if (verbose) {
-                        cout << "Using default configuration file " << defaultConfigurationPathString << " ..." << endl;
+                        cout << "Using default configuration file " << defaultConfigurationPath << " ..." << executableName << endl;
                     }
-                    configurationPath = defaultConfigurationPathString;
+                    configurationPath = defaultConfigurationPath;
                 }
             }
         } else {
             // treat all arguments as "remains"
             remains = &argv[1];
             if (verbose) {
-                cout << "Using default configuration file " << defaultConfigurationPathString << " ..." << endl;
+                cout << "Using default configuration file " << defaultConfigurationPath << " ..." << executableName << endl;
             }
-            configurationPath = defaultConfigurationPathString;
+            configurationPath = defaultConfigurationPath;
         }
 
         // count number of unparsed arguments
