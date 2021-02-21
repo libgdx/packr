@@ -188,7 +188,7 @@ TEST(PackrLauncherTest, test_setCmdLineArguments) {
     // config
     const int argumentCount = 7;
     dropt_char **commandLineArguments = new dropt_char *[argumentCount + 1];
-    commandLineArguments[0] = dropt_strdup(DROPT_TEXT_LITERAL("path/to/executable"));
+    commandLineArguments[0] = dropt_strdup(DROPT_TEXT_LITERAL("path/to/executableÄ"));
     commandLineArguments[1] = dropt_strdup(DROPT_TEXT_LITERAL("-c"));
     commandLineArguments[2] = dropt_strdup(DROPT_TEXT_LITERAL("--config"));
     commandLineArguments[3] = dropt_strdup(DROPT_TEXT_LITERAL("hello"));

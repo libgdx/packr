@@ -45,7 +45,7 @@ bool verbose = false;
  */
 static string workingDir;
 static string executableName;
-static string configurationPath = "config.json";
+static string configurationPath;
 
 static size_t cmdLineArgc = 0;
 
@@ -191,10 +191,16 @@ static int loadStaticMethod(JNIEnv *env, const vector<string> &classPath, const 
 }
 
 static sajson::document readConfigurationFile(const string &fileName) {
-
+    string content;
+#ifdef UNICODE
+    wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    wstring fileNameWstring = converter.from_bytes(fileName);
+    // On Windows, fstream's constructor accepts a wchar_t file name that is unicode.
+    std::fstream in(fileNameWstring.c_str(), std::ios::in | std::ios::binary);
+#else
     ifstream in(fileName.c_str(), std::ios::in | std::ios::binary);
-    string content((istreambuf_iterator<char>(in)), (istreambuf_iterator<char>()));
-
+#endif
+    content = string((istreambuf_iterator<char>(in)), (istreambuf_iterator<char>()));
     sajson::document json = sajson::parse(sajson::literal(content.c_str()));
     return json;
 }
@@ -319,6 +325,16 @@ bool setCmdLineArguments(int argc, dropt_char **argv) {
     const dropt_char *executablePath = getExecutablePath(argv[0]);
     workingDir = getExecutableDirectory(executablePath);
     executableName = getExecutableName(executablePath);
+    const dropt_char* defaultConfigurationPath;
+    string defaultConfigurationPathString;
+#ifdef UNICODE
+    wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    defaultConfigurationPath = getDefaultConfigurationPath(converter.from_bytes(executableName).c_str());
+    defaultConfigurationPathString = converter.to_bytes(defaultConfigurationPath);
+#else
+    defaultConfigurationPath = getDefaultConfigurationPath(executableName.c_str());
+    defaultConfigurationPathString = string(defaultConfigurationPath);
+#endif
 
     dropt_bool showHelp = 0;
     dropt_bool showVersion = 0;
@@ -360,7 +376,7 @@ bool setCmdLineArguments(int argc, dropt_char **argv) {
                               {'\0',
                                DROPT_TEXT_LITERAL("config"),
                                DROPT_TEXT_LITERAL("Specifies the configuration file."),
-                               DROPT_TEXT_LITERAL("config.json"),
+                               defaultConfigurationPath,
                                dropt_handle_string,
                                &config,
                                dropt_attr_optional_val},
@@ -421,15 +437,29 @@ bool setCmdLineArguments(int argc, dropt_char **argv) {
                 }
 
                 if (config != nullptr) {
+#ifdef UNICODE
+                    configurationPath = converter.to_bytes(wstring(config));
+#else
+                    configurationPath = string(config);
+#endif
                     if (verbose) {
-                        cout << "Using configuration file " << config << " ..." << endl;
+                        cout << "Using custom configuration file " << config << " ..." << endl;
                     }
-                    configurationPath = string((char *) config);
+                }
+                else {
+                    if (verbose) {
+                        cout << "Using default configuration file " << defaultConfigurationPathString << " ..." << executableName << endl;
+                    }
+                    configurationPath = defaultConfigurationPathString;
                 }
             }
         } else {
             // treat all arguments as "remains"
             remains = &argv[1];
+            if (verbose) {
+                cout << "Using default configuration file " << defaultConfigurationPathString << " ..." << executableName << endl;
+            }
+            configurationPath = defaultConfigurationPathString;
         }
 
         // count number of unparsed arguments
@@ -445,7 +475,6 @@ bool setCmdLineArguments(int argc, dropt_char **argv) {
 
         while (*remains != nullptr) {
 #ifdef UNICODE
-            wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
             string utf8CommandLineArgument = converter.to_bytes(*remains);
             cmdLineArgv[cmdLineArgc] = strdup(utf8CommandLineArgument.c_str());
 #else
