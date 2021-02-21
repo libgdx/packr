@@ -87,18 +87,6 @@ const dropt_char* getExecutablePath(const dropt_char* argv0) {
     return buf;
 }
 
-/**
- * Appends ".json" to the executable name.
- * @param executableName the UTF-8 encoded executable name
- * @return UTF-8 encoded configuration path
- */
-const dropt_char* getDefaultConfigurationPath(const dropt_char* executableName) {
-    string executableNameString = string(executableName);
-    static char buf[PATH_MAX];
-    strcpy(buf, (executableNameString + ".json").c_str());
-    return buf;
-}
-
 bool changeWorkingDir(const dropt_char* directory) {
 	return chdir(directory) == 0;
 }
