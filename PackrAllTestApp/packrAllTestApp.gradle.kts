@@ -190,9 +190,9 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
 
                // run packr exe
                executable = if (isFamily(FAMILY_MAC)) {
-                  workingDir.toPath().resolve("Contents").resolve("MacOS").resolve("PackrAllTestApp").toAbsolutePath().toString()
+                  workingDir.toPath().resolve("Contents").resolve("MacOS").resolve("PackrAllTestAppÄ").toAbsolutePath().toString()
                } else {
-                  workingDir.toPath().resolve("PackrAllTestApp").toAbsolutePath().toString()
+                  workingDir.toPath().resolve("PackrAllTestAppÄ").toAbsolutePath().toString()
                }
                args("-c")
                args("--verbose")
@@ -286,7 +286,8 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       args("--jdk")
       args(jdkPath.toFile())
       args("--executable")
-      args("PackrAllTestApp")
+      // Tests unicode file name for default configuration PackrAllTestAppÄ.json.
+      args("PackrAllTestAppÄ")
       args("--jrePath")
       // Tests a custom jre path.
       args("jre/123456Ä/")

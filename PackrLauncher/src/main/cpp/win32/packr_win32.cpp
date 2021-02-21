@@ -325,6 +325,28 @@ const dropt_char *getExecutablePath(const dropt_char *argv0) {
     return argv0;
 }
 
+/**
+ * Strips ".exe" suffix from the executable name and appends ".json".
+ * @param executableName the UTF-8 encoded executable name
+ * @return UTF-8 encoded configuration path
+ */
+const dropt_char* getDefaultConfigurationPath(const dropt_char* executableName) {
+    wstring executableNameWstring = wstring(executableName);
+        wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+    wstring exeSuffix = wstring(L".exe");
+    bool hasExeSuffix = executableNameWstring.size() >= exeSuffix.size() &&
+        executableNameWstring.compare(executableNameWstring.size() - exeSuffix.size(),
+            exeSuffix.size(), exeSuffix) == 0;
+    wstring appName;
+    if (hasExeSuffix)
+        appName = executableNameWstring.substr(0, executableNameWstring.size() - exeSuffix.size());
+    else
+        appName = executableNameWstring;
+    static TCHAR buf[MAX_PATH];
+    wcscpy(buf, (appName + L".json").c_str());
+    return buf;
+}
+
 bool changeWorkingDir(const dropt_char *directory) {
     BOOL currentDirectory = SetCurrentDirectory(directory);
     if(currentDirectory == 0){
