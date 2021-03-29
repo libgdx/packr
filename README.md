@@ -9,9 +9,8 @@ Starting with Java 14, there's a new tool that is included with the JDK called [
 The latest build is available for [download here](https://github.com/libgdx/packr/releases).
 
 Resource artifacts are available at [Maven Central](https://mvnrepository.com/artifact/com.badlogicgames.packr)
-   * Until Maven central publishing is working, the following Maven repositories are available:
-      * <http://artifactory.nimblygames.com/artifactory/ng-public-snapshot/>
-      * <http://artifactory.nimblygames.com/artifactory/ng-public-release/> 
+   * Until Maven central publishing is working, the following Maven repository is available:
+      * <http://artifactory.nimblygames.com/artifactory/ng-public/>
 
 # Usage
 You point packr at your JAR file(s) containing your code and assets, some configuration parameters, and a URL or local file location to a JDK build for your target platform.
