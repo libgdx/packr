@@ -16,7 +16,7 @@
 
 
 group = "com.badlogicgames.packr"
-version = "3.1.0-SNAPSHOT"
+version = "4.0.0-SNAPSHOT"
 
 ext["macOsMinimumVersion"] = "10.10"
 
@@ -25,6 +25,6 @@ plugins {
 }
 
 tasks.named<Wrapper>("wrapper") {
-   gradleVersion = "6.6.1"
+   gradleVersion = "6.8.3"
    distributionType = Wrapper.DistributionType.ALL
 }

@@ -99,7 +99,7 @@ dependencies {
 }
 
 application {
-   mainClassName = "com.badlogicgames.packrtestapp.PackrAllTestApplication"
+   mainClass.set("com.badlogicgames.packrtestapp.PackrAllTestApplication")
 }
 
 /**
@@ -107,7 +107,7 @@ application {
  */
 val jarTask: TaskProvider<Jar> = tasks.named<Jar>(JavaPlugin.JAR_TASK_NAME) {
    @Suppress("UnstableApiUsage") manifest {
-      attributes["Main-Class"] = application.mainClassName
+      attributes["Main-Class"] = application.mainClass.get()
    }
 }
 
@@ -253,7 +253,7 @@ val jdkArchiveDirectory: Path = if (jdkArchiveProperty == null) {
 /**
  * The path to JAVA_HOME
  */
-val javaHomePath: String = Jvm.current().jre?.homeDir?.absolutePath ?: Jvm.current().javaHome.absolutePath
+val javaHomePath: String = Jvm.current().javaHome.absolutePath
 
 /**
  *  Run libGdx Packr which creates minimized JREs and platform specific executables for running PackrAllTestApp.

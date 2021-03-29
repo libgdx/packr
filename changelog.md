@@ -1,16 +1,25 @@
-# Unreleased 3.1.0
+# Release 4.0.0
+
 1. Added an option to specify the JRE directory in the configuration file.
-2. Changed the default config file name from `config.json` to `<app name>.json` 
-where `app name` is the value of the `--executable` field passed to `packr-all.jar`.  
-If the executable name is `myapp` (or `myapp.exe` on Windows) then the default config 
-file name will be `myapp.json` instead of `config.json`. 
-# Released 3.0.3
+2. Changed the default config file name from `config.json` to `<app name>.json`
+   where `app name` is the value of the `--executable` field passed to `packr-all.jar`.  
+   If the executable name is `myapp` (or `myapp.exe` on Windows) then the default config file name will be `myapp.json` instead
+   of `config.json`.
+3. Please update your Maven and Gradle build scripts to point to <https://artifactory.nimblygames.com/artifactory/ng-public>.
+   * Gradle will soon require HTTPS and the -snapshot and -release repository URLs are for publishing, not downloading.
+
+# Release 3.0.3
+
 1. Fixed symbolic link issue for Linux and macOS JREs.
 1. Fixed pthread not being available on Linux.
-# Released 3.0.2
+
+# Release 3.0.2
+
 1. Preemptively load all DLLs in the jre/bin directory on Windows.
    * This resolves an issue on Windows where the awt.dll cannot find the Microsoft runtime libraries (MSVCP140.dll).
+
 # Release 3.0.1
+
 1. Updated tests to use the latest versions of AdoptOpenJDK 8, 11, and 15.
 1. Changed DLL loading on Windows to search in the JRE bin and server directories.
    * This should make packr more robust to Windows runtime DLL changes.
