@@ -288,8 +288,8 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       args("--executable")
       // Tests unicode file name for default configuration PackrAllTestAppÄ.json.
       args("PackrAllTestAppÄ")
-      args("--jrePath")
       // Tests a custom jre path.
+      args("--jrePath")
       args("jre/123456Ä/")
       args("--classpath")
       Files.walk(jarTask.get().destinationDirectory.asFile.get().toPath()).use { pathStream ->

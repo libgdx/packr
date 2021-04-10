@@ -54,17 +54,18 @@ import static com.badlogicgames.packr.ArchiveUtils.extractArchive;
  */
 public class Packr {
 
-	 private PackrConfig config;
-	 private Predicate<File> removePlatformLibsFileFilter = f -> false;
+   private static final String DEFAULT_JRE_PATH = "jre";
+   private PackrConfig config;
+   private Predicate<File> removePlatformLibsFileFilter = f -> false;
 
-	 /**
-	  * The main CLI entrance.
-	  *
-	  * @param args Should conform to {@link PackrCommandLine}
-	  */
-	 public static void main (String[] args) {
+   /**
+    * The main CLI entrance.
+    *
+    * @param args Should conform to {@link PackrCommandLine}
+    */
+   public static void main(String[] args) {
 
-		  try {
+      try {
 
 				PackrCommandLine commandLine = CliFactory.parseArguments(PackrCommandLine.class, args.length > 0 ? args : new String[] {"-h"});
 
@@ -310,19 +311,21 @@ public class Packr {
 	  * @throws IOException if an IO error occurs
 	  */
 	 private void writeConfig (PackrOutput output) throws IOException {
-		  StringBuilder builder = new StringBuilder();
-		  builder.append("{\n");
-		  builder.append("  \"jrePath\": \"").append(config.jrePath).append("\",\n");
-		  builder.append("  \"classPath\": [");
+       StringBuilder builder = new StringBuilder();
+       builder.append("{\n");
+       if (config.jrePath != null) {
+          builder.append("  \"jrePath\": \"").append(config.jrePath).append("\",\n");
+       }
+       builder.append("  \"classPath\": [");
 
-		  String delimiter = "\n";
-		  for (String f : config.classpath) {
-				builder.append(delimiter).append("    \"").append(new File(f).getName()).append("\"");
-				delimiter = ",\n";
-		  }
-		  builder.append("\n  ],\n");
+       String delimiter = "\n";
+       for (String f : config.classpath) {
+          builder.append(delimiter).append("    \"").append(new File(f).getName()).append("\"");
+          delimiter = ",\n";
+       }
+       builder.append("\n  ],\n");
 
-		  builder.append("  \"mainClass\": \"").append(config.mainClass).append("\",\n");
+       builder.append("  \"mainClass\": \"").append(config.mainClass).append("\",\n");
 		  builder.append("  \"useZgcIfSupportedOs\": ").append(config.useZgcIfSupportedOs).append(",\n");
 		  builder.append("  \"vmArgs\": [\n");
 
@@ -365,25 +368,32 @@ public class Packr {
 		  if (extractToCache && config.cacheJre.exists()) {
 				if (config.cacheJre.isDirectory()) {
 					 // check if the cache directory is empty
-					 String[] files = config.cacheJre.list();
-					 skipExtractToCache = files != null && files.length > 0;
-				} else {
-					 throw new IOException(config.cacheJre + " must be a directory");
-				}
-		  }
+               String[] files = config.cacheJre.list();
+               skipExtractToCache = files != null && files.length > 0;
+            } else {
+               throw new IOException(config.cacheJre + " must be a directory");
+            }
+        }
 
-		  // path to extract JRE to (cache, or target folder)
-		  File jreStoragePath = extractToCache ? config.cacheJre : output.resourcesFolder;
+       // path to extract JRE to (cache, or target folder)
+       File jreStoragePath = extractToCache ? config.cacheJre : output.resourcesFolder;
 
-		  if (skipExtractToCache) {
-				System.out.println("Using cached JRE in '" + config.cacheJre + "' ...");
-		  } else {
-				// path to extract JRE from (folder, zip or remote)
-				boolean fetchFromRemote = config.jdk.startsWith("http://") || config.jdk.startsWith("https://");
-				File jdkFile = fetchFromRemote ? new File(jreStoragePath, "jdk.zip") : new File(config.jdk);
+       final String jrePath;
+       if (config.jrePath == null) {
+          jrePath = DEFAULT_JRE_PATH;
+       } else {
+          jrePath = config.jrePath;
+       }
 
-				// download from remote
-				if (fetchFromRemote) {
+       if (skipExtractToCache) {
+          System.out.println("Using cached JRE in '" + config.cacheJre + "' ...");
+       } else {
+          // path to extract JRE from (folder, zip or remote)
+          boolean fetchFromRemote = config.jdk.startsWith("http://") || config.jdk.startsWith("https://");
+          File jdkFile = fetchFromRemote ? new File(jreStoragePath, "jdk.zip") : new File(config.jdk);
+
+          // download from remote
+          if (fetchFromRemote) {
 					 System.out.println("Downloading JDK from '" + config.jdk + "' ...");
 					 try (InputStream remote = new URL(config.jdk).openStream()) {
 						  try (OutputStream outJdk = new FileOutputStream(jdkFile)) {
@@ -402,44 +412,44 @@ public class Packr {
 
 				if (jdkFile.isDirectory()) {
 					 PackrFileUtils.copyDirectory(jdkFile, tmp);
-				} else {
-					 extractArchive(jdkFile.toPath(), tmp.toPath());
-				}
+            } else {
+               extractArchive(jdkFile.toPath(), tmp.toPath());
+            }
 
-				// copy the JVM sub folder
-				File jre = findJvmDynamicLibraryBaseDirectory(tmp.toPath());
-				if (jre == null) {
-					 throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
-				}
+          // copy the JVM sub folder
+          File jre = findJvmDynamicLibraryBaseDirectory(tmp.toPath());
+          if (jre == null) {
+             throw new IOException("Couldn't find JRE in JDK, see '" + tmp.getAbsolutePath() + "'");
+          }
 
-				PackrFileUtils.copyDirectory(jre, new File(jreStoragePath, config.jrePath));
-				PackrFileUtils.deleteDirectory(tmp);
+          PackrFileUtils.copyDirectory(jre, new File(jreStoragePath, jrePath));
+          PackrFileUtils.deleteDirectory(tmp);
 
-				if (fetchFromRemote) {
-					 Files.deleteIfExists(jdkFile.toPath());
-				}
+          if (fetchFromRemote) {
+             Files.deleteIfExists(jdkFile.toPath());
+          }
 
-				// run minimize
-				PackrReduce.minimizeJre(jreStoragePath, config);
-		  }
+          // run minimize
+          PackrReduce.minimizeJre(jreStoragePath, config);
+       }
 
-		  if (extractToCache) {
-				// if cache is used, copy again here; if the JRE is cached already,
-				// this is the only copy done (and everything above is skipped)
-				PackrFileUtils.copyDirectory(jreStoragePath, output.resourcesFolder);
-		  }
+       if (extractToCache) {
+          // if cache is used, copy again here; if the JRE is cached already,
+          // this is the only copy done (and everything above is skipped)
+          PackrFileUtils.copyDirectory(jreStoragePath, output.resourcesFolder);
+       }
 
-		  Files.walkFileTree(output.resourcesFolder.toPath().resolve(config.jrePath), new SimpleFileVisitor<Path>() {
-				@Override public FileVisitResult visitFile (Path file, BasicFileAttributes attrs) throws IOException {
-					 final String parentFilename = file.getParent().getFileName().toString();
-					 final String filename = file.getFileName().toString();
-					 final String filenameExtension = FileNameUtils.getExtension(filename);
+       Files.walkFileTree(output.resourcesFolder.toPath().resolve(jrePath), new SimpleFileVisitor<Path>() {
+          @Override public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+             final String parentFilename = file.getParent().getFileName().toString();
+             final String filename = file.getFileName().toString();
+             final String filenameExtension = FileNameUtils.getExtension(filename);
 
-					 final boolean isInBinOrLibDirectory = parentFilename.equalsIgnoreCase("bin") || parentFilename.equalsIgnoreCase("lib");
-					 final boolean isExecutableFile = filenameExtension.trim().length() == 0 || filenameExtension.equalsIgnoreCase("exe");
+             final boolean isInBinOrLibDirectory = parentFilename.equalsIgnoreCase("bin") || parentFilename.equalsIgnoreCase("lib");
+             final boolean isExecutableFile = filenameExtension.trim().length() == 0 || filenameExtension.equalsIgnoreCase("exe");
 
-					 if (isInBinOrLibDirectory && isExecutableFile) {
-						  PackrFileUtils.chmodX(file.toFile());
+             if (isInBinOrLibDirectory && isExecutableFile) {
+                PackrFileUtils.chmodX(file.toFile());
 					 }
 					 return super.visitFile(file, attrs);
 				}
