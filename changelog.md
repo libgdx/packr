@@ -1,10 +1,13 @@
+# Unreleased 4.0.1
+
+1. Fixed null pointer exception when not specifing `--jrePath` on the command line or in the JSON configuration file.
+
 # Release 4.0.0
 
 1. Added an option to specify the JRE directory in the configuration file.
 2. Changed the default config file name from `config.json` to `<app name>.json`
    where `app name` is the value of the `--executable` field passed to `packr-all.jar`.  
-   If the executable name is `myapp` (or `myapp.exe` on Windows) then the default config file name will be `myapp.json` instead
-   of `config.json`.
+   If the executable name is `myapp` (or `myapp.exe` on Windows) then the default config file name will be `myapp.json` instead of `config.json`.
 3. Please update your Maven and Gradle build scripts to point to <https://artifactory.nimblygames.com/artifactory/ng-public>.
    * Gradle will soon require HTTPS and the -snapshot and -release repository URLs are for publishing, not downloading.
 
@@ -66,7 +69,7 @@
    * When running from a Windows Explorer shortcut, a new console is popped up and if `--verbose` was also specified then all debug output shows up in the console window.
 3. If the PackrLauncher parent process has a console, PackrLauncher attaches to it.
    * This allows debug output when PackrLauncher is launched from a command prompt window, without the need for passing `--console`.
-   
+
 # Release 2.5.0
 1. Added `useZgcIfSupportedOs` flag making it easier to use the Z garbage collector when bundling Java 14+.
    * The launcher executable will detect if the running operating system supports the Z garbage collector and use it.

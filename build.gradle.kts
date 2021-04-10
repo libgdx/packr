@@ -16,7 +16,7 @@
 
 
 group = "com.badlogicgames.packr"
-version = "4.0.0"
+version = "4.0.1-SNAPSHOT"
 
 ext["macOsMinimumVersion"] = "10.10"
 
