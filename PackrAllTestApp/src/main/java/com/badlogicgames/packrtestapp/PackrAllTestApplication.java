@@ -16,13 +16,9 @@
 
 package com.badlogicgames.packrtestapp;
 
-import com.badlogic.gdx.ApplicationListener;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
-import org.lwjgl.opengl.GL11;
 
-import java.awt.Toolkit;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,7 +35,11 @@ public class PackrAllTestApplication {
 	  * @throws IOException if an IO error occurs
 	  */
 	 public static void main (String[] args) throws IOException, InterruptedException {
-		  System.out.println("EventQueue=" + Toolkit.getDefaultToolkit().getSystemEventQueue());
+		 System.out.println("Thread = " + Thread.currentThread());
+//		 SwingUtilities.invokeLater(()->{
+//			 System.out.println("EventQueue=" + Toolkit.getDefaultToolkit().getSystemEventQueue());
+//		 });
+
 
 		  System.out.println("Hello world!");
 		  System.out.println("Running from java.version=" + System.getProperty("java.version"));
@@ -59,9 +59,42 @@ public class PackrAllTestApplication {
 		 //				lineStream.forEach(resourceLine -> System.out.println("Loaded resource line: " + resourceLine));
 		 //		  }
 
+//		 SwingUtilities.invokeLater(()->{
+//			 JFrame frame = new JFrame("hi");
+//			 frame.getContentPane().add(new JLabel("hello Jojo"));
+//			 frame.pack();
+//			 frame.setSize(300, 200);
+//			 frame.setLocationRelativeTo(null);
+//			 frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+//			 frame.setVisible(true);
+//			 System.out.println("Launched jframe");
+//		 });
+		 System.out.flush();
+		 System.err.flush();
+
+//		 GLFW.glfwInitHint(GLFW.GLFW_COCOA_CHDIR_RESOURCES, GLFW.GLFW_FALSE);
+//		 GLFW.glfwInitHint(GLFW.GLFW_COCOA_MENUBAR, GLFW.GLFW_FALSE);
+//		 GLFW.glfwInitHint(GLFW.GLFW_JOYSTICK_HAT_BUTTONS, GLFW.GLFW_FALSE);
+//		 GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+//		 GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 2);
+//		 GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+//		 GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
+//		 GLFW.glfwSetErrorCallback(new GLFWErrorCallback() {
+//			 @Override public void invoke(int error, long description) {
+//				 System.out.println("Got GLFW error " + error + ": " + description);
+//			 }
+//		 });
+//		 System.out.println("Calling GLFW init.");
+//		 final boolean init=GLFW.glfwInit();
+//		 System.out.println("Done calling GLFW init=" + init);
+//		 System.out.flush();
 		 Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
+		 config.useOpenGL3(true, 3, 2);
+		 config.setResizable(true);
 		 config.setTitle("libGdx test");
-		 config.setWindowedMode(800, 480);
+		 config.setWindowedMode(800, 600);
+
+		 System.out.println("About to launch libGDX!");
 		 new Lwjgl3Application(new TestLibGdx(), config);
 
 		 throw new RuntimeException("Testing uncaught exception handler. Thrown from the main thread, Thread.currentThread().getName()=" +
@@ -69,30 +102,3 @@ public class PackrAllTestApplication {
 	 }
 }
 
-class TestLibGdx implements ApplicationListener {
-
-	@Override public void create() {
-
-	}
-
-	@Override public void resize(int width, int height) {
-
-	}
-
-	@Override public void render() {
-		Gdx.gl.glClearColor(1f, 1f, 1f, 1f);
-		Gdx.gl.glClear(GL11.GL_COLOR_BUFFER_BIT);
-	}
-
-	@Override public void pause() {
-
-	}
-
-	@Override public void resume() {
-
-	}
-
-	@Override public void dispose() {
-
-	}
-}

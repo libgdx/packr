@@ -352,6 +352,8 @@ extractJdkTasks.forEach { extractJdkTask ->
             args("java.base")
             args("--add-modules")
             args("java.desktop")
+            args("--add-modules")
+            args("jdk.unsupported")
          }
       }
    }

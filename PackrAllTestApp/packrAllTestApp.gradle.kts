@@ -155,7 +155,7 @@ val createTestDirectory: TaskProvider<Task> = tasks.register("createTestDirector
          }
          jvmArchivesToRunPackrOn.add(path)
       }
-      jvmArchivesToRunPackrOn.parallelStream().forEach { path ->
+      jvmArchivesToRunPackrOn.forEach { path ->
          logger.info("Running packr against $path")
          val fileNameNoExtension = path.fileName.toString().substring(0, path.fileName.toString().indexOf('.'))
          // Add the Ä to test unicode paths
@@ -316,10 +316,6 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       args("Xms64M")
       args("--vmargs")
       args("Xmx128M")
-      args("--vmargs")
-      args("Dsun.java2d.noddraw=true")
-      args("--vmargs")
-      args("Djava.awt.headless=true")
       args("--vmargs")
       args("XstartOnFirstThread")
       if (jdkPath.fileName.toString().toLowerCase().contains("jdk14")) {
