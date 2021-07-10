@@ -96,6 +96,12 @@ dependencies {
    add(packrAllArchive.name, project(":Packr", "packrAll"))
 
    add(jdksAndJresFromJreDist.name, project(":TestAppJreDist", "jdksAndCurrentPlatformJlinkedJres"))
+
+   // gdx
+   val libgdxVersion = "1.9.14"
+   implementation("com.badlogicgames.gdx:gdx:$libgdxVersion")
+   runtimeOnly("com.badlogicgames.gdx:gdx-platform:$libgdxVersion:natives-desktop")
+   implementation("com.badlogicgames.gdx:gdx-backend-lwjgl3:$libgdxVersion")
 }
 
 application {
