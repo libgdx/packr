@@ -316,8 +316,6 @@ fun createPackrContent(jdkPath: Path, osFamily: String, destination: Path) {
       args("Xms64M")
       args("--vmargs")
       args("Xmx128M")
-      args("--vmargs")
-      args("XstartOnFirstThread")
       if (jdkPath.fileName.toString().toLowerCase().contains("jdk14")) {
          args("--useZgcIfSupportedOs")
          args("--vmargs")

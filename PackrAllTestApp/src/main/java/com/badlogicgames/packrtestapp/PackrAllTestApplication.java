@@ -64,8 +64,6 @@ public class PackrAllTestApplication {
 			 frame.setVisible(true);
 			 System.out.println("Launched jframe");
 		 });
-		 System.out.flush();
-		 System.err.flush();
 
 		 LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
 		 config.resizable = true;
