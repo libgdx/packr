@@ -100,8 +100,8 @@ dependencies {
    // gdx
    val libgdxVersion = "1.9.14"
    implementation("com.badlogicgames.gdx:gdx:$libgdxVersion")
-   runtimeOnly("com.badlogicgames.gdx:gdx-platform:$libgdxVersion:natives-desktop")
-   implementation("com.badlogicgames.gdx:gdx-backend-lwjgl3:$libgdxVersion")
+   runtimeOnly("com.badlogicgames.gdx:gdx-platform:$libgdxVersion:natives-desktop") //   implementation("com.badlogicgames.gdx:gdx-backend-lwjgl3:$libgdxVersion")
+   implementation("com.badlogicgames.gdx:gdx-backend-lwjgl:$libgdxVersion")
 }
 
 application {

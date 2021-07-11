@@ -16,9 +16,12 @@
 
 package com.badlogicgames.packrtestapp;
 
-import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
-import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
+import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,10 +39,6 @@ public class PackrAllTestApplication {
 	  */
 	 public static void main (String[] args) throws IOException, InterruptedException {
 		 System.out.println("Thread = " + Thread.currentThread());
-//		 SwingUtilities.invokeLater(()->{
-//			 System.out.println("EventQueue=" + Toolkit.getDefaultToolkit().getSystemEventQueue());
-//		 });
-
 
 		  System.out.println("Hello world!");
 		  System.out.println("Running from java.version=" + System.getProperty("java.version"));
@@ -55,47 +54,27 @@ public class PackrAllTestApplication {
 			 throwable.printStackTrace(System.out);
 		 });
 
-		 //		  try (Stream<String> lineStream = Files.lines(Paths.get("application-resources").resolve("fake-resource.txt"))) {
-		 //				lineStream.forEach(resourceLine -> System.out.println("Loaded resource line: " + resourceLine));
-		 //		  }
-
-//		 SwingUtilities.invokeLater(()->{
-//			 JFrame frame = new JFrame("hi");
-//			 frame.getContentPane().add(new JLabel("hello Jojo"));
-//			 frame.pack();
-//			 frame.setSize(300, 200);
-//			 frame.setLocationRelativeTo(null);
-//			 frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-//			 frame.setVisible(true);
-//			 System.out.println("Launched jframe");
-//		 });
+		 SwingUtilities.invokeLater(() -> {
+			 JFrame frame = new JFrame("hi");
+			 frame.getContentPane().add(new JLabel("hello Jojo"));
+			 frame.pack();
+			 frame.setSize(300, 200);
+			 frame.setLocationRelativeTo(null);
+			 frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			 frame.setVisible(true);
+			 System.out.println("Launched jframe");
+		 });
 		 System.out.flush();
 		 System.err.flush();
 
-//		 GLFW.glfwInitHint(GLFW.GLFW_COCOA_CHDIR_RESOURCES, GLFW.GLFW_FALSE);
-//		 GLFW.glfwInitHint(GLFW.GLFW_COCOA_MENUBAR, GLFW.GLFW_FALSE);
-//		 GLFW.glfwInitHint(GLFW.GLFW_JOYSTICK_HAT_BUTTONS, GLFW.GLFW_FALSE);
-//		 GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
-//		 GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 2);
-//		 GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
-//		 GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
-//		 GLFW.glfwSetErrorCallback(new GLFWErrorCallback() {
-//			 @Override public void invoke(int error, long description) {
-//				 System.out.println("Got GLFW error " + error + ": " + description);
-//			 }
-//		 });
-//		 System.out.println("Calling GLFW init.");
-//		 final boolean init=GLFW.glfwInit();
-//		 System.out.println("Done calling GLFW init=" + init);
-//		 System.out.flush();
-		 Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-		 config.useOpenGL3(true, 3, 2);
-		 config.setResizable(true);
-		 config.setTitle("libGdx test");
-		 config.setWindowedMode(800, 600);
+		 LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
+		 config.resizable = true;
+		 config.title = "libGdx test";
+		 config.width = 800;
+		 config.height = 600;
 
 		 System.out.println("About to launch libGDX!");
-		 new Lwjgl3Application(new TestLibGdx(), config);
+		 new LwjglApplication(new TestLibGdx(), config);
 
 		 throw new RuntimeException("Testing uncaught exception handler. Thrown from the main thread, Thread.currentThread().getName()=" +
 				 Thread.currentThread().getName());
