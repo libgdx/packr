@@ -216,7 +216,7 @@ This configuration will unpack `rt.jar`, remove all the listed packages and clas
 
 Then, rhino.jar (about 1.1 MiB) and, in the JRE for Windows case, all executable files in `jre/bin/` and the folder `jre/bin/client/` will be removed.
 
-Packr comes with two such configurations out of the box, [`soft`](./Packr/src/main/resources/minimize/soft). The `hard` profile removes a few more files, and repacks some additional JAR files.
+Packr comes with two such configurations out of the box: [`soft`](./Packr/src/main/resources/minimize/soft) and [`hard`](./Packr/src/main/resources/minimize/hard). The `hard` profile removes a few more files, and repacks some additional JAR files.
 
 ## The "removelibs" option
 Minimization aside, packr can remove all dynamic libraries which do not match the target platform from your project JAR file(s):
