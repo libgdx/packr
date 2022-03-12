@@ -1,0 +1,28 @@
+import java.util.Scanner;
+import java.io.*;
+
+public class Colculator1 {
+	public static final String ANSI_RESET = "\u001B[0m";
+	  
+    // Declaring the color
+    // Custom declaration
+    public static final String ANSI_YELLOW = "\u001B[33m";
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		 // Declaring ANSI_RESET so that we can reset the color
+		  
+	  
+	    // Main driver method
+	   
+	        // Printing the text on console prior adding
+	        // the desired color
+	        System.out.println(ANSI_YELLOW
+	                           + "This text is yellow"
+	                           + ANSI_RESET);
+	    
+	
+			
+		
+	}
+
+}
