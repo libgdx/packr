@@ -161,6 +161,12 @@ data class JvmRemoteArchiveInformation(
       "780bc92292e3f9899235457189d7aa6943833c9f426d104931d399bc404c89d3"
    ),
 
+   // Windows x86-64 Java 8 JRE
+   JvmRemoteArchiveInformation(
+      uri("https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u332-b09/OpenJDK8U-jre_x64_windows_hotspot_8u332b09.zip").toURL(),
+      "e85179ac15fb70ade453ab0997b1a115c0067a77d5e9a9b9ce4464bd417f6716"
+   ),
+
    // Windows x86-64 Java 11
    JvmRemoteArchiveInformation(
       uri("https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15%2B10/OpenJDK11U-jdk_x64_windows_hotspot_11.0.15_10.zip").toURL(),
