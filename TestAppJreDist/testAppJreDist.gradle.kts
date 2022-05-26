@@ -175,8 +175,8 @@ data class JvmRemoteArchiveInformation(
 
    // Windows x86-64 Java 17
    JvmRemoteArchiveInformation(
-      uri("https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.3%2B7/OpenJDK17U-jdk_x64_mac_hotspot_17.0.3_7.tar.gz").toURL(),
-      "a5db5927760d2864316354d98ff18d18bec2e72bfac59cd25a416ed67fa84594"
+      uri("https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.3%2B7/OpenJDK17U-jdk_x64_windows_hotspot_17.0.3_7.zip").toURL(),
+      "595e361d1bbb627fe4a496e3c26c2a1562d118776310cfeb9ae8845e2906d9ab"
    )
 )
 
