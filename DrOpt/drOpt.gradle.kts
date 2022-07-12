@@ -52,7 +52,28 @@ library {
 
    publicHeaders.from(file("dropt/include"))
 
-   targetMachines.set(listOf(machines.windows.x86_64, machines.linux.x86_64, machines.macOS.x86_64))
+   targetMachines.set(listOf(machines.windows.x86_64, machines.linux.x86_64, machines.macOS.x86_64, machines.macOS.architecture("aarch64")))
+
+   toolChains.configureEach {
+      if (this is Clang) {
+         target("host:x86-64") {
+            cppCompiler.withArguments { add("--target=x86_64-apple-darwin") }
+            getcCompiler().withArguments { add("--target=x86_64-apple-darwin") }
+            objcCompiler.withArguments { add("--target=x86_64-apple-darwin") }
+            objcppCompiler.withArguments { add("--target=x86_64-apple-darwin") }
+            linker.withArguments { add("--target=x86_64-apple-darwin") }
+            assembler.withArguments { add("--target=x86_64-apple-darwin") }
+         }
+         target("host:aarch64") {
+            cppCompiler.withArguments { add("--target=arm64-apple-darwin") }
+            getcCompiler().withArguments { add("--target=arm64-apple-darwin") }
+            objcCompiler.withArguments { add("--target=arm64-apple-darwin") }
+            objcppCompiler.withArguments { add("--target=arm64-apple-darwin") }
+            linker.withArguments { add("--target=arm64-apple-darwin") }
+            assembler.withArguments { add("--target=arm64-apple-darwin") }
+         }
+      }
+   }
 
    binaries.configureEach(CppStaticLibrary::class.java) {
       val binaryToolChain = toolChain

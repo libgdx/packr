@@ -149,10 +149,28 @@ data class JvmRemoteArchiveInformation(
       "0a5419a45fe3680610ff15afa7d854c9b79579550327d14d616ea8ccd0e89505"
    ),
 
+   // macOs aarch64 Java 11
+   JvmRemoteArchiveInformation(
+      uri("https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15%2B10/OpenJDK11U-jdk_aarch64_mac_hotspot_11.0.15_10.tar.gz").toURL(),
+      "e84143a6c633a26aeefcb1fd5ad8dfb9e952cfec2a1af5c9d9b69f2390990dac"
+   ),
+
+   // macOs aarch64 Java 11 JRE
+   JvmRemoteArchiveInformation(
+      uri("https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15%2B10/OpenJDK11U-jre_aarch64_mac_hotspot_11.0.15_10.tar.gz").toURL(),
+      "6736f6ef503658f3ae48a54646a8ac6dc8ca286f10887dae22b41f2148882695"
+   ),
+
    // macOs x86-64 Java 17
    JvmRemoteArchiveInformation(
       uri("https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.3%2B7/OpenJDK17U-jdk_x64_mac_hotspot_17.0.3_7.tar.gz").toURL(),
       "a5db5927760d2864316354d98ff18d18bec2e72bfac59cd25a416ed67fa84594"
+   ),
+
+   // macOs aarch64 Java 17
+   JvmRemoteArchiveInformation(
+      uri("https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.3%2B7/OpenJDK17U-jdk_aarch64_mac_hotspot_17.0.3_7.tar.gz").toURL(),
+      "ff42be4d7a348d0d7aee07749e4daec9f427dcc7eb46b343f8131e8f3906c05b"
    ),
 
    // Windows x86-64 Java 8
@@ -233,6 +251,19 @@ fun getJdkOsFamily(jdkFilename: String): String {
    }
 }
 
+fun getJdkOsArch(jdkFilename: String): String {
+   val jdkFilenameLowercase = jdkFilename.toLowerCase()
+   return when {
+      jdkFilenameLowercase.contains("x64") -> {
+         "x86-64"
+      }
+      jdkFilenameLowercase.contains("aarch64") -> {
+         "aarch64"
+      }
+      else -> throw GradleException("Unknown Java Arch for JDK $jdkFilename")
+   }
+}
+
 /*
  * List of JDKs to download
  * task - Download JDKs from the internet
@@ -256,6 +287,20 @@ jvmRemoteArchiveInformationList.forEach { (jvmArchiveUrl, jvmArchiveSha256) ->
       ))
    ) {
       return@forEach
+   }
+
+   // This code is ugly, but works
+   if (Os.isFamily(Os.FAMILY_MAC)) {
+      val jdkOsArch = getJdkOsArch(jvmDownloadFilename)
+      if (Os.isArch("aarch64")) {
+         if (jdkOsArch != "aarch64") {
+            return@forEach
+         }
+      } else {
+         if (jdkOsArch == "aarch64") {
+            return@forEach
+         }
+      }
    }
 
    val downloadTask = tasks.register("download${jvmDownloadFilename.substring(0, jvmDownloadFilename.indexOf('.'))}") {
