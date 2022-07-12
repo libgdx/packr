@@ -82,7 +82,7 @@ tasks.withType(CppCompile::class).configureEach {
 
 dependencies {
    implementation(project(":DrOpt"))
-   testImplementation("org.gradle.cpp-samples:googletest:1.9.0-gr4-SNAPSHOT")
+   //testImplementation("org.gradle.cpp-samples:googletest:1.9.0-gr4-SNAPSHOT")
 }
 
 /**
@@ -95,10 +95,31 @@ val operatingSystemFamilyByPublicationName: MutableMap<String, OperatingSystemFa
  * MacOS x86 is no longer built because it requires and older version of Xcode and Apple makes it too difficult to install on newer versions of Mac
  * Windows x86 is no longer built because the Adopt OpenJDK has crash failures.
  */
-val targetPlatformsToBuild = listOf(machines.windows.x86_64, machines.linux.x86_64, machines.macOS.x86_64)
+val targetPlatformsToBuild = listOf(machines.windows.x86_64, machines.linux.x86_64, machines.macOS.x86_64, machines.macOS.architecture("aarch64"))
 
 application {
    targetMachines.set(targetPlatformsToBuild)
+
+   toolChains.configureEach {
+      if (this is Clang) {
+         target("host:x86-64") {
+            cppCompiler.withArguments { add("--target=x86_64-apple-darwin") }
+            getcCompiler().withArguments { add("--target=x86_64-apple-darwin") }
+            objcCompiler.withArguments { add("--target=x86_64-apple-darwin") }
+            objcppCompiler.withArguments { add("--target=x86_64-apple-darwin") }
+            linker.withArguments { add("--target=x86_64-apple-darwin") }
+            assembler.withArguments { add("--target=x86_64-apple-darwin") }
+         }
+         target("host:aarch64") {
+            cppCompiler.withArguments { add("--target=arm64-apple-darwin") }
+            getcCompiler().withArguments { add("--target=arm64-apple-darwin") }
+            objcCompiler.withArguments { add("--target=arm64-apple-darwin") }
+            objcppCompiler.withArguments { add("--target=arm64-apple-darwin") }
+            linker.withArguments { add("--target=arm64-apple-darwin") }
+            assembler.withArguments { add("--target=arm64-apple-darwin") }
+         }
+      }
+   }
 
    binaries.configureEach(CppExecutable::class.java) {
       logger.debug("Configuring executable ${this.name}")
@@ -161,6 +182,7 @@ application {
             when (targetMachine.architecture.name) {
                MachineArchitecture.X86 -> args("i386")
                MachineArchitecture.X86_64 -> args("x86_64")
+               "aarch64" -> args("arm64")
                else -> throw GradleException("Don't know the lipo -arch flag for architecture ${targetMachine.architecture.name}")
             }
             args(executableFile.get().asFile.absolutePath)
@@ -247,10 +269,34 @@ application {
 unitTest {
    targetMachines.set(targetPlatformsToBuild)
 
+   toolChains.configureEach {
+      if (this is Clang) {
+         target("host:x86-64") {
+            cppCompiler.withArguments { add("--target=x86_64-apple-darwin") }
+            getcCompiler().withArguments { add("--target=x86_64-apple-darwin") }
+            objcCompiler.withArguments { add("--target=x86_64-apple-darwin") }
+            objcppCompiler.withArguments { add("--target=x86_64-apple-darwin") }
+            linker.withArguments { add("--target=x86_64-apple-darwin") }
+            assembler.withArguments { add("--target=x86_64-apple-darwin") }
+         }
+         target("host:aarch64") {
+            cppCompiler.withArguments { add("--target=arm64-apple-darwin") }
+            getcCompiler().withArguments { add("--target=arm64-apple-darwin") }
+            objcCompiler.withArguments { add("--target=arm64-apple-darwin") }
+            objcppCompiler.withArguments { add("--target=arm64-apple-darwin") }
+            linker.withArguments { add("--target=arm64-apple-darwin") }
+            assembler.withArguments { add("--target=arm64-apple-darwin") }
+         }
+      }
+   }
+
    binaries.configureEach(CppTestExecutable::class.java) {
+      val binaryCompileTask = compileTask.get()
       val binaryLinkTask = linkTask.get()
       when (toolChain) {
          is Gcc -> {
+            binaryCompileTask.compilerArgs.add("-std=c++14")
+
             if (targetMachine.operatingSystemFamily.isLinux) {
                binaryLinkTask.linkerArgs.add("-lpthread")
             }
@@ -259,11 +305,16 @@ unitTest {
             binaryLinkTask.linkerArgs.add("-fno-pie")
          }
          is Clang -> {
+            binaryCompileTask.compilerArgs.add("-std=c++14")
+
             binaryLinkTask.linkerArgs.add("-ldl")
          }
          is VisualCpp -> {
-            compileTask.get().macros["UNICODE"] = null
-            compileTask.get().macros["_UNICODE"] = null
+            binaryCompileTask.macros["UNICODE"] = null
+            binaryCompileTask.macros["_UNICODE"] = null
+
+            binaryCompileTask.compilerArgs.add("/std:c++14")
+
             binaryLinkTask.linkerArgs.add("/SUBSYSTEM:CONSOLE")
             binaryLinkTask.linkerArgs.add("Shell32.lib")
          }
@@ -275,6 +326,8 @@ unitTest {
       }
 
       addJvmHeaders(compileTask.get(), this)
+
+      addGoogleTest(compileTask.get())
    }
 }
 
@@ -397,4 +450,10 @@ fun addJvmHeaders(binaryCompileTask: CppCompile, cppBinary: CppBinary) {
          binaryCompileTask.includes(file("${javaHomePathString}/include/win32"))
       }
    }
+}
+
+fun addGoogleTest(binaryCompileTask: CppCompile) {
+   binaryCompileTask.includes(file("${rootProject.projectDir}/googletest"))
+   binaryCompileTask.includes(file("${rootProject.projectDir}/googletest/include"))
+   binaryCompileTask.source(file("${rootProject.projectDir}/googletest/src/gtest-all.cc"))
 }
