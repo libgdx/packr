@@ -3,7 +3,7 @@ Packages your JAR, assets and a JVM for distribution on Windows, Linux and macOS
 
 On the topic of games, Packr version 2.4.2+ supports Java 14 and the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) has been verified to work. Because who doesn't want GC pause times guaranteed to not exceed 10ms with work in progress for sub 1ms GC pauses. When bundling Java 14+ make sure to use `--useZgcIfSupportedOs` instead of passing `--vmargs XX:+UseZGC` because versions of Windows before Windows 10 1803 are not supported by the Z garbage collector.
 
-Starting with Java 14, there's a new tool that is included with the JDK called [jpackage](https://docs.oracle.com/en/java/javase/14/jpackage/packaging-overview.html). There's a lot of overlap between jpackage and packr. Considering jpackage is supported by the broader OpenJDK community, it's worth looking into. It might be a better solution for your product.
+Starting with Java 14, there's a new tool that is included with the JDK called [jpackage](https://docs.oracle.com/en/java/javase/14/jpackage/packaging-overview.html). There's a lot of overlap between jpackage and packr. Considering jpackage is supported by the broader OpenJDK community, it's worth looking into. It might be a better solution for your product. There's also [Conveyor](https://www.hydraulic.software/) which can build self-updating packages, do signing and notarization, and cross-build (Windows/Mac packages from Linux, Linux/Mac from Windows etc). It's free for open source projects but requires payment for commercial projects.
 
 # Download
 The latest build is available for [download here](https://github.com/libgdx/packr/releases).
