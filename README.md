@@ -25,7 +25,7 @@ java -jar packr-all.jar \
      --executable myapp \
      --classpath myjar.jar \
      --mainclass com.my.app.MainClass \
-     --vmargs Xmx1G \
+     --vmargs -Xmx1G \
      --resources src/main/resources path/to/other/assets \
      --output out-mac
 ```
@@ -39,7 +39,7 @@ java -jar packr-all.jar \
 | classpath | file locations of the JAR files to package |
 | removelibs (optional) | file locations of JAR files to remove native libraries which do not match the target platform. See below for details. |
 | mainclass | the fully qualified name of the main class, using dots to delimit package names |
-| vmargs (optional) | list of arguments for the JVM, without leading dashes, e.g. "Xmx1G" |
+| vmargs (optional) | list of arguments for the JVM, including leading dashes, e.g. "-Xmx1G" |
 | useZgcIfSupportedOs (optional) | When bundling a Java 14+ JRE, the launcher will check if the operating system supports the [Z garbage collector](https://wiki.openjdk.java.net/display/zgc/Main) and use it. At the time of this writing, the supported operating systems are Linux, macOS, and Windows version 1803 (Windows 10 or Windows Server 2019) or later." |
 | resources (optional) | list of files and directories to be packaged next to the native executable |
 | minimizejre (optional) | Only use on Java 8 or lower. Minimize the JRE by removing directories and files as specified by an additional config file. Comes with a few config files out of the box. See below for details on the minimization config file. |
@@ -65,7 +65,7 @@ Alternatively, you can put all the command line arguments into a JSON file which
     ],
     "mainclass": "com.my.app.MainClass",
     "vmargs": [
-       "Xmx1G"
+       "-Xmx1G"
     ],
     "resources": [
         "src/main/resources",
@@ -87,7 +87,7 @@ It is possible to combine a JSON configuration, and the command line. For single
 This is an example which overrides the output folder and adds another VM argument. Note that the config file name is delimited by `--` because the option prior to it, `--vmargs`, allows multiple arguments:
 
 ```bash
-java -jar packr-all.jar --output target/out-mac --vmargs Xms256m -- my-packr-config.json
+java -jar packr-all.jar --output target/out-mac --vmargs -Xms256m -- my-packr-config.json
 ```
 
 Finally, you can use packr from within your Java code. Just add the JAR file to your project, either manually, or via the following Gradle dependency:
@@ -116,7 +116,7 @@ config.executable = "myapp";
 config.classpath = Arrays.asList("myjar.jar");
 config.removePlatformLibs = config.classpath;
 config.mainClass = "com.my.app.MainClass";
-config.vmArgs = Arrays.asList("Xmx1G");
+config.vmArgs = Arrays.asList("-Xmx1G");
 config.minimizeJre = "soft";
 config.outDir = new java.io.File("out-mac");
 config.useZgcIfSupportedOs = true;
